@@ -31,9 +31,15 @@ Scope {
         onLoadFailed: root.launchCounts = {}
     }
     Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", root.stateDir])
+    // Sorting uses a snapshot taken when the launcher opens, so recording a
+    // launch never reorders the list underneath the item being activated.
+    property var rankCounts: ({})
     function launchCount(app) {
-        return root.launchCounts[app.id] || 0;
+        return root.rankCounts[app.id] || 0;
     }
+    // Last pointer position in scene coordinates; hover only selects when the
+    // pointer actually moves, not when the list scrolls under a still cursor.
+    property point lastPointer: Qt.point(-1, -1)
     function recordLaunch(app) {
         var c = Object.assign({}, root.launchCounts);
         c[app.id] = (c[app.id] || 0) + 1;
@@ -128,8 +134,9 @@ Scope {
         if (index < 0 || index >= itemCount())
             return;
         if (mode === "launcher") {
-            root.recordLaunch(apps[index]);
-            apps[index].execute();
+            var app = apps[index];
+            app.execute();
+            root.recordLaunch(app);
         } else if (mode === "clipboard") {
             var id = clipIds[clipHits[index]];
             if (/^\d+$/.test(id)) {
@@ -219,6 +226,8 @@ Scope {
 
             onFocusedHereChanged: {
                 if (focusedHere) {
+                    root.rankCounts = root.launchCounts;
+                    root.lastPointer = Qt.point(-1, -1);
                     root.query = "";
                     search.text = "";
                     list.currentIndex = 0;
@@ -380,7 +389,13 @@ Scope {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
-                                    onEntered: list.currentIndex = row.index
+                                    onPositionChanged: mouse => {
+                                        var p = mapToItem(null, mouse.x, mouse.y);
+                                        var moved = root.lastPointer.x >= 0 && (p.x !== root.lastPointer.x || p.y !== root.lastPointer.y);
+                                        root.lastPointer = p;
+                                        if (moved)
+                                            list.currentIndex = row.index;
+                                    }
                                     onClicked: root.activate(row.index)
                                 }
                             }
