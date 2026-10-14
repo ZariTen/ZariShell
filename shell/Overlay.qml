@@ -135,7 +135,15 @@ Scope {
             return;
         if (mode === "launcher") {
             var app = apps[index];
-            app.execute();
+            // Run each app in its own systemd scope so restarting the shell
+            // (quickshell.service) doesn't kill everything launched from it.
+            if (app.runInTerminal || !app.command || app.command.length === 0)
+                app.execute();
+            else
+                Quickshell.execDetached({
+                    command: ["systemd-run", "--user", "--scope", "--collect", "--quiet", "--"].concat(app.command),
+                    workingDirectory: app.workingDirectory || ""
+                });
             root.recordLaunch(app);
         } else if (mode === "clipboard") {
             var id = clipIds[clipHits[index]];
