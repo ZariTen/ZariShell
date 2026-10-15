@@ -111,7 +111,6 @@ Scope {
             columns: 7
             rowSpacing: 2
             columnSpacing: 2
-            uniformCellSizes: true
 
             Repeater {
                 model: 7
