@@ -86,7 +86,7 @@ Singleton {
     readonly property int barHeight: 42
     readonly property int gap: 8
     readonly property string font: "Noto Sans"
-    readonly property string iconFont: "JetBrainsMono Nerd Font"
+    readonly property string iconFont: "JetBrainsMono Nerd Font Propo"
     readonly property int fontSmall: 11
     readonly property int fontBody: 13
     readonly property int fontTitle: 15
