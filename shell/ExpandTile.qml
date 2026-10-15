@@ -30,7 +30,7 @@ Item {
 
     Rectangle {
         anchors.right: more.left
-        anchors.rightMargin: 2
+        anchors.rightMargin: Theme.spacingXs / 2
         anchors.verticalCenter: parent.verticalCenter
         width: 1
         height: parent.height - 22
@@ -40,7 +40,7 @@ Item {
     AeroButton {
         id: more
         anchors.right: parent.right
-        anchors.rightMargin: 6
+        anchors.rightMargin: Theme.spacingXs
         anchors.verticalCenter: parent.verticalCenter
         implicitWidth: 28
         implicitHeight: parent.height - 14

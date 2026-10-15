@@ -11,10 +11,12 @@ RowLayout {
     spacing: Theme.spacingS
 
     MdIcon {
+        Layout.alignment: Qt.AlignVCenter
         codepoint: parent.codepoint
         color: Theme.glow
     }
     StyledText {
+        Layout.alignment: Qt.AlignVCenter
         Layout.fillWidth: true
         text: parent.title
         font.pixelSize: Theme.fontTitle

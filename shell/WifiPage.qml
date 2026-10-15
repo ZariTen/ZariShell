@@ -389,7 +389,7 @@ QsPage {
 
     trailing: [
         AeroButton {
-            implicitWidth: 30
+            implicitWidth: 28
             implicitHeight: 28
             enabled: page.radioOn && !page.scanning
             opacity: enabled ? 1 : 0.5
@@ -640,7 +640,7 @@ QsPage {
                             property bool reveal: false
 
                             anchors.right: parent.right
-                            anchors.rightMargin: 3
+                            anchors.rightMargin: Theme.spacingXs
                             anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: 24
                             implicitHeight: 24

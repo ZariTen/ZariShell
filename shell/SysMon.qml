@@ -26,7 +26,7 @@ Scope {
         readonly property var colors: root.fill(value)
 
         Layout.fillWidth: true
-        spacing: 3
+        spacing: Theme.spacingXs
 
         RowLayout {
             Layout.fillWidth: true

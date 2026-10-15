@@ -135,14 +135,17 @@ Scope {
                                         font.pixelSize: Theme.fontSmall
                                         color: toast.critical ? Theme.error : Theme.glow
                                     }
-                                    MdIcon {
-                                        codepoint: 0xF0156 // md-close
-                                        font.pixelSize: 14
-                                        color: Theme.textSurfaceVariant
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            anchors.margins: -4
-                                            cursorShape: Qt.PointingHandCursor
+                                    Item {
+                                        implicitWidth: 20
+                                        implicitHeight: 20
+
+                                        MdIcon {
+                                            anchors.centerIn: parent
+                                            codepoint: 0xF0156 // md-close
+                                            font.pixelSize: 14
+                                            color: Theme.textSurfaceVariant
+                                        }
+                                        HoverLayer {
                                             onClicked: Notifs.dismiss(toast.modelData)
                                         }
                                     }

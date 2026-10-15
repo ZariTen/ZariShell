@@ -91,7 +91,7 @@ QsPage {
 
     trailing: [
         AeroButton {
-            implicitWidth: 30
+            implicitWidth: 28
             implicitHeight: 28
             enabled: page.powered
             opacity: enabled ? 1 : 0.5

@@ -351,7 +351,7 @@ Scope {
                         spacing: Theme.spacingS
 
                         AeroButton {
-                            implicitWidth: 30
+                            implicitWidth: 28
                             implicitHeight: 28
                             onClicked: root.toggleMute()
                             MdIcon {

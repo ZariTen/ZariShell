@@ -124,7 +124,7 @@ Scope {
 
                 RowLayout {
                     anchors.fill: parent
-                    anchors.leftMargin: 10
+                    anchors.leftMargin: Theme.spacingM
                     anchors.rightMargin: Theme.spacingL
                     spacing: Theme.spacingM
 

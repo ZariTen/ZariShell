@@ -35,6 +35,7 @@ AeroButton {
         spacing: Theme.spacingS
 
         MdIcon {
+            Layout.alignment: Qt.AlignVCenter
             codepoint: tile.codepoint
             font.pixelSize: 20
             color: tile.active ? "#ffffff" : Theme.textSurfaceVariant

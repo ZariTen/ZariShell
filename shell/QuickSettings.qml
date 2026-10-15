@@ -80,7 +80,7 @@ Scope {
                 title: "Quick settings"
 
                 AeroButton {
-                    implicitWidth: 30
+                    implicitWidth: 28
                     implicitHeight: 28
                     onClicked: ShellState.toggle("power")
                     MdIcon {
@@ -94,6 +94,7 @@ Scope {
             GridLayout {
                 Layout.fillWidth: true
                 columns: 2
+                uniformCellWidths: true
                 rowSpacing: Theme.spacingS
                 columnSpacing: Theme.spacingS
 
@@ -146,7 +147,7 @@ Scope {
                 spacing: Theme.spacingS
 
                 AeroButton {
-                    implicitWidth: 30
+                    implicitWidth: 28
                     implicitHeight: 28
                     onClicked: root.sink.audio.muted = !root.sink.audio.muted
                     MdIcon {
@@ -179,7 +180,7 @@ Scope {
                 spacing: Theme.spacingS
 
                 MdIcon {
-                    Layout.preferredWidth: 30
+                    Layout.preferredWidth: 28
                     codepoint: 0xF00DF
                 }
                 GlossySlider {

@@ -35,7 +35,7 @@ ColumnLayout {
         spacing: Theme.spacingS
 
         AeroButton {
-            implicitWidth: 30
+            implicitWidth: 28
             implicitHeight: 28
             onClicked: page.back()
             MdIcon {
@@ -44,6 +44,7 @@ ColumnLayout {
             }
         }
         MdIcon {
+            Layout.alignment: Qt.AlignVCenter
             codepoint: page.codepoint
             color: Theme.glow
         }

@@ -80,13 +80,13 @@ Scope {
 
             AeroButton {
                 implicitWidth: 28
-                implicitHeight: 26
+                implicitHeight: 28
                 onClicked: root.shift(-1)
                 MdIcon { anchors.centerIn: parent; codepoint: 0xF0141 } // md-chevron_left
             }
             AeroButton {
                 Layout.fillWidth: true
-                implicitHeight: 26
+                implicitHeight: 28
                 onClicked: root.goToday()
                 StyledText {
                     anchors.centerIn: parent
@@ -99,7 +99,7 @@ Scope {
             }
             AeroButton {
                 implicitWidth: 28
-                implicitHeight: 26
+                implicitHeight: 28
                 onClicked: root.shift(1)
                 MdIcon { anchors.centerIn: parent; codepoint: 0xF0142 } // md-chevron_right
             }
