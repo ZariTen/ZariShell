@@ -14,9 +14,11 @@ PanelWindow {
     property string align: "right"
     property bool centered: false
     property int cardWidth: 360
+    property bool canGoBack: false   // Escape steps back (signal back) instead of closing
     default property alias content: column.data
     readonly property bool open: ShellState.panel === name
     property alias spacing: column.spacing
+    signal back
 
     screen: {
         var all = Quickshell.screens;
@@ -69,9 +71,10 @@ PanelWindow {
         opacity: panel.open ? 1 : 0
         scale: panel.centered ? (panel.open ? 1 : 0.95) : 1
         focus: true
-        Keys.onEscapePressed: ShellState.close()
+        Keys.onEscapePressed: panel.canGoBack ? panel.back() : ShellState.close()
 
         Behavior on opacity { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
+        Behavior on height { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.OutCubic } }
         Behavior on y { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         Behavior on scale { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
 

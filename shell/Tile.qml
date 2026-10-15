@@ -8,6 +8,7 @@ AeroButton {
     property int codepoint: 0
     property string label: ""
     property string sublabel: ""
+    property int trailingSpace: 0   // room reserved on the right (e.g. for a split chevron)
 
     Layout.fillWidth: true
     implicitHeight: 56
@@ -30,7 +31,7 @@ AeroButton {
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: Theme.spacingM
-        anchors.rightMargin: Theme.spacingS
+        anchors.rightMargin: Theme.spacingS + tile.trailingSpace
         spacing: Theme.spacingS
 
         MdIcon {
