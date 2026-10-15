@@ -111,12 +111,17 @@ Scope {
             columns: 7
             rowSpacing: 2
             columnSpacing: 2
+            uniformCellSizes: true
 
             Repeater {
                 model: 7
                 delegate: StyledText {
                     required property int index
                     Layout.fillWidth: true
+                    Layout.preferredWidth: 1
+                    Layout.minimumWidth: 0
+                    Layout.preferredHeight: 24
+                    verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
                     text: root.locale.dayName((root.locale.firstDayOfWeek + index) % 7, Locale.ShortFormat).slice(0, 3)
                     font.pixelSize: Theme.fontSmall
@@ -133,7 +138,9 @@ Scope {
                     readonly property bool today: modelData.toDateString() === clock.date.toDateString()
 
                     Layout.fillWidth: true
-                    implicitHeight: 32
+                    Layout.preferredWidth: 1
+                    Layout.minimumWidth: 0
+                    Layout.preferredHeight: 32
 
                     Rectangle {
                         anchors.fill: parent
