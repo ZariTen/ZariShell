@@ -11,7 +11,7 @@ Rectangle {
     implicitWidth: row.implicitWidth + (framed ? Theme.spacingM * 2 : 0)
     implicitHeight: Theme.barHeight - 10
     radius: Theme.radius
-    color: framed ? Qt.rgba(0, 0, 0, 0.22) : "transparent"
+    color: framed ? Theme.inset : "transparent"
     border.width: framed ? 1 : 0
     border.color: Qt.rgba(1, 1, 1, 0.10)
 

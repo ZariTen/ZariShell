@@ -69,7 +69,7 @@ Scope {
 
                         Glass {
                             anchors.fill: parent
-                            tint: toast.critical ? Qt.rgba(0.42, 0.05, 0.04, 0.88) : Theme.glassTintStrong
+                            tint: toast.critical ? Qt.rgba(0.62, 0.14, 0.10, 0.82) : Theme.glassTintStrong
                             sheenHeight: Math.min(0.48, 30 / Math.max(1, toast.height))
                         }
 

@@ -44,7 +44,7 @@ Item {
             GradientStop { position: 0.0; color: Theme.sheenTop }
             GradientStop { position: glass.sheenHeight; color: Theme.sheenMid }
             GradientStop { position: glass.sheenHeight + 0.001; color: Qt.rgba(1, 1, 1, 0.0) }
-            GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.18) }
+            GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.10) }
         }
     }
 

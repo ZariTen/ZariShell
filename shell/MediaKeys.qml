@@ -152,7 +152,7 @@ Scope {
                         Layout.fillWidth: true
                         implicitHeight: 14
                         radius: 2
-                        color: Qt.rgba(0, 0, 0, 0.5)
+                        color: Theme.inset
                         border.width: 1
                         border.color: Qt.rgba(1, 1, 1, 0.25)
 

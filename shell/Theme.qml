@@ -4,7 +4,7 @@ import Quickshell
 
 // Material 3-style tonal palette derived from the current wallpaper. A
 // ColorQuantizer samples the image; the most vivid sampled color gives the
-// seed hue, and every token is a fixed tone of that hue (dark scheme).
+// seed hue, and every token is a fixed tone of that hue (mid-tone glass scheme).
 Singleton {
     id: root
 
@@ -27,12 +27,14 @@ Singleton {
         return Qt.hsla(((h % 1) + 1) % 1, s, l, a === undefined ? 1 : a);
     }
 
-    // Dark Windows 7 Aero palette. The glass tint follows the wallpaper hue
-    // (like Win7's "color of windows"), everything else is fixed tones of it.
+    // Windows 7 Aero palette: translucent blue-ish glass that follows the
+    // wallpaper hue (like Win7's "color of windows"); everything else is
+    // fixed tones of it. Mid-tone glass keeps white text readable while the
+    // sheen/edge highlights still pop.
     // Note: never name a property on<Capital>…; QML parses that as a signal
     // handler (e.g. "onSurface" for "surface"), leaving it unset (black).
-    readonly property color glassTint: tone(hue - 0.02, 0.6, 0.17, 0.6)
-    readonly property color glassTintStrong: tone(hue, 0.5, 0.11, 0.86)
+    readonly property color glassTint: tone(hue - 0.02, 0.55, 0.36, 0.52)
+    readonly property color glassTintStrong: tone(hue, 0.5, 0.28, 0.80)
     readonly property color glow: tone(hue - 0.06, 0.95, 0.64)          // Aero hover glow (cyan)
     readonly property color glowSoft: tone(hue - 0.06, 0.95, 0.64, 0.35)
     readonly property color sheenTop: Qt.rgba(1, 1, 1, 0.20)
@@ -49,11 +51,15 @@ Singleton {
     readonly property color textSecondaryContainer: "#ffffff"
     readonly property color tertiary: "#b4d455"                          // wallpaper's leaf green
     readonly property color tertiaryContainer: "#3d5a12"
-    readonly property color surface: tone(hue, 0.4, 0.06)
-    readonly property color surfaceContainerLow: Qt.rgba(0, 0, 0, 0.22)
-    readonly property color surfaceContainer: Qt.rgba(0, 0, 0, 0.30)
-    readonly property color surfaceContainerHigh: Qt.rgba(0, 0, 0, 0.42)
+    readonly property color surface: tone(hue, 0.4, 0.12)
+    readonly property color surfaceContainerLow: tone(hue, 0.6, 0.62, 0.10)
+    readonly property color surfaceContainer: tone(hue, 0.6, 0.62, 0.16)
+    readonly property color surfaceContainerHigh: tone(hue, 0.6, 0.62, 0.26)
     readonly property color surfaceContainerHighest: Qt.rgba(1, 1, 1, 0.12)
+    // Recessed wells (slider tracks, search/password fields, list wells):
+    // a deeper, hue-tinted tone of the glass instead of pure black.
+    readonly property color inset: tone(hue, 0.55, 0.16, 0.50)
+    readonly property color insetBorder: tone(hue, 0.5, 0.10, 0.65)
     readonly property color textSurface: "#ffffff"
     readonly property color textSurfaceVariant: Qt.rgba(1, 1, 1, 0.72)
     readonly property color outline: Qt.rgba(1, 1, 1, 0.45)

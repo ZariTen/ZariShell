@@ -295,9 +295,9 @@ Scope {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         radius: Theme.radius
-                        color: Qt.rgba(0, 0, 0, 0.38)
+                        color: Theme.inset
                         border.width: 1
-                        border.color: Qt.rgba(0, 0, 0, 0.6)
+                        border.color: Theme.insetBorder
 
                         Rectangle {
                             anchors.fill: parent
@@ -415,7 +415,7 @@ Scope {
                         Layout.fillWidth: true
                         implicitHeight: 32
                         radius: Theme.radius
-                        color: Qt.rgba(0, 0, 0, 0.5)
+                        color: Theme.inset
                         border.width: 1
                         border.color: search.activeFocus ? Theme.glow : Qt.rgba(1, 1, 1, 0.25)
 

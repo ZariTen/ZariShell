@@ -1,6 +1,6 @@
 # ZariShell
 
-A dark Windows 7 Aero style desktop shell for Hyprland, built with [Quickshell](https://quickshell.org), plus a matching login screen.
+A Windows 7 Aero style desktop shell for Hyprland, built with [Quickshell](https://quickshell.org), plus a matching login screen.
 
 ## Install
 
