@@ -108,7 +108,7 @@ Scope {
                 spacing: Theme.spacingS
 
                 Island {
-                    spacing: 3
+                    spacing: Theme.spacingXs
 
                     Repeater {
                         model: Hyprland.workspaces
@@ -141,7 +141,7 @@ Scope {
                                 visible: ws.occupied && !ws.active
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 anchors.bottom: parent.bottom
-                                anchors.bottomMargin: 3
+                                anchors.bottomMargin: Theme.spacingXs
                                 width: 10
                                 height: 2
                                 radius: 1
@@ -156,7 +156,7 @@ Scope {
 
                 Island {
                     visible: winRow.count > 0
-                    spacing: 3
+                    spacing: Theme.spacingXs
 
                     Repeater {
                         id: winRow
@@ -316,8 +316,8 @@ Scope {
 
                 // System monitor indicator (CPU / RAM)
                 AeroButton {
-                    implicitWidth: sysRow.implicitWidth + Theme.spacingM * 2
-                    implicitHeight: 30
+                    implicitWidth: sysRow.implicitWidth + Theme.spacingS * 2
+                    implicitHeight: 26
                     active: ShellState.panel === "sysmon"
                     onClicked: ShellState.toggle("sysmon")
 
@@ -328,14 +328,14 @@ Scope {
 
                         MdIcon { codepoint: 0xF061A; font.pixelSize: 14; color: Theme.glow } // md-chip
                         StyledText { text: Math.round(SysStats.cpu * 100) + "%"; font.pixelSize: Theme.fontSmall }
-                        MdIcon { Layout.leftMargin: 4; codepoint: 0xF035B; font.pixelSize: 14; color: Theme.glow } // md-memory
+                        MdIcon { Layout.leftMargin: Theme.spacingXs; codepoint: 0xF035B; font.pixelSize: 14; color: Theme.glow } // md-memory
                         StyledText { text: Math.round(SysStats.mem * 100) + "%"; font.pixelSize: Theme.fontSmall }
                     }
                 }
 
                 Island {
                     framed: true
-                    spacing: Theme.spacingS
+                    spacing: Theme.spacingXs
 
                     Repeater {
                         model: SystemTray.items
@@ -366,31 +366,13 @@ Scope {
                         }
                     }
 
-                    // Network (opens quick settings)
+                    // System: network, volume and battery in one button.
+                    // Opens quick settings; scroll adjusts the volume.
                     AeroButton {
-                        implicitWidth: 26
+                        id: system
+                        implicitWidth: systemRow.implicitWidth + Theme.spacingS * 2
                         implicitHeight: 26
                         active: ShellState.panel === "quicksettings"
-                        onClicked: ShellState.toggle("quicksettings")
-
-                        MdIcon {
-                            anchors.centerIn: parent
-                            codepoint: {
-                                if (!root.netDevice)
-                                    return 0xF05AA;
-                                if (root.netDevice.type === DeviceType.Wired)
-                                    return 0xF0200;
-                                var s = root.wifiNetwork ? root.wifiNetwork.signalStrength : 1;
-                                return s < 0.25 ? 0xF091F : (s < 0.5 ? 0xF0922 : (s < 0.75 ? 0xF0925 : 0xF0928));
-                            }
-                            color: root.netDevice ? Theme.textSurface : Theme.outline
-                        }
-                    }
-
-                    // Volume: click for quick settings, scroll to adjust
-                    AeroButton {
-                        implicitWidth: volRow.implicitWidth + Theme.spacingS * 2
-                        implicitHeight: 26
                         onClicked: ShellState.toggle("quicksettings")
                         onWheel: wheel => {
                             if (root.sink && root.sink.audio)
@@ -398,49 +380,59 @@ Scope {
                         }
 
                         RowLayout {
-                            id: volRow
+                            id: systemRow
                             anchors.centerIn: parent
                             spacing: Theme.spacingXs
+
+                            MdIcon {
+                                codepoint: {
+                                    if (!root.netDevice)
+                                        return 0xF05AA;
+                                    if (root.netDevice.type === DeviceType.Wired)
+                                        return 0xF0200;
+                                    var s = root.wifiNetwork ? root.wifiNetwork.signalStrength : 1;
+                                    return s < 0.25 ? 0xF091F : (s < 0.5 ? 0xF0922 : (s < 0.75 ? 0xF0925 : 0xF0928));
+                                }
+                                color: root.netDevice ? Theme.textSurface : Theme.outline
+                            }
 
                             MdIcon {
                                 codepoint: root.volumeIcon
                                 color: root.sink && root.sink.audio && root.sink.audio.muted ? Theme.outline : Theme.textSurface
                             }
-                            StyledText {
-                                visible: root.sink !== null && root.sink.audio !== null && !root.sink.audio.muted
-                                text: root.sink && root.sink.audio ? Math.round(root.sink.audio.volume * 100) + "%" : ""
-                            }
-                        }
-                    }
 
-                    // Battery
-                    RowLayout {
-                        id: battery
-                        readonly property var device: UPower.displayDevice
-                        readonly property bool charging: device.state === UPowerDeviceState.Charging || device.state === UPowerDeviceState.FullyCharged
-                        readonly property bool low: device.percentage <= 15 && device.state === UPowerDeviceState.Discharging
-                        visible: device.ready && device.isLaptopBattery
-                        spacing: Theme.spacingXs
+                            // Battery: icon only, plus the percentage when low or charging.
+                            RowLayout {
+                                id: battery
+                                readonly property var device: UPower.displayDevice
+                                readonly property bool charging: device.state === UPowerDeviceState.Charging || device.state === UPowerDeviceState.FullyCharged
+                                readonly property bool low: device.percentage <= 15 && device.state === UPowerDeviceState.Discharging
+                                visible: device.ready && device.isLaptopBattery
+                                spacing: 2
 
-                        MdIcon {
-                            codepoint: {
-                                if (battery.charging)
-                                    return 0xF0084;
-                                var level = Math.floor(battery.device.percentage / 10);
-                                return level >= 10 ? 0xF0079 : (level < 1 ? 0xF008E : 0xF007A + level - 1);
+                                MdIcon {
+                                    codepoint: {
+                                        if (battery.charging)
+                                            return 0xF0084;
+                                        var level = Math.floor(battery.device.percentage / 10);
+                                        return level >= 10 ? 0xF0079 : (level < 1 ? 0xF008E : 0xF007A + level - 1);
+                                    }
+                                    color: battery.low ? Theme.error : (battery.charging ? Theme.success : Theme.textSurface)
+                                }
+                                StyledText {
+                                    visible: battery.low || battery.device.state === UPowerDeviceState.Charging
+                                    text: Math.round(battery.device.percentage) + "%"
+                                    font.pixelSize: Theme.fontSmall
+                                    color: battery.low ? Theme.error : Theme.textSurface
+                                }
                             }
-                            color: battery.low ? Theme.error : (battery.charging ? Theme.success : Theme.textSurface)
-                        }
-                        StyledText {
-                            text: Math.round(battery.device.percentage) + "%"
-                            color: battery.low ? Theme.error : Theme.textSurface
                         }
                     }
 
                     // Notification center (bell + unread badge)
                     AeroButton {
                         id: bellButton
-                        implicitWidth: 28
+                        implicitWidth: 26
                         implicitHeight: 26
                         active: ShellState.panel === "notifications"
                         onClicked: ShellState.toggle("notifications")
@@ -455,8 +447,8 @@ Scope {
                             visible: Notifs.unread > 0
                             anchors.right: parent.right
                             anchors.top: parent.top
-                            anchors.margins: -2
-                            width: Math.max(15, badge.implicitWidth + 7)
+                            anchors.margins: -Theme.spacingXs / 2
+                            width: Math.max(15, badge.implicitWidth + Theme.spacingS - 1)
                             height: 15
                             radius: height / 2
                             border.width: 1
@@ -477,26 +469,11 @@ Scope {
                             }
                         }
                     }
-
-                    // Quick settings (Wi-Fi, Bluetooth, volume, brightness, power)
-                    AeroButton {
-                        implicitWidth: 28
-                        implicitHeight: 26
-                        active: ShellState.panel === "quicksettings"
-                        onClicked: ShellState.toggle("quicksettings")
-
-                        MdIcon {
-                            anchors.centerIn: parent
-                            codepoint: 0xF062E // md-tune
-                            color: ShellState.panel === "quicksettings" ? Theme.glow : Theme.textSurface
-                            Behavior on color { ColorAnimation { duration: Theme.durShort } }
-                        }
-                    }
                 }
 
                 // Clock: time over date, like the Win7 notification area
                 AeroButton {
-                    implicitWidth: clockColumn.implicitWidth + Theme.spacingM * 2
+                    implicitWidth: clockColumn.implicitWidth + Theme.spacingS * 2
                     implicitHeight: 34
                     active: ShellState.panel === "calendar"
                     onClicked: ShellState.toggle("calendar")
@@ -507,12 +484,12 @@ Scope {
                         spacing: -2
 
                         StyledText {
-                            anchors.right: parent.right
+                            anchors.horizontalCenter: parent.horizontalCenter
                             text: Qt.formatDateTime(clock.date, "HH:mm")
                             font.pixelSize: Theme.fontBody
                         }
                         StyledText {
-                            anchors.right: parent.right
+                            anchors.horizontalCenter: parent.horizontalCenter
                             text: Qt.formatDateTime(clock.date, "dd/MM/yyyy")
                             font.pixelSize: Theme.fontSmall
                         }
