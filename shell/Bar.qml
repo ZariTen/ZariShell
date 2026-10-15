@@ -477,6 +477,21 @@ Scope {
                             }
                         }
                     }
+
+                    // Quick settings (Wi-Fi, Bluetooth, volume, brightness, power)
+                    AeroButton {
+                        implicitWidth: 28
+                        implicitHeight: 26
+                        active: ShellState.panel === "quicksettings"
+                        onClicked: ShellState.toggle("quicksettings")
+
+                        MdIcon {
+                            anchors.centerIn: parent
+                            codepoint: 0xF062E // md-tune
+                            color: ShellState.panel === "quicksettings" ? Theme.glow : Theme.textSurface
+                            Behavior on color { ColorAnimation { duration: Theme.durShort } }
+                        }
+                    }
                 }
 
                 // Clock: time over date, like the Win7 notification area
