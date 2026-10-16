@@ -6,6 +6,9 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 
+// On-screen pill for volume and brightness changes. Volume shows for any
+// change of the default sink (keys, bar scroll, sliders, other apps); the IPC
+// handlers below go through the same show path.
 Scope {
     id: root
 
@@ -15,9 +18,29 @@ Scope {
     property string kind: "volume"
     property bool open: false
 
+    // Volume events are ignored right after startup, a sink switch or a sink
+    // becoming ready, when its values are just being populated.
+    property bool armed: false
+    property real seenVolume: -1
+    property bool seenMuted: false
+
+    readonly property bool over: kind === "volume" && shown > 1.001
+
+    // Gradient stops for the fill: grey when muted, amber above 100%, else green.
+    readonly property var fill: kind === "muted" ? ["#9a9a9a", "#6b6b6b", "#555555", "#777777"] : (over ? ["#ffe9a0", "#e8b52a", "#c48d0c", "#f0c43c"] : ["#b6f39a", "#4fc22a", "#2f9e12", "#5fd23a"])
+
     PwObjectTracker {
         objects: root.sink ? [root.sink] : []
     }
+
+    function disarm(ms) {
+        armed = false;
+        arm.interval = ms;
+        arm.restart();
+    }
+
+    onSinkChanged: disarm(500)
+    Component.onCompleted: disarm(1500)
 
     function show(value, text, what) {
         shown = value;
@@ -27,24 +50,79 @@ Scope {
         hide.restart();
     }
 
+    // Show the sink's current state. Unless forced, skips a repeat of what is
+    // already on screen.
+    function showAudio(force) {
+        var a = sink ? sink.audio : null;
+        if (!a)
+            return;
+        var text = a.muted ? "Muted" : Math.round(a.volume * 100) + "%";
+        var what = a.muted ? "muted" : "volume";
+        if (!force && open && kind === what && label === text)
+            return;
+        show(a.muted ? 0 : a.volume, text, what);
+    }
+
+    // Any volume/mute change of the default sink, whoever made it.
+    function audioEvent() {
+        var a = sink ? sink.audio : null;
+        if (!a)
+            return;
+        var changed = Math.abs(a.volume - seenVolume) > 0.0005 || a.muted !== seenMuted;
+        seenVolume = a.volume;
+        seenMuted = a.muted;
+        if (armed && changed)
+            showAudio(false);
+    }
+
     function bumpVolume(delta) {
         if (!sink || !sink.audio)
             return;
         sink.audio.muted = false;
         sink.audio.volume = Math.max(0, Math.min(1.5, sink.audio.volume + delta));
-        show(Math.min(1, sink.audio.volume), Math.round(sink.audio.volume * 100) + "%", "volume");
+        showAudio(true);
     }
 
     function toggleMute() {
         if (!sink || !sink.audio)
             return;
         sink.audio.muted = !sink.audio.muted;
-        show(sink.audio.muted ? 0 : Math.min(1, sink.audio.volume), sink.audio.muted ? "Muted" : Math.round(sink.audio.volume * 100) + "%", sink.audio.muted ? "muted" : "volume");
+        showAudio(true);
     }
 
     function bumpBrightness(up) {
         brightness.command = ["brightnessctl", "set", up ? "5%+" : "5%-"];
         brightness.running = true;
+    }
+
+    Connections {
+        target: root.sink
+        function onReadyChanged() {
+            root.disarm(500);
+        }
+    }
+
+    // `audio` has no change signal; depending on `ready` re-evaluates it.
+    Connections {
+        target: root.sink && root.sink.ready ? root.sink.audio : null
+        function onVolumesChanged() {
+            root.audioEvent();
+        }
+        function onMutedChanged() {
+            root.audioEvent();
+        }
+    }
+
+    Timer {
+        id: arm
+        onTriggered: {
+            var a = root.sink ? root.sink.audio : null;
+            if (a) {
+                root.seenVolume = a.volume;
+                root.seenMuted = a.muted;
+            }
+            root.armed = true;
+        }
     }
 
     IpcHandler {
@@ -101,26 +179,26 @@ Scope {
             implicitWidth: 320
             implicitHeight: 80
 
+            WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.namespace: "shell-osd"
             mask: Region {}
 
-            Rectangle {
+            Item {
                 id: pill
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: window.showHere ? 12 : 36
                 width: 280
                 height: 56
-                radius: Theme.radiusLarge
-                color: "transparent"
-
-                Glass {
-                    anchors.fill: parent
-                    tint: Theme.glassTintStrong
-                }
                 opacity: window.showHere ? 1 : 0
 
                 Behavior on opacity { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
                 Behavior on y { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
+
+                Glass {
+                    anchors.fill: parent
+                    radius: Theme.radiusLarge
+                    tint: Theme.glassTintStrong
+                }
 
                 RowLayout {
                     anchors.fill: parent
@@ -128,28 +206,23 @@ Scope {
                     anchors.rightMargin: Theme.spacingL
                     spacing: Theme.spacingM
 
-                    Rectangle {
-                        implicitWidth: 36
-                        implicitHeight: 36
-                        radius: Theme.radius
-                        color: "transparent"
-
-                        MdIcon {
-                            anchors.centerIn: parent
-                            font.pixelSize: 18
-                            color: root.kind === "muted" ? Theme.outline : Theme.glow
-                            codepoint: {
-                                if (root.kind === "brightness")
-                                    return 0xF00DF;
-                                if (root.kind === "muted" || root.shown <= 0)
-                                    return 0xF0581;
-                                return root.shown < 0.34 ? 0xF057F : (root.shown < 0.67 ? 0xF0580 : 0xF057E);
-                            }
+                    MdIcon {
+                        Layout.alignment: Qt.AlignVCenter
+                        font.pixelSize: 24
+                        color: root.kind === "muted" ? Theme.outline : (root.over ? Theme.warning : Theme.glow)
+                        codepoint: {
+                            if (root.kind === "brightness")
+                                return 0xF00DF;
+                            if (root.kind === "muted" || root.shown <= 0)
+                                return 0xF0581;
+                            var v = Math.min(1, root.shown);
+                            return v < 0.34 ? 0xF057F : (v < 0.67 ? 0xF0580 : 0xF057E);
                         }
                     }
 
                     Rectangle {
                         Layout.fillWidth: true
+                        Layout.alignment: Qt.AlignVCenter
                         implicitHeight: 14
                         radius: 2
                         color: Theme.inset
@@ -162,22 +235,24 @@ Scope {
                             y: 1
                             height: parent.height - 2
                             radius: 1
-                            // Win7 glossy green progress fill
+                            // Win7 glossy progress fill
                             gradient: Gradient {
-                                GradientStop { position: 0.0; color: root.kind === "muted" ? "#9a9a9a" : "#b6f39a" }
-                                GradientStop { position: 0.45; color: root.kind === "muted" ? "#6b6b6b" : "#4fc22a" }
-                                GradientStop { position: 0.5; color: root.kind === "muted" ? "#555555" : "#2f9e12" }
-                                GradientStop { position: 1.0; color: root.kind === "muted" ? "#777777" : "#5fd23a" }
+                                GradientStop { position: 0.0; color: root.fill[0] }
+                                GradientStop { position: 0.45; color: root.fill[1] }
+                                GradientStop { position: 0.5; color: root.fill[2] }
+                                GradientStop { position: 1.0; color: root.fill[3] }
                             }
                             Behavior on width { NumberAnimation { duration: Theme.durShort; easing.type: Easing.OutCubic } }
                         }
                     }
 
                     StyledText {
-                        Layout.preferredWidth: 44
+                        Layout.preferredWidth: 48
+                        Layout.alignment: Qt.AlignVCenter
                         horizontalAlignment: Text.AlignRight
                         text: root.label
                         font.weight: Font.DemiBold
+                        color: root.over ? Theme.warning : Theme.textSurface
                     }
                 }
             }
