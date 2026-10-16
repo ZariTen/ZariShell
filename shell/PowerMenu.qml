@@ -68,7 +68,7 @@ Scope {
                     Layout.fillWidth: true
                     implicitHeight: 92
                     alwaysFramed: true
-                    glowColor: modelData.id === "poweroff" || modelData.id === "reboot" ? "#ff7a5c" : Theme.glow
+                    glowColor: modelData.id === "poweroff" || modelData.id === "reboot" ? "#ff7a5c" : Theme.glowFill
                     onClicked: modelData.confirm ? root.pending = modelData.id : root.run(modelData.id)
 
                     ColumnLayout {

@@ -21,18 +21,13 @@ Item {
 
     implicitHeight: 46
 
-    Rectangle {
+    // Highlighted (e.g. connected) entry
+    GlowFill {
         anchors.fill: parent
         radius: Theme.radius
-        opacity: row.highlighted ? 1 : 0
-        border.width: 1
-        border.color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.45)
-        Behavior on opacity { NumberAnimation { duration: Theme.durMedium } }
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.34) }
-            GradientStop { position: 0.5; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.14) }
-            GradientStop { position: 1.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.22) }
-        }
+        bordered: true
+        level: row.highlighted ? 0.9 : 0
+        Behavior on level { NumberAnimation { duration: Theme.durMedium } }
     }
 
     HoverLayer {
@@ -40,15 +35,13 @@ Item {
         onClicked: row.clicked()
     }
 
-    // Keyboard focus ring
-    Rectangle {
+    // Keyboard focus: same look as hover
+    GlowFill {
         anchors.fill: parent
         radius: Theme.radius
-        color: "transparent"
-        border.width: 1
-        border.color: Theme.glow
-        opacity: row.current ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: Theme.durShort } }
+        bordered: true
+        level: row.current ? 0.6 : 0
+        Behavior on level { NumberAnimation { duration: Theme.durShort } }
     }
 
     RowLayout {

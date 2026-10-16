@@ -1,27 +1,22 @@
 import QtQuick
 
-// Aero hover state for list rows/cards: light glossy fill + light border on
-// hover, darker on press. Exposes MouseArea signals (clicked, wheel, …).
+// Aero hover state for list rows/cards: the shared glow fill and tinted
+// border on hover, dimmer on press. Exposes MouseArea signals (clicked, wheel, …).
 MouseArea {
     id: area
-    property color tint: Theme.glow
+    property color tint: Theme.glowFill
     property real radius: Theme.radius
 
     anchors.fill: parent
     hoverEnabled: true
     cursorShape: Qt.PointingHandCursor
 
-    Rectangle {
+    GlowFill {
         anchors.fill: parent
         radius: area.radius
-        opacity: area.pressed ? 0.7 : (area.containsMouse ? 1 : 0)
-        border.width: 1
-        border.color: Qt.rgba(area.tint.r, area.tint.g, area.tint.b, 0.55)
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.rgba(area.tint.r, area.tint.g, area.tint.b, area.pressed ? 0.10 : 0.22) }
-            GradientStop { position: 0.5; color: Qt.rgba(area.tint.r, area.tint.g, area.tint.b, 0.10) }
-            GradientStop { position: 1.0; color: Qt.rgba(area.tint.r, area.tint.g, area.tint.b, 0.16) }
-        }
-        Behavior on opacity { NumberAnimation { duration: Theme.durShort } }
+        tint: area.tint
+        bordered: true
+        level: area.pressed ? 0.35 : (area.containsMouse ? 0.6 : 0)
+        Behavior on level { NumberAnimation { duration: Theme.durShort } }
     }
 }

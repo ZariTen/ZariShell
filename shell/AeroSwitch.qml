@@ -22,7 +22,7 @@ Item {
         radius: height / 2
         color: Theme.inset
         border.width: 1
-        border.color: sw.activeFocus ? Theme.glow : Theme.insetBorder
+        border.color: sw.activeFocus ? Theme.glowFill : Theme.insetBorder
 
         Rectangle {
             anchors.fill: parent
@@ -31,10 +31,10 @@ Item {
             opacity: sw.checked ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: Theme.durMedium } }
             gradient: Gradient {
-                GradientStop { position: 0.0; color: Qt.lighter(Theme.primary, 1.35) }
-                GradientStop { position: 0.5; color: Theme.primary }
-                GradientStop { position: 0.51; color: Qt.darker(Theme.primary, 1.2) }
-                GradientStop { position: 1.0; color: Theme.primary }
+                GradientStop { position: 0.0; color: Qt.lighter(Theme.glowFill, 1.25) }
+                GradientStop { position: 0.5; color: Theme.glowFill }
+                GradientStop { position: 0.51; color: Qt.darker(Theme.glowFill, 1.15) }
+                GradientStop { position: 1.0; color: Theme.glowFill }
             }
         }
 

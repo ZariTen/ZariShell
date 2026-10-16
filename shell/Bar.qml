@@ -122,7 +122,7 @@ Scope {
                             implicitWidth: modelData.active ? 44 : 32
                             implicitHeight: 30
                             active: modelData.active
-                            glowColor: modelData.urgent ? Theme.error : Theme.glow
+                            glowColor: modelData.urgent ? Theme.error : Theme.glowFill
                             onClicked: modelData.activate()
 
                             Behavior on implicitWidth {

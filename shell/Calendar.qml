@@ -141,18 +141,12 @@ Scope {
                     Layout.minimumWidth: 0
                     Layout.preferredHeight: 32
 
-                    Rectangle {
+                    GlowFill {
                         anchors.fill: parent
                         anchors.margins: 1
                         radius: Theme.radius
-                        visible: day.today
-                        border.width: 1
-                        border.color: Qt.lighter(Theme.glow, 1.3)
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.75) }
-                            GradientStop { position: 0.5; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.45) }
-                            GradientStop { position: 1.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.6) }
-                        }
+                        bordered: true
+                        level: day.today ? 1.3 : 0
                     }
 
                     HoverLayer {

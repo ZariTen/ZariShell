@@ -14,20 +14,6 @@ AeroButton {
     implicitHeight: 56
     alwaysFramed: true
 
-    Rectangle {
-        anchors.fill: parent
-        anchors.margins: 1
-        radius: tile.radius
-        z: -1
-        opacity: tile.active ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: Theme.durMedium } }
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.45) }
-            GradientStop { position: 0.5; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.2) }
-            GradientStop { position: 1.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.3) }
-        }
-    }
-
     RowLayout {
         anchors.fill: parent
         anchors.leftMargin: Theme.spacingM

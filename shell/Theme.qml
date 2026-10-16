@@ -37,6 +37,7 @@ Singleton {
     readonly property color glassTintStrong: tone(hue, 0.5, 0.28, 0.80)
     readonly property color glow: tone(hue - 0.06, 0.95, 0.64)          // Aero hover glow (cyan)
     readonly property color glowSoft: tone(hue - 0.06, 0.95, 0.64, 0.35)
+    readonly property color glowFill: tone(hue - 0.05, 0.6, 0.62)       // softer tone of glow for button / row highlight fills
     readonly property color sheenTop: Qt.rgba(1, 1, 1, 0.20)
     readonly property color sheenMid: Qt.rgba(1, 1, 1, 0.07)
     readonly property color edgeLight: Qt.rgba(1, 1, 1, 0.26)            // 1px inner border

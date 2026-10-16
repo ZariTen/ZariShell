@@ -319,15 +319,10 @@ Scope {
                             boundsBehavior: Flickable.StopAtBounds
                             highlightMoveDuration: Theme.durShort
                             highlightResizeDuration: 0
-                            highlight: Rectangle {
+                            highlight: GlowFill {
                                 radius: Theme.radius
-                                border.width: 1
-                                border.color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.7)
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.38) }
-                                    GradientStop { position: 0.5; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.18) }
-                                    GradientStop { position: 1.0; color: Qt.rgba(Theme.glow.r, Theme.glow.g, Theme.glow.b, 0.28) }
-                                }
+                                bordered: true
+                                level: 0.9
                             }
 
                             StyledText {
