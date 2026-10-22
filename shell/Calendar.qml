@@ -50,7 +50,7 @@ Scope {
     DropPanel {
         name: "calendar"
         align: "right"
-        cardWidth: 320
+        cardWidth: Theme.widthPx(320)
 
         // Today
         ColumnLayout {
@@ -79,14 +79,14 @@ Scope {
             spacing: Theme.spacingXs
 
             Button {
-                implicitWidth: 28
-                implicitHeight: 28
+                implicitWidth: Theme.px(28)
+                implicitHeight: Theme.px(28)
                 onClicked: root.shift(-1)
                 MdIcon { anchors.centerIn: parent; codepoint: 0xF0141 } // md-chevron_left
             }
             Button {
                 Layout.fillWidth: true
-                implicitHeight: 28
+                implicitHeight: Theme.px(28)
                 onClicked: root.goToday()
                 StyledText {
                     anchors.centerIn: parent
@@ -98,8 +98,8 @@ Scope {
                 }
             }
             Button {
-                implicitWidth: 28
-                implicitHeight: 28
+                implicitWidth: Theme.px(28)
+                implicitHeight: Theme.px(28)
                 onClicked: root.shift(1)
                 MdIcon { anchors.centerIn: parent; codepoint: 0xF0142 } // md-chevron_right
             }
@@ -109,8 +109,8 @@ Scope {
         GridLayout {
             Layout.fillWidth: true
             columns: 7
-            rowSpacing: 2
-            columnSpacing: 2
+            rowSpacing: Theme.px(2)
+            columnSpacing: Theme.px(2)
 
             Repeater {
                 model: 7
@@ -119,7 +119,7 @@ Scope {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
                     Layout.minimumWidth: 0
-                    Layout.preferredHeight: 24
+                    Layout.preferredHeight: Theme.px(24)
                     verticalAlignment: Text.AlignVCenter
                     horizontalAlignment: Text.AlignHCenter
                     text: root.locale.dayName((root.locale.firstDayOfWeek + index) % 7, Locale.ShortFormat).slice(0, 3)
@@ -139,7 +139,7 @@ Scope {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
                     Layout.minimumWidth: 0
-                    Layout.preferredHeight: 32
+                    Layout.preferredHeight: Theme.px(32)
 
                     Highlight {
                         anchors.fill: parent
@@ -158,7 +158,7 @@ Scope {
                         anchors.centerIn: parent
                         text: day.modelData.getDate()
                         font.weight: day.today ? Font.Bold : Font.Normal
-                        opacity: day.inMonth ? 1 : 0.35
+                        opacity: day.inMonth ? 1 : Theme.dim(0.35)
                     }
                 }
             }

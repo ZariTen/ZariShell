@@ -176,8 +176,8 @@ Scope {
 
             anchors.bottom: true
             margins.bottom: 48
-            implicitWidth: 320
-            implicitHeight: 80
+            implicitWidth: Theme.widthPx(320)
+            implicitHeight: Theme.px(80)
 
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.namespace: "shell-osd"
@@ -187,8 +187,8 @@ Scope {
                 id: pill
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: window.showHere ? 12 : 36
-                width: 280
-                height: 56
+                width: Theme.widthPx(280)
+                height: Theme.px(56)
                 opacity: window.showHere ? 1 : 0
 
                 Behavior on opacity { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
@@ -208,7 +208,7 @@ Scope {
 
                     MdIcon {
                         Layout.alignment: Qt.AlignVCenter
-                        font.pixelSize: 24
+                        font.pixelSize: Theme.iconPx(24)
                         color: root.kind === "muted" ? Theme.outline : (root.over ? Theme.warning : Theme.accent)
                         codepoint: {
                             if (root.kind === "brightness")
@@ -223,14 +223,14 @@ Scope {
                     Slider {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
-                        implicitHeight: 14
+                        implicitHeight: Theme.px(14)
                         interactive: false
                         value: root.shown
                         tone: root.tone
                     }
 
                     StyledText {
-                        Layout.preferredWidth: 48
+                        Layout.preferredWidth: Theme.px(48)
                         Layout.alignment: Qt.AlignVCenter
                         horizontalAlignment: Text.AlignRight
                         text: root.label

@@ -11,7 +11,7 @@ Item {
     property bool prominent: false
     readonly property bool focused: input ? input.activeFocus : false
 
-    implicitHeight: 34
+    implicitHeight: Theme.px(34)
 
     Loader {
         anchors.fill: parent

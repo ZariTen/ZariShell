@@ -28,8 +28,8 @@ Item {
         id: drag
         property real ratio: 0
         anchors.fill: parent
-        anchors.topMargin: -6
-        anchors.bottomMargin: -6
+        anchors.topMargin: Theme.px(-6)
+        anchors.bottomMargin: Theme.px(-6)
         enabled: control.interactive
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor

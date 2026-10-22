@@ -119,7 +119,7 @@ Scope {
 
                             visible: bar.monitor !== null && modelData.monitor === bar.monitor && modelData.id > 0
                             implicitWidth: modelData.active ? 44 : 32
-                            implicitHeight: 30
+                            implicitHeight: Theme.px(30)
                             active: modelData.active
                             tint: modelData.urgent ? Theme.error : Theme.highlight
                             onClicked: modelData.activate()
@@ -132,7 +132,7 @@ Scope {
                                 anchors.centerIn: parent
                                 text: ws.modelData.name
                                 font.weight: ws.active ? Font.Bold : Font.Normal
-                                opacity: ws.active || ws.occupied || ws.hovered ? 1 : 0.5
+                                opacity: ws.active || ws.occupied || ws.hovered ? 1 : Theme.dim(0.5)
                             }
 
                             // Occupied marker
@@ -141,8 +141,8 @@ Scope {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 anchors.bottom: parent.bottom
                                 anchors.bottomMargin: Theme.spacingXs
-                                width: 10
-                                height: 2
+                                width: Theme.px(10)
+                                height: Theme.px(2)
                                 radius: Theme.radiusFull
                                 color: Theme.accent
                             }
@@ -151,7 +151,7 @@ Scope {
                 }
 
                 // Windows on this monitor's active workspace, as icons.
-                Divider { implicitHeight: 26; visible: winRow.count > 0 }
+                Divider { implicitHeight: Theme.px(26); visible: winRow.count > 0 }
 
                 Island {
                     visible: winRow.count > 0
@@ -175,8 +175,8 @@ Scope {
                             readonly property var entry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
                             readonly property string iconName: entry ? entry.icon : appId
 
-                            implicitWidth: 38
-                            implicitHeight: 30
+                            implicitWidth: Theme.px(38)
+                            implicitHeight: Theme.px(30)
                             active: modelData.activated || Hyprland.activeToplevel === modelData
                             onClicked: {
                                 if (win.modelData.wayland) {
@@ -214,7 +214,7 @@ Scope {
                 anchors.verticalCenter: strip.verticalCenter
                 visible: root.player !== null
                 implicitWidth: mediaRow.implicitWidth + Theme.spacingM * 2
-                implicitHeight: 32
+                implicitHeight: Theme.px(32)
                 framed: true
                 active: ShellState.panel === "media"
                 acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
@@ -237,8 +237,8 @@ Scope {
 
                     // Album art with a play/pause badge; play/pause orb when no art.
                     Item {
-                        implicitWidth: 24
-                        implicitHeight: 24
+                        implicitWidth: Theme.px(24)
+                        implicitHeight: Theme.px(24)
 
                         Fill {
                             anchors.fill: parent
@@ -249,7 +249,7 @@ Scope {
                             MdIcon {
                                 anchors.centerIn: parent
                                 codepoint: root.player && root.player.isPlaying ? 0xF03E4 : 0xF040A
-                                font.pixelSize: 13
+                                font.pixelSize: Theme.iconPx(13)
                             }
                         }
 
@@ -277,9 +277,9 @@ Scope {
                             visible: art.visible
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
-                            anchors.margins: -3
-                            width: 13
-                            height: 13
+                            anchors.margins: Theme.px(-3)
+                            width: Theme.px(13)
+                            height: Theme.px(13)
                             radius: Theme.radiusFull
                             color: Theme.primary
                             border.width: 1
@@ -288,13 +288,13 @@ Scope {
                             MdIcon {
                                 anchors.centerIn: parent
                                 codepoint: root.player && root.player.isPlaying ? 0xF03E4 : 0xF040A
-                                font.pixelSize: 8
+                                font.pixelSize: Theme.iconPx(8)
                             }
                         }
                     }
 
                     StyledText {
-                        Layout.maximumWidth: 260
+                        Layout.maximumWidth: Theme.px(260)
                         text: root.player ? (root.player.trackTitle || root.player.identity) : ""
                     }
                 }
@@ -310,7 +310,7 @@ Scope {
                 // System monitor indicator (CPU / RAM)
                 Button {
                     implicitWidth: sysRow.implicitWidth + Theme.spacingS * 2
-                    implicitHeight: 26
+                    implicitHeight: Theme.px(26)
                     active: ShellState.panel === "sysmon"
                     onClicked: ShellState.toggle("sysmon")
 
@@ -319,9 +319,9 @@ Scope {
                         anchors.centerIn: parent
                         spacing: Theme.spacingXs
 
-                        MdIcon { codepoint: 0xF061A; font.pixelSize: 14; color: Theme.accent } // md-chip
+                        MdIcon { codepoint: 0xF061A; font.pixelSize: Theme.iconPx(14); color: Theme.accent } // md-chip
                         StyledText { text: Math.round(SysStats.cpu * 100) + "%"; font.pixelSize: Theme.fontSmall }
-                        MdIcon { Layout.leftMargin: Theme.spacingXs; codepoint: 0xF035B; font.pixelSize: 14; color: Theme.accent } // md-memory
+                        MdIcon { Layout.leftMargin: Theme.spacingXs; codepoint: 0xF035B; font.pixelSize: Theme.iconPx(14); color: Theme.accent } // md-memory
                         StyledText { text: Math.round(SysStats.mem * 100) + "%"; font.pixelSize: Theme.fontSmall }
                     }
                 }
@@ -336,8 +336,8 @@ Scope {
                         delegate: Button {
                             id: trayIcon
                             required property var modelData
-                            implicitWidth: 26
-                            implicitHeight: 26
+                            implicitWidth: Theme.px(26)
+                            implicitHeight: Theme.px(26)
                             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
 
                             IconImage {
@@ -364,7 +364,7 @@ Scope {
                     Button {
                         id: system
                         implicitWidth: systemRow.implicitWidth + Theme.spacingS * 2
-                        implicitHeight: 26
+                        implicitHeight: Theme.px(26)
                         active: ShellState.panel === "quicksettings"
                         onClicked: ShellState.toggle("quicksettings")
                         onWheel: wheel => {
@@ -401,7 +401,7 @@ Scope {
                                 readonly property bool charging: device.state === UPowerDeviceState.Charging || device.state === UPowerDeviceState.FullyCharged
                                 readonly property bool low: device.percentage <= 15 && device.state === UPowerDeviceState.Discharging
                                 visible: device.ready && device.isLaptopBattery
-                                spacing: 2
+                                spacing: Theme.px(2)
 
                                 MdIcon {
                                     codepoint: {
@@ -425,8 +425,8 @@ Scope {
                     // Notification center (bell + unread badge)
                     Button {
                         id: bellButton
-                        implicitWidth: 26
-                        implicitHeight: 26
+                        implicitWidth: Theme.px(26)
+                        implicitHeight: Theme.px(26)
                         active: ShellState.panel === "notifications"
                         onClicked: ShellState.toggle("notifications")
 
@@ -442,7 +442,7 @@ Scope {
                             anchors.top: parent.top
                             anchors.margins: -Theme.spacingXs / 2
                             width: Math.max(15, badge.implicitWidth + Theme.spacingS - 1)
-                            height: 15
+                            height: Theme.px(15)
                             role: "badge"
                             color: Theme.badge
                             bordered: true
@@ -453,7 +453,7 @@ Scope {
                                 id: badge
                                 anchors.centerIn: parent
                                 text: Notifs.unread > 9 ? "9+" : Notifs.unread
-                                font.pixelSize: 9
+                                font.pixelSize: Theme.fontPx(9)
                                 font.weight: Font.Bold
                             }
                         }
@@ -463,14 +463,14 @@ Scope {
                 // Clock: time over date
                 Button {
                     implicitWidth: clockColumn.implicitWidth + Theme.spacingS * 2
-                    implicitHeight: 34
+                    implicitHeight: Theme.px(34)
                     active: ShellState.panel === "calendar"
                     onClicked: ShellState.toggle("calendar")
 
                     Column {
                         id: clockColumn
                         anchors.centerIn: parent
-                        spacing: -2
+                        spacing: Theme.px(-2)
 
                         StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter

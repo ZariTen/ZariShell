@@ -53,7 +53,7 @@ Scope {
     DropPanel {
         name: "quicksettings"
         align: "right"
-        cardWidth: 380
+        cardWidth: Theme.widthPx(380)
         canGoBack: root.page !== "main"
         onBack: root.page = "main"
 
@@ -80,8 +80,17 @@ Scope {
                 title: "Quick settings"
 
                 Button {
-                    implicitWidth: 28
-                    implicitHeight: 28
+                    implicitWidth: Theme.px(28)
+                    implicitHeight: Theme.px(28)
+                    onClicked: ShellState.toggle("settings")
+                    MdIcon {
+                        anchors.centerIn: parent
+                        codepoint: 0xF062E // md-tune
+                    }
+                }
+                Button {
+                    implicitWidth: Theme.px(28)
+                    implicitHeight: Theme.px(28)
                     onClicked: ShellState.toggle("power")
                     MdIcon {
                         anchors.centerIn: parent
@@ -147,8 +156,8 @@ Scope {
                 spacing: Theme.spacingS
 
                 Button {
-                    implicitWidth: 28
-                    implicitHeight: 28
+                    implicitWidth: Theme.px(28)
+                    implicitHeight: Theme.px(28)
                     onClicked: root.sink.audio.muted = !root.sink.audio.muted
                     MdIcon {
                         anchors.centerIn: parent
@@ -165,7 +174,7 @@ Scope {
                     }
                 }
                 StyledText {
-                    Layout.preferredWidth: 40
+                    Layout.preferredWidth: Theme.px(40)
                     horizontalAlignment: Text.AlignRight
                     text: root.sink && root.sink.audio ? (root.sink.audio.muted ? "Muted" : Math.round(root.sink.audio.volume * 100) + "%") : ""
                     font.pixelSize: Theme.fontSmall
@@ -180,7 +189,7 @@ Scope {
                 spacing: Theme.spacingS
 
                 MdIcon {
-                    Layout.preferredWidth: 28
+                    Layout.preferredWidth: Theme.px(28)
                     codepoint: 0xF00DF
                 }
                 Slider {
@@ -193,7 +202,7 @@ Scope {
                     }
                 }
                 StyledText {
-                    Layout.preferredWidth: 40
+                    Layout.preferredWidth: Theme.px(40)
                     horizontalAlignment: Text.AlignRight
                     text: Math.round(root.brightness * 100) + "%"
                     font.pixelSize: Theme.fontSmall

@@ -11,7 +11,7 @@ Button {
     property int trailingSpace: 0   // room reserved on the right (e.g. for a split chevron)
 
     Layout.fillWidth: true
-    implicitHeight: 56
+    implicitHeight: Theme.px(56)
     framed: true
 
     RowLayout {
@@ -23,7 +23,7 @@ Button {
         MdIcon {
             Layout.alignment: Qt.AlignVCenter
             codepoint: tile.codepoint
-            font.pixelSize: 20
+            font.pixelSize: Theme.iconPx(20)
             color: tile.active ? Theme.textSurface : Theme.textSurfaceVariant
         }
         ColumnLayout {

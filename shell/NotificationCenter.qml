@@ -67,7 +67,7 @@ Scope {
                 anchors.right: parent.right
                 anchors.rightMargin: Theme.gap
                 y: Theme.barHeight + Theme.gap * 2 + (shown ? 0 : -16)
-                width: 400
+                width: Theme.widthPx(400)
                 height: Math.min(window.height - y - Theme.gap * 4, column.implicitHeight + Theme.spacingL * 2)
                 color: "transparent"
                 opacity: shown ? 1 : 0
@@ -81,7 +81,7 @@ Scope {
                 Surface {
                     anchors.fill: parent
                     color: Theme.panel
-                    headerHeight: 44
+                    headerHeight: Theme.px(44)
                 }
 
                 MouseArea {
@@ -108,7 +108,7 @@ Scope {
                         ActionButton {
                             visible: Notifs.history.length > 0
                             text: "Clear all"
-                            implicitHeight: 30
+                            implicitHeight: Theme.px(30)
                             onClicked: Notifs.clearAll()
                         }
                     }
@@ -116,7 +116,7 @@ Scope {
                     // Empty state
                     Item {
                         Layout.fillWidth: true
-                        implicitHeight: 128
+                        implicitHeight: Theme.px(128)
                         visible: Notifs.history.length === 0
 
                         Column {
@@ -125,8 +125,8 @@ Scope {
 
                             Rectangle {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                implicitWidth: 56
-                                implicitHeight: 56
+                                implicitWidth: Theme.px(56)
+                                implicitHeight: Theme.px(56)
                                 radius: Theme.radiusFull
                                 color: Theme.surfaceContainerHigh
 
@@ -134,7 +134,7 @@ Scope {
                                     anchors.centerIn: parent
                                     codepoint: 0xF009B // md-bell_off
                                     color: Theme.outline
-                                    font.pixelSize: 26
+                                    font.pixelSize: Theme.iconPx(26)
                                 }
                             }
 
@@ -197,15 +197,15 @@ Scope {
 
                                 NotifIcon {
                                     Layout.alignment: Qt.AlignTop
-                                    implicitWidth: 36
-                                    implicitHeight: 36
+                                    implicitWidth: Theme.px(36)
+                                    implicitHeight: Theme.px(36)
                                     notification: entry.modelData
                                     critical: entry.critical
                                 }
 
                                 ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 2
+                                    spacing: Theme.px(2)
 
                                     RowLayout {
                                         Layout.fillWidth: true
@@ -223,13 +223,13 @@ Scope {
                                             color: Theme.outline
                                         }
                                         Item {
-                                            implicitWidth: 20
-                                            implicitHeight: 20
+                                            implicitWidth: Theme.px(20)
+                                            implicitHeight: Theme.px(20)
 
                                             MdIcon {
                                                 anchors.centerIn: parent
                                                 codepoint: 0xF0156 // md-close
-                                                font.pixelSize: 14
+                                                font.pixelSize: Theme.iconPx(14)
                                                 color: Theme.textSurfaceVariant
                                             }
                                             HoverLayer {

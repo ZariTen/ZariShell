@@ -121,8 +121,8 @@ Scope {
                         spacing: Theme.spacingM
 
                         Rectangle {
-                            implicitWidth: 40
-                            implicitHeight: 40
+                            implicitWidth: Theme.px(40)
+                            implicitHeight: Theme.px(40)
                             radius: Theme.radiusFull
                             color: Theme.primaryContainer
 
@@ -130,7 +130,7 @@ Scope {
                                 anchors.centerIn: parent
                                 codepoint: 0xF02E9
                                 color: Theme.textPrimaryContainer
-                                font.pixelSize: 20
+                                font.pixelSize: Theme.iconPx(20)
                             }
                         }
 
@@ -157,7 +157,7 @@ Scope {
                         focus: true
                         boundsBehavior: Flickable.StopAtBounds
                         cellWidth: Math.floor(width / Math.max(1, Math.floor(width / 236)))
-                        cellHeight: 156
+                        cellHeight: Theme.px(156)
                         model: root.files
                         keyNavigationEnabled: true
                         Keys.onEscapePressed: ShellState.close()
@@ -175,7 +175,7 @@ Scope {
 
                             ClippingRectangle {
                                 anchors.fill: parent
-                                anchors.margins: 6
+                                anchors.margins: Theme.px(6)
                                 radius: tile.selected ? Theme.radiusLarge : Theme.radius
                                 color: Theme.surfaceContainerHigh
                                 border.width: tile.selected ? 3 : (tile.hot ? 2 : 0)
@@ -201,8 +201,8 @@ Scope {
                                     anchors.right: parent.right
                                     anchors.top: parent.top
                                     anchors.margins: Theme.spacingS
-                                    width: 26
-                                    height: 26
+                                    width: Theme.px(26)
+                                    height: Theme.px(26)
                                     radius: Theme.radiusFull
                                     color: Theme.primary
 
@@ -210,7 +210,7 @@ Scope {
                                         anchors.centerIn: parent
                                         codepoint: 0xF012C // md-check
                                         color: Theme.textPrimary
-                                        font.pixelSize: 14
+                                        font.pixelSize: Theme.iconPx(14)
                                     }
                                 }
                             }

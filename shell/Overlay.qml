@@ -270,7 +270,7 @@ Scope {
                     // Header (title-bar band)
                     RowLayout {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 28
+                        Layout.preferredHeight: Theme.px(28)
                         spacing: Theme.spacingS
 
                         MdIcon {
@@ -348,8 +348,8 @@ Scope {
                                     spacing: Theme.spacingS
 
                                     Item {
-                                        implicitWidth: 32
-                                        implicitHeight: 32
+                                        implicitWidth: Theme.px(32)
+                                        implicitHeight: Theme.px(32)
 
                                         IconImage {
                                             id: icon
@@ -363,7 +363,7 @@ Scope {
                                             anchors.centerIn: parent
                                             visible: !icon.visible
                                             codepoint: row.entry.glyph
-                                            font.pixelSize: 20
+                                            font.pixelSize: Theme.iconPx(20)
                                             color: row.current ? Theme.accent : Theme.textSurfaceVariant
                                         }
                                     }
@@ -408,7 +408,7 @@ Scope {
                     // Search box at the bottom
                     Field {
                         Layout.fillWidth: true
-                        implicitHeight: 32
+                        implicitHeight: Theme.px(32)
                         input: search
 
                         RowLayout {

@@ -23,7 +23,7 @@ Item {
         id: surface
         anchors.fill: parent
         color: Theme.panel
-        headerHeight: 44   // title-bar area
+        headerHeight: Theme.px(44)   // title-bar area
     }
 
     // Swallow clicks so the scrim behind doesn't close the panel.

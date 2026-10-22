@@ -15,7 +15,7 @@ Item {
 
     Layout.fillWidth: true
     implicitHeight: tile.implicitHeight
-    opacity: enabled ? 1 : 0.5
+    opacity: enabled ? 1 : Theme.dim(0.5)
 
     Tile {
         id: tile
@@ -24,7 +24,7 @@ Item {
         label: split.label
         sublabel: split.sublabel
         active: split.active
-        trailingSpace: 36
+        trailingSpace: Theme.px(36)
         onClicked: mouse => split.clicked(mouse)
     }
 
@@ -41,7 +41,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: Theme.spacingXs
         anchors.verticalCenter: parent.verticalCenter
-        implicitWidth: 28
+        implicitWidth: Theme.px(28)
         implicitHeight: parent.height - 14
         onClicked: split.expand()
 

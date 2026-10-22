@@ -42,8 +42,8 @@ Scope {
         spacing: Theme.spacingM
 
         Rectangle {
-            Layout.preferredWidth: 32
-            Layout.preferredHeight: 32
+            Layout.preferredWidth: Theme.px(32)
+            Layout.preferredHeight: Theme.px(32)
             Layout.alignment: Qt.AlignVCenter
             radius: Theme.radius
             color: Theme.surfaceContainer
@@ -53,7 +53,7 @@ Scope {
             MdIcon {
                 anchors.centerIn: parent
                 codepoint: meter.codepoint
-                font.pixelSize: 18
+                font.pixelSize: Theme.iconPx(18)
                 color: Theme.textSurface
             }
         }
@@ -103,7 +103,7 @@ Scope {
     DropPanel {
         name: "sysmon"
         align: "right"
-        cardWidth: 380
+        cardWidth: Theme.widthPx(380)
 
         PanelHeader {
             codepoint: 0xF04C5 // md-speedometer

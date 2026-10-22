@@ -389,10 +389,10 @@ QsPage {
 
     trailing: [
         Button {
-            implicitWidth: 28
-            implicitHeight: 28
+            implicitWidth: Theme.px(28)
+            implicitHeight: Theme.px(28)
             enabled: page.radioOn && !page.scanning
-            opacity: enabled ? 1 : 0.5
+            opacity: enabled ? 1 : Theme.dim(0.5)
             onClicked: page.scan("yes")
 
             Spinner {
@@ -443,7 +443,7 @@ QsPage {
             }
             MdIcon {
                 codepoint: 0xF0156 // md-close
-                font.pixelSize: 14
+                font.pixelSize: Theme.iconPx(14)
                 color: Theme.textSurfaceVariant
             }
         }
@@ -489,7 +489,7 @@ QsPage {
         Layout.preferredHeight: Math.min(contentHeight, 304)
         visible: page.radioOn && count > 0
         clip: true
-        spacing: 2
+        spacing: Theme.px(2)
         boundsBehavior: Flickable.StopAtBounds
         model: ScriptModel {
             values: page.sorted
@@ -567,12 +567,12 @@ QsPage {
                 MdIcon {
                     visible: entry.net.secured
                     codepoint: 0xF033E // md-lock
-                    font.pixelSize: 14
+                    font.pixelSize: Theme.iconPx(14)
                     color: Theme.textSurfaceVariant
                 }
                 ActionButton {
                     visible: entry.net.inUse
-                    implicitHeight: 26
+                    implicitHeight: Theme.px(26)
                     text: "Disconnect"
                     onClicked: page.disconnect()
                 }
@@ -596,7 +596,7 @@ QsPage {
 
                     Field {
                         Layout.fillWidth: true
-                        implicitHeight: 32
+                        implicitHeight: Theme.px(32)
                         input: pw
 
                         StyledText {
@@ -638,23 +638,23 @@ QsPage {
                             anchors.right: parent.right
                             anchors.rightMargin: Theme.spacingXs
                             anchors.verticalCenter: parent.verticalCenter
-                            implicitWidth: 24
-                            implicitHeight: 24
+                            implicitWidth: Theme.px(24)
+                            implicitHeight: Theme.px(24)
                             onClicked: reveal = !reveal
                             MdIcon {
                                 anchors.centerIn: parent
                                 codepoint: eye.reveal ? 0xF0209 : 0xF0208 // md-eye_off / md-eye
-                                font.pixelSize: 14
+                                font.pixelSize: Theme.iconPx(14)
                             }
                         }
                     }
 
                     ActionButton {
-                        implicitWidth: 78
-                        implicitHeight: 30
+                        implicitWidth: Theme.px(78)
+                        implicitHeight: Theme.px(30)
                         text: "Connect"
                         filled: true
-                        opacity: pw.text !== "" ? 1 : 0.5
+                        opacity: pw.text !== "" ? 1 : Theme.dim(0.5)
                         onClicked: if (pw.text !== "") page.connectTo(entry.net, pw.text)
                     }
                 }

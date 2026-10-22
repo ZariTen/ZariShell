@@ -19,6 +19,9 @@ import Quickshell.Io
 // "accent" (the accent seed) or { "h", "s", "l", "a" }: a tone whose hue is
 // offset by h from the accent hue. "accent" is "wallpaper" (hue sampled from
 // the current wallpaper) or a color. Every token is listed in README.md.
+//
+// User settings (Settings.qml, settings.json) sit on top: scale factors and
+// overrides applied here, so shell code only ever reads Theme.*.
 Singleton {
     id: root
 
@@ -74,7 +77,8 @@ Singleton {
     }
 
     // ---- Accent -----------------------------------------------------------
-    readonly property string accentMode: typeof spec.accent === "string" && spec.accent !== "" ? spec.accent : "#7a9cc6"
+    readonly property string themeAccent: typeof spec.accent === "string" && spec.accent !== "" ? spec.accent : "#7a9cc6"
+    readonly property string accentMode: Settings.get("accent", "") !== "" ? Settings.get("accent", "") : themeAccent
     readonly property bool wallpaperAccent: accentMode === "wallpaper"
     readonly property color accentSeed: wallpaperAccent ? tone(hue, 0.6, 0.6) : accentMode
 
@@ -129,6 +133,10 @@ Singleton {
         return v === undefined ? toColor(fallback) : toColor(v);
     }
 
+    function withAlpha(c, a) {
+        return a === c.a ? c : Qt.rgba(c.r, c.g, c.b, Math.max(0, Math.min(1, a)));
+    }
+
     function metric(key, fallback) {
         var v = lookup("metrics", key);
         return typeof v === "number" ? v : fallback;
@@ -146,8 +154,10 @@ Singleton {
 
     // ---- Colors (neutral defaults: flat translucent slate, white text) ----
     readonly property color surface: color("surface", "#24282e")              // desktop behind the wallpaper
-    readonly property color bar: color("bar", [0.21, 0.23, 0.26, 0.92])       // taskbar
-    readonly property color panel: color("panel", [0.24, 0.26, 0.30, 0.96])   // panels, dialogs, toasts
+    readonly property color themeBar: color("bar", [0.21, 0.23, 0.26, 0.92])
+    readonly property color themePanel: color("panel", [0.24, 0.26, 0.30, 0.96])
+    readonly property color bar: withAlpha(themeBar, Settings.get("barOpacity", themeBar.a))       // taskbar
+    readonly property color panel: withAlpha(themePanel, Settings.get("panelOpacity", themePanel.a)) // panels, dialogs, toasts
     readonly property color panelError: color("panelError", [0.55, 0.16, 0.13, 0.94])
     readonly property color accent: color("accent", "accent")                 // accent icons and text
     readonly property color highlight: color("highlight", "accent")           // hover / selection / active fill
@@ -186,37 +196,90 @@ Singleton {
     readonly property color danger: color("danger", error)                     // destructive action icon
     readonly property color dangerHighlight: color("dangerHighlight", error)   // destructive action hover
 
+    // ---- User scale factors (settings.json; 1 = as the theme says) -------
+    readonly property real uiScale: clamp(Settings.get("scale", 1), 0.5, 2)
+    readonly property real radiusScale: clamp(Settings.get("radius", 1), 0, 3)
+    readonly property real spacingScale: clamp(Settings.get("spacing", 1), 0.25, 3)
+    readonly property real fontScale: clamp(Settings.get("fontSize", themeFontBody) / themeFontBody, 0.5, 3)
+    readonly property real iconScale: clamp(Settings.get("iconSize", 16) / 16, 0.5, 3)
+    readonly property real widthScale: clamp(Settings.get("panelWidth", 1), 0.5, 2)
+    readonly property real dimLevel: clamp(Settings.get("dim", 0.5), 0.05, 1)
+    readonly property real speed: clamp(Settings.get("animationSpeed", 1), 0.1, 5)
+    readonly property bool reduceMotion: Settings.get("reduceMotion", false)
+
+    function clamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+    }
+    // Layout size (px at scale 1) at the current UI scale.
+    function px(n) {
+        return Math.round(n * uiScale);
+    }
+    // Icon glyph size: UI scale and the icon size setting.
+    function iconPx(n) {
+        return Math.round(n * uiScale * iconScale);
+    }
+    // Literal text size: UI scale and the font size setting.
+    function fontPx(n) {
+        return Math.round(n * uiScale * fontScale);
+    }
+    // Panel / card width: UI scale and the panel width setting.
+    function widthPx(n) {
+        return Math.round(n * uiScale * widthScale);
+    }
+    // Opacity of a disabled / hint element (v = its value at the default
+    // dim level 0.5).
+    function dim(v) {
+        return clamp(v * dimLevel / 0.5, 0, 1);
+    }
+    // Transition duration (ms): animation speed, 0 with reduce motion.
+    function dur(ms) {
+        return reduceMotion ? 0 : Math.round(ms / speed);
+    }
+
     // ---- Shape and spacing ------------------------------------------------
-    readonly property int radiusSmall: metric("radiusSmall", 3)
-    readonly property int radius: metric("radius", 5)
-    readonly property int radiusLarge: metric("radiusLarge", 8)
+    function radiusMetric(key, d) {
+        return Math.round(metric(key, d) * uiScale * radiusScale);
+    }
+    function spacingMetric(key, d) {
+        return Math.round(metric(key, d) * uiScale * spacingScale);
+    }
+    readonly property int radiusSmall: radiusMetric("radiusSmall", 3)
+    readonly property int radius: radiusMetric("radius", 5)
+    readonly property int radiusLarge: radiusMetric("radiusLarge", 8)
     readonly property int radiusFull: metric("radiusFull", 999)
-    readonly property int spacingXs: metric("spacingXs", 4)
-    readonly property int spacingS: metric("spacingS", 8)
-    readonly property int spacingM: metric("spacingM", 12)
-    readonly property int spacingL: metric("spacingL", 16)
-    readonly property int spacingXl: metric("spacingXl", 24)
-    readonly property int radiusFrame: metric("radiusFrame", 10)   // matted picture frames (avatars)
-    readonly property int barRadius: metric("barRadius", 0)        // full-width edge bars
-    readonly property int barHeight: metric("barHeight", 42)
-    readonly property int shadowRoom: metric("shadowRoom", 0)      // extra bar window height for a theme's shadow
-    readonly property int gap: metric("gap", 8)
+    readonly property int radiusFrame: radiusMetric("radiusFrame", 10)   // matted picture frames (avatars)
+    readonly property int barRadius: radiusMetric("barRadius", 0)        // full-width edge bars
+    readonly property int spacingXs: spacingMetric("spacingXs", 4)
+    readonly property int spacingS: spacingMetric("spacingS", 8)
+    readonly property int spacingM: spacingMetric("spacingM", 12)
+    readonly property int spacingL: spacingMetric("spacingL", 16)
+    readonly property int spacingXl: spacingMetric("spacingXl", 24)
+    readonly property int themeBarHeight: metric("barHeight", 42)
+    readonly property int barHeight: px(clamp(Settings.get("barHeight", themeBarHeight), 24, 96))
+    readonly property int shadowRoom: px(metric("shadowRoom", 0))      // extra bar window height for a theme's shadow
+    readonly property int gap: spacingMetric("gap", 8)
+    readonly property int avatarSize: px(clamp(Settings.get("avatarSize", 112), 48, 256)) // lock screen avatar
 
     // ---- Type -------------------------------------------------------------
-    readonly property string font: fontValue("font", "sans-serif")
+    readonly property int themeFontBody: fontValue("fontBody", 13)
+    function fontSize(key, d) {
+        return Math.round(fontValue(key, d) * uiScale * fontScale);
+    }
+    readonly property string themeFont: fontValue("font", "sans-serif")
+    readonly property string font: Settings.get("font", "") !== "" ? Settings.get("font", "") : themeFont
     readonly property string iconFont: fontValue("iconFont", "JetBrainsMono Nerd Font Propo")
-    readonly property int fontSmall: fontValue("fontSmall", 11)
-    readonly property int fontBody: fontValue("fontBody", 13)
-    readonly property int fontTitle: fontValue("fontTitle", 15)
-    readonly property int fontHeadline: fontValue("fontHeadline", 22)
-    readonly property int fontLarge: fontValue("fontLarge", 34)       // calendar clock
-    readonly property int fontDisplay: fontValue("fontDisplay", 112)  // lock / login clock
+    readonly property int fontSmall: fontSize("fontSmall", 11)
+    readonly property int fontBody: fontSize("fontBody", 13)
+    readonly property int fontTitle: fontSize("fontTitle", 15)
+    readonly property int fontHeadline: fontSize("fontHeadline", 22)
+    readonly property int fontLarge: fontSize("fontLarge", 34)       // calendar clock
+    readonly property int fontDisplay: fontSize("fontDisplay", 112)  // lock / login clock
     readonly property int fontDisplayWeight: fontValue("fontDisplayWeight", Font.Light)
 
     // ---- Motion (M3 emphasized / standard) ---------------------------------
-    readonly property int durShort: motion("durShort", 150)
-    readonly property int durMedium: motion("durMedium", 280)
-    readonly property int durLong: motion("durLong", 420)
+    readonly property int durShort: dur(motion("durShort", 150))
+    readonly property int durMedium: dur(motion("durMedium", 280))
+    readonly property int durLong: dur(motion("durLong", 420))
     readonly property var emphasized: motion("emphasized", [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1])
     readonly property var standard: motion("standard", [0.2, 0, 0, 1, 1, 1])
 

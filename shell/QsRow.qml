@@ -19,7 +19,7 @@ Item {
     default property alias trailing: tail.data
     signal clicked
 
-    implicitHeight: 46
+    implicitHeight: Theme.px(46)
 
     // Highlighted (e.g. connected) entry
     Highlight {
@@ -51,20 +51,20 @@ Item {
         spacing: Theme.spacingS
 
         Item {
-            Layout.preferredWidth: 26
-            Layout.preferredHeight: 26
+            Layout.preferredWidth: Theme.px(26)
+            Layout.preferredHeight: Theme.px(26)
 
             MdIcon {
                 anchors.centerIn: parent
                 visible: !row.busy
                 codepoint: row.codepoint
-                font.pixelSize: 20
+                font.pixelSize: Theme.iconPx(20)
                 color: row.iconColor
             }
             Spinner {
                 anchors.centerIn: parent
                 running: row.busy
-                font.pixelSize: 18
+                font.pixelSize: Theme.iconPx(18)
                 color: Theme.accent
             }
         }

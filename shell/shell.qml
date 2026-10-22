@@ -17,5 +17,6 @@ ShellRoot {
     PowerMenu {}
     Calendar {}
     SysMon {}
+    SettingsPanel {}
     ClipboardWatcher {}
 }

@@ -103,7 +103,7 @@ Scope {
 
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: Theme.barHeight + Theme.gap + (shown ? 0 : -16)
-                width: 440
+                width: Theme.widthPx(440)
                 height: column.implicitHeight + Theme.spacingL * 2
                 opacity: shown ? 1 : 0
                 focus: true
@@ -116,7 +116,7 @@ Scope {
                 Surface {
                     anchors.fill: parent
                     color: Theme.panel
-                    headerHeight: 44
+                    headerHeight: Theme.px(44)
                 }
 
                 MouseArea {
@@ -161,7 +161,7 @@ Scope {
                                 id: chip
                                 required property var modelData
                                 implicitWidth: chipText.implicitWidth + Theme.spacingM * 2
-                                implicitHeight: 26
+                                implicitHeight: Theme.px(26)
                                 framed: true
                                 active: modelData === card.p
                                 onClicked: ShellState.chosenPlayer = chip.modelData
@@ -182,8 +182,8 @@ Scope {
                         spacing: Theme.spacingL
 
                         Item {
-                            implicitWidth: 128
-                            implicitHeight: 128
+                            implicitWidth: Theme.px(128)
+                            implicitHeight: Theme.px(128)
 
                             Surface {
                                 anchors.fill: parent
@@ -193,7 +193,7 @@ Scope {
                                 MdIcon {
                                     anchors.centerIn: parent
                                     codepoint: 0xF075A
-                                    font.pixelSize: 56
+                                    font.pixelSize: Theme.iconPx(56)
                                     color: Theme.accent
                                 }
                             }
@@ -221,7 +221,7 @@ Scope {
                         ColumnLayout {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignVCenter
-                            spacing: 2
+                            spacing: Theme.px(2)
 
                             StyledText {
                                 Layout.fillWidth: true
@@ -251,12 +251,12 @@ Scope {
                     ColumnLayout {
                         Layout.fillWidth: true
                         visible: card.p !== null && card.p.lengthSupported && card.p.length > 0
-                        spacing: 2
+                        spacing: Theme.px(2)
 
                         Slider {
                             id: seek
                             Layout.fillWidth: true
-                            implicitHeight: 12
+                            implicitHeight: Theme.px(12)
                             tone: "accent"
                             interactive: card.p !== null && card.p.canSeek
                             value: card.p && card.p.length > 0 ? Math.min(1, card.p.position / card.p.length) : 0
@@ -289,8 +289,8 @@ Scope {
                         spacing: Theme.spacingS
 
                         Button {
-                            implicitWidth: 28
-                            implicitHeight: 28
+                            implicitWidth: Theme.px(28)
+                            implicitHeight: Theme.px(28)
                             onClicked: root.toggleMute()
                             MdIcon {
                                 anchors.centerIn: parent
@@ -307,7 +307,7 @@ Scope {
                         }
 
                         StyledText {
-                            Layout.preferredWidth: 40
+                            Layout.preferredWidth: Theme.px(40)
                             horizontalAlignment: Text.AlignRight
                             text: root.muted ? "Muted" : Math.round((volSlider.pressed ? volSlider.shown : root.volume) * 100) + "%"
                             font.pixelSize: Theme.fontSmall
@@ -322,8 +322,8 @@ Scope {
 
                         Button {
                             visible: card.p !== null && card.p.shuffleSupported
-                            implicitWidth: 34
-                            implicitHeight: 34
+                            implicitWidth: Theme.px(34)
+                            implicitHeight: Theme.px(34)
                             active: card.p !== null && card.p.shuffle
                             onClicked: card.p.shuffle = !card.p.shuffle
                             MdIcon {
@@ -334,44 +334,44 @@ Scope {
                         }
 
                         Button {
-                            implicitWidth: 44
-                            implicitHeight: 40
+                            implicitWidth: Theme.px(44)
+                            implicitHeight: Theme.px(40)
                             framed: true
                             enabled: card.p !== null && card.p.canGoPrevious
-                            opacity: enabled ? 1 : 0.4
+                            opacity: enabled ? 1 : Theme.dim(0.4)
                             onClicked: card.p.previous()
-                            MdIcon { anchors.centerIn: parent; codepoint: 0xF04AE; font.pixelSize: 22 }
+                            MdIcon { anchors.centerIn: parent; codepoint: 0xF04AE; font.pixelSize: Theme.iconPx(22) }
                         }
 
                         Button {
-                            implicitWidth: 56
-                            implicitHeight: 48
+                            implicitWidth: Theme.px(56)
+                            implicitHeight: Theme.px(48)
                             framed: true
                             active: true
                             enabled: card.p !== null && card.p.canTogglePlaying
-                            opacity: enabled ? 1 : 0.4
+                            opacity: enabled ? 1 : Theme.dim(0.4)
                             onClicked: card.p.togglePlaying()
                             MdIcon {
                                 anchors.centerIn: parent
                                 codepoint: card.p && card.p.isPlaying ? 0xF03E4 : 0xF040A
-                                font.pixelSize: 28
+                                font.pixelSize: Theme.iconPx(28)
                             }
                         }
 
                         Button {
-                            implicitWidth: 44
-                            implicitHeight: 40
+                            implicitWidth: Theme.px(44)
+                            implicitHeight: Theme.px(40)
                             framed: true
                             enabled: card.p !== null && card.p.canGoNext
-                            opacity: enabled ? 1 : 0.4
+                            opacity: enabled ? 1 : Theme.dim(0.4)
                             onClicked: card.p.next()
-                            MdIcon { anchors.centerIn: parent; codepoint: 0xF04AD; font.pixelSize: 22 }
+                            MdIcon { anchors.centerIn: parent; codepoint: 0xF04AD; font.pixelSize: Theme.iconPx(22) }
                         }
 
                         Button {
                             visible: card.p !== null && card.p.loopSupported
-                            implicitWidth: 34
-                            implicitHeight: 34
+                            implicitWidth: Theme.px(34)
+                            implicitHeight: Theme.px(34)
                             active: card.p !== null && card.p.loopState !== MprisLoopState.None
                             onClicked: {
                                 var s = card.p.loopState;

@@ -91,10 +91,10 @@ QsPage {
 
     trailing: [
         Button {
-            implicitWidth: 28
-            implicitHeight: 28
+            implicitWidth: Theme.px(28)
+            implicitHeight: Theme.px(28)
             enabled: page.powered
-            opacity: enabled ? 1 : 0.5
+            opacity: enabled ? 1 : Theme.dim(0.5)
             active: page.discovering
             onClicked: page.adapter.discovering = !page.adapter.discovering
 
@@ -105,11 +105,11 @@ QsPage {
                 codepoint: 0xF0437 // md-radar
                 opacity: pulse
                 SequentialAnimation {
-                    running: page.discovering
+                    running: page.discovering && !Theme.reduceMotion
                     loops: Animation.Infinite
                     onRunningChanged: if (!running) radar.pulse = 1
-                    NumberAnimation { target: radar; property: "pulse"; to: 0.35; duration: 700; easing.type: Easing.InOutSine }
-                    NumberAnimation { target: radar; property: "pulse"; to: 1; duration: 700; easing.type: Easing.InOutSine }
+                    NumberAnimation { target: radar; property: "pulse"; to: 0.35; duration: Theme.dur(700); easing.type: Easing.InOutSine }
+                    NumberAnimation { target: radar; property: "pulse"; to: 1; duration: Theme.dur(700); easing.type: Easing.InOutSine }
                 }
             }
         },
@@ -156,7 +156,7 @@ QsPage {
         Layout.preferredHeight: Math.min(contentHeight, 320)
         visible: page.powered && count > 0
         clip: true
-        spacing: 2
+        spacing: Theme.px(2)
         boundsBehavior: Flickable.StopAtBounds
         model: ScriptModel {
             values: page.devices
@@ -226,7 +226,7 @@ QsPage {
             StyledText {
                 Layout.fillWidth: true
                 Layout.topMargin: entry.index === 0 ? 0 : Theme.spacingS
-                Layout.bottomMargin: 2
+                Layout.bottomMargin: Theme.px(2)
                 Layout.leftMargin: Theme.spacingS
                 visible: entry.firstOfGroup
                 text: page.group(entry.dev) === 0 ? "My devices" : "Nearby devices"
@@ -263,11 +263,11 @@ QsPage {
 
                 RowLayout {
                     visible: entry.dev.batteryAvailable
-                    spacing: 2
+                    spacing: Theme.px(2)
 
                     MdIcon {
                         codepoint: page.batteryGlyph(entry.dev)
-                        font.pixelSize: 14
+                        font.pixelSize: Theme.iconPx(14)
                         color: page.level(entry.dev) <= 0.15 ? Theme.error : Theme.textSurfaceVariant
                     }
                     StyledText {
@@ -278,19 +278,19 @@ QsPage {
                 }
                 Button {
                     visible: entry.dev.paired && !entry.dev.connected && !entry.busy
-                    implicitWidth: 26
-                    implicitHeight: 26
+                    implicitWidth: Theme.px(26)
+                    implicitHeight: Theme.px(26)
                     onClicked: entry.dev.forget()
                     MdIcon {
                         anchors.centerIn: parent
                         codepoint: 0xF09E7 // md-delete_outline
-                        font.pixelSize: 15
+                        font.pixelSize: Theme.iconPx(15)
                         color: Theme.textSurfaceVariant
                     }
                 }
                 ActionButton {
                     visible: !entry.busy || entry.dev.pairing
-                    implicitHeight: 26
+                    implicitHeight: Theme.px(26)
                     text: entry.dev.pairing ? "Cancel" : (entry.dev.connected ? "Disconnect" : (entry.dev.paired ? "Connect" : "Pair"))
                     filled: !entry.dev.connected && !entry.dev.pairing
                     onClicked: entry.primary()

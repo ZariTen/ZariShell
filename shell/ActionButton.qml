@@ -9,7 +9,7 @@ Button {
     property bool filled: false
 
     implicitWidth: Math.max(86, label.implicitWidth + Theme.spacingL * 2)
-    implicitHeight: 30
+    implicitHeight: Theme.px(30)
     framed: true
     radius: Theme.radius
 

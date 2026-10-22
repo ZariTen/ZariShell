@@ -11,9 +11,9 @@ Item {
     readonly property bool pressed: mouse.pressed
     signal toggled
 
-    implicitWidth: 42
-    implicitHeight: 22
-    opacity: enabled ? 1 : 0.45
+    implicitWidth: Theme.px(42)
+    implicitHeight: Theme.px(22)
+    opacity: enabled ? 1 : Theme.dim(0.45)
     activeFocusOnTab: true
     Keys.onSpacePressed: control.toggled()
     Behavior on opacity { NumberAnimation { duration: Theme.durShort } }
@@ -26,7 +26,7 @@ Item {
     MouseArea {
         id: mouse
         anchors.fill: parent
-        anchors.margins: -3
+        anchors.margins: Theme.px(-3)
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: control.toggled()

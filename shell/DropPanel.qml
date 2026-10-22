@@ -13,7 +13,7 @@ PanelWindow {
     property string name
     property string align: "right"
     property bool centered: false
-    property int cardWidth: 360
+    property int cardWidth: Theme.widthPx(360)
     property bool canGoBack: false   // Escape steps back (signal back) instead of closing
     default property alias content: column.data
     readonly property bool open: ShellState.panel === name
@@ -81,7 +81,7 @@ PanelWindow {
         Surface {
             anchors.fill: parent
             color: Theme.panel
-            headerHeight: 44
+            headerHeight: Theme.px(44)
         }
 
         MouseArea {

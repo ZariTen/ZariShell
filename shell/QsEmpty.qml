@@ -14,7 +14,7 @@ Item {
     signal action
 
     Layout.fillWidth: true
-    implicitHeight: 136
+    implicitHeight: Theme.px(136)
 
     Column {
         anchors.centerIn: parent
@@ -23,22 +23,22 @@ Item {
 
         Item {
             anchors.horizontalCenter: parent.horizontalCenter
-            implicitWidth: 40
-            implicitHeight: 40
-            width: 40
-            height: 40
+            implicitWidth: Theme.px(40)
+            implicitHeight: Theme.px(40)
+            width: Theme.px(40)
+            height: Theme.px(40)
 
             MdIcon {
                 anchors.centerIn: parent
                 visible: !empty.busy
                 codepoint: empty.codepoint
-                font.pixelSize: 32
+                font.pixelSize: Theme.iconPx(32)
                 color: Theme.outline
             }
             Spinner {
                 anchors.centerIn: parent
                 running: empty.busy
-                font.pixelSize: 32
+                font.pixelSize: Theme.iconPx(32)
                 color: Theme.accent
             }
         }

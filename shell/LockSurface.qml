@@ -93,7 +93,7 @@ Item {
         id: card
         anchors.horizontalCenter: parent.horizontalCenter
         y: parent.height * 0.42
-        width: 380
+        width: Theme.widthPx(380)
         height: cardColumn.implicitHeight + Theme.spacingXl * 2
 
         transform: Translate { id: shake }
@@ -101,11 +101,11 @@ Item {
         SequentialAnimation {
             id: shakeAnim
             loops: 1
-            NumberAnimation { target: shake; property: "x"; to: -14; duration: 50 }
-            NumberAnimation { target: shake; property: "x"; to: 12; duration: 70 }
-            NumberAnimation { target: shake; property: "x"; to: -8; duration: 60 }
-            NumberAnimation { target: shake; property: "x"; to: 5; duration: 50 }
-            NumberAnimation { target: shake; property: "x"; to: 0; duration: 40 }
+            NumberAnimation { target: shake; property: "x"; to: -14; duration: Theme.dur(50) }
+            NumberAnimation { target: shake; property: "x"; to: 12; duration: Theme.dur(70) }
+            NumberAnimation { target: shake; property: "x"; to: -8; duration: Theme.dur(60) }
+            NumberAnimation { target: shake; property: "x"; to: 5; duration: Theme.dur(50) }
+            NumberAnimation { target: shake; property: "x"; to: 0; duration: Theme.dur(40) }
         }
 
         Connections {
@@ -120,7 +120,7 @@ Item {
         Surface {
             anchors.fill: parent
             color: Theme.panel
-            headerHeight: 60
+            headerHeight: Theme.px(60)
         }
 
         ColumnLayout {
@@ -134,8 +134,8 @@ Item {
             // Avatar
             Frame {
                 Layout.alignment: Qt.AlignHCenter
-                implicitWidth: 112
-                implicitHeight: 112
+                implicitWidth: Theme.avatarSize
+                implicitHeight: Theme.avatarSize
                 padding: Theme.spacingS
                 radius: Theme.radiusFrame
                 innerRadius: Theme.radius
@@ -155,7 +155,7 @@ Item {
                     anchors.centerIn: parent
                     visible: !face.visible
                     codepoint: 0xF0004 // md-account
-                    font.pixelSize: 56
+                    font.pixelSize: Theme.iconPx(56)
                 }
             }
 
@@ -213,8 +213,8 @@ Item {
                 }
 
                 Button {
-                    implicitWidth: 34
-                    implicitHeight: 34
+                    implicitWidth: Theme.px(34)
+                    implicitHeight: Theme.px(34)
                     radius: Theme.radiusFull
                     framed: true
                     active: password.text !== ""
@@ -229,7 +229,7 @@ Item {
                     MdIcon {
                         anchors.centerIn: parent
                         codepoint: surface.lock.busy ? 0xF0450 : 0xF0054 // md-refresh / md-arrow_right
-                        font.pixelSize: 18
+                        font.pixelSize: Theme.iconPx(18)
                         RotationAnimation on rotation {
                             running: surface.lock.busy
                             from: 0
@@ -263,7 +263,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        height: 44
+        height: Theme.px(44)
         radius: Theme.barRadius
         shadow: false
 
@@ -276,7 +276,7 @@ Item {
             MdIcon {
                 codepoint: 0xF1105
                 color: Theme.accent
-                font.pixelSize: 20
+                font.pixelSize: Theme.iconPx(20)
             }
             StyledText {
                 text: "NixOS"
@@ -289,7 +289,7 @@ Item {
             Button {
                 visible: ShellState.player !== null
                 implicitWidth: lockMedia.implicitWidth + Theme.spacingM * 2
-                implicitHeight: 32
+                implicitHeight: Theme.px(32)
                 onClicked: if (ShellState.player && ShellState.player.canTogglePlaying) ShellState.player.togglePlaying()
 
                 RowLayout {
@@ -301,7 +301,7 @@ Item {
                         color: Theme.accent
                     }
                     StyledText {
-                        Layout.maximumWidth: 320
+                        Layout.maximumWidth: Theme.px(320)
                         text: ShellState.player ? (ShellState.player.trackTitle || ShellState.player.identity) : ""
                     }
                 }

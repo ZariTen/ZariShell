@@ -12,8 +12,8 @@ Item {
     readonly property string appIcon: Notifs.appIconFor(notification)
     readonly property bool showImage: image !== "" && picture.status === Image.Ready
 
-    implicitWidth: 40
-    implicitHeight: 40
+    implicitWidth: Theme.px(40)
+    implicitHeight: Theme.px(40)
 
     ClippingRectangle {
         anchors.fill: parent
@@ -36,7 +36,7 @@ Item {
         IconImage {
             id: icon
             anchors.fill: parent
-            anchors.margins: 3
+            anchors.margins: Theme.px(3)
             visible: !root.showImage && root.appIcon !== "" && status === Image.Ready
             source: root.showImage ? "" : root.appIcon
             asynchronous: true
@@ -47,7 +47,7 @@ Item {
             visible: !root.showImage && !icon.visible
             codepoint: root.critical ? 0xF0026 : 0xF009A
             color: Theme.textSurface
-            font.pixelSize: 20
+            font.pixelSize: Theme.iconPx(20)
         }
     }
 
@@ -56,9 +56,9 @@ Item {
         visible: root.showImage && badgeIcon.status === Image.Ready
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.margins: -4
-        width: 20
-        height: 20
+        anchors.margins: Theme.px(-4)
+        width: Theme.px(20)
+        height: Theme.px(20)
         radius: Theme.radius
         color: Theme.panel
         border.width: 1
@@ -67,7 +67,7 @@ Item {
         IconImage {
             id: badgeIcon
             anchors.fill: parent
-            anchors.margins: 2
+            anchors.margins: Theme.px(2)
             source: root.showImage ? root.appIcon : ""
             asynchronous: true
         }

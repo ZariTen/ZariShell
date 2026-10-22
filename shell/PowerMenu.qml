@@ -46,7 +46,7 @@ Scope {
     DropPanel {
         name: "power"
         centered: true
-        cardWidth: 520
+        cardWidth: Theme.widthPx(520)
 
         PanelHeader {
             codepoint: 0xF0425
@@ -66,7 +66,7 @@ Scope {
                     id: action
                     required property var modelData
                     Layout.fillWidth: true
-                    implicitHeight: 92
+                    implicitHeight: Theme.px(92)
                     framed: true
                     tint: modelData.id === "poweroff" || modelData.id === "reboot" ? Theme.dangerHighlight : Theme.highlight
                     onClicked: modelData.confirm ? root.pending = modelData.id : root.run(modelData.id)
@@ -77,7 +77,7 @@ Scope {
                         MdIcon {
                             Layout.alignment: Qt.AlignHCenter
                             codepoint: action.modelData.glyph
-                            font.pixelSize: 32
+                            font.pixelSize: Theme.iconPx(32)
                             color: action.modelData.id === "poweroff" ? Theme.danger : Theme.textSurface
                         }
                         StyledText {

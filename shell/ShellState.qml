@@ -4,6 +4,7 @@ import Quickshell.Services.Mpris
 
 QtObject {
     property string panel: ""
+    property string settingsSection: "appearance"   // open page of the settings panel
 
     // Media player picked in the media panel; falls back to the playing one.
     property var chosenPlayer: null

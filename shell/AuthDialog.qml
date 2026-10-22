@@ -58,7 +58,7 @@ Scope {
         PanelCard {
             id: card
             shown: window.active
-            width: 420
+            width: Theme.widthPx(420)
             height: column.implicitHeight + Theme.spacingXl * 2
 
             ColumnLayout {
@@ -77,8 +77,8 @@ Scope {
 
                 Rectangle {
                     Layout.alignment: Qt.AlignHCenter
-                    implicitWidth: 52
-                    implicitHeight: 52
+                    implicitWidth: Theme.px(52)
+                    implicitHeight: Theme.px(52)
                     radius: Theme.radiusFull
                     color: "transparent"
 
@@ -86,7 +86,7 @@ Scope {
                         anchors.centerIn: parent
                         codepoint: 0xF0780 // md-shield_half_full (UAC shield)
                         color: Theme.warning
-                        font.pixelSize: 26
+                        font.pixelSize: Theme.iconPx(26)
                     }
                 }
 
@@ -120,7 +120,7 @@ Scope {
                     Layout.fillWidth: true
                     Layout.topMargin: Theme.spacingS
                     visible: agent.flow !== null && agent.flow.isResponseRequired
-                    implicitHeight: 48
+                    implicitHeight: Theme.px(48)
                     radius: Theme.radius
                     color: Theme.surfaceContainerHigh
                     border.width: secret.activeFocus ? 2 : 1

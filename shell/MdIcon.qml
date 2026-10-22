@@ -23,7 +23,7 @@ Item {
         x: Math.round((icon.width - width) / 2)
         y: Math.round((icon.height - height) / 2)
         font.family: Theme.iconFont
-        font.pixelSize: 16
+        font.pixelSize: Theme.iconPx(16)
         text: icon.codepoint > 0 ? Theme.icon(icon.codepoint) : ""
         elide: Text.ElideNone
     }

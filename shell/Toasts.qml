@@ -40,7 +40,7 @@ Scope {
 
             margins.top: Theme.barHeight + Theme.gap * 2
             margins.right: Theme.gap
-            implicitWidth: 380
+            implicitWidth: Theme.widthPx(380)
             implicitHeight: Math.max(1, column.implicitHeight)
 
             WlrLayershell.namespace: "shell-notification"
@@ -70,7 +70,7 @@ Scope {
                         Surface {
                             anchors.fill: parent
                             color: toast.critical ? Theme.panelError : Theme.panel
-                            headerHeight: 30
+                            headerHeight: Theme.px(30)
                         }
 
                         // Slide in from the right.
@@ -125,7 +125,7 @@ Scope {
 
                             ColumnLayout {
                                 Layout.fillWidth: true
-                                spacing: 2
+                                spacing: Theme.px(2)
 
                                 RowLayout {
                                     Layout.fillWidth: true
@@ -136,13 +136,13 @@ Scope {
                                         color: toast.critical ? Theme.error : Theme.accent
                                     }
                                     Item {
-                                        implicitWidth: 20
-                                        implicitHeight: 20
+                                        implicitWidth: Theme.px(20)
+                                        implicitHeight: Theme.px(20)
 
                                         MdIcon {
                                             anchors.centerIn: parent
                                             codepoint: 0xF0156 // md-close
-                                            font.pixelSize: 14
+                                            font.pixelSize: Theme.iconPx(14)
                                             color: Theme.textSurfaceVariant
                                         }
                                         HoverLayer {
@@ -180,7 +180,7 @@ Scope {
                                         delegate: ActionButton {
                                             required property var modelData
                                             text: modelData.text
-                                            implicitHeight: 30
+                                            implicitHeight: Theme.px(30)
                                             onClicked: modelData.invoke()
                                         }
                                     }

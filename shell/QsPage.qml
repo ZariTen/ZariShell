@@ -35,8 +35,8 @@ ColumnLayout {
         spacing: Theme.spacingS
 
         Button {
-            implicitWidth: 28
-            implicitHeight: 28
+            implicitWidth: Theme.px(28)
+            implicitHeight: Theme.px(28)
             onClicked: page.back()
             MdIcon {
                 anchors.centerIn: parent
