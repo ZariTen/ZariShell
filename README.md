@@ -45,6 +45,7 @@ The active theme is `~/.config/zarishell/current` (for example a symlink to a
 theme folder) when it contains a `theme.json`, otherwise the packaged theme
 named by `$ZARISHELL_THEME` (default `aero`).
 
+User settings (see [Settings](#settings)) are applied on top of these tokens.
 Any token a theme leaves out falls back to the neutral default shown below, and
 any component it does not override uses the flat look in `shell/base/`. So an
 empty `{}` theme gives the plain base shell: flat translucent slate, 1px
@@ -166,6 +167,49 @@ Each generic component lives in `shell/<Name>.qml`; its look is loaded from
 `Frame` (mat Surface plus clipped picture), `Fill` and `Backdrop` are used by
 the lock screen, login screen, bar and media panel; `Glow` is applied with
 `Theme.effect("Glow")` and is skipped when the theme does not provide it.
+
+## Settings
+
+Open the settings panel from the slider icon in quick settings, or over IPC:
+
+```sh
+quickshell -c shell ipc call settings toggle        # also: open, close
+quickshell -c shell ipc call settings set scale 1.2 # value is JSON
+quickshell -c shell ipc call settings reset scale
+```
+
+A Hyprland bind could be `bind = SUPER, comma, exec, quickshell -c shell ipc call settings toggle`
+(`shell` is the default `programs.zarishell.configName`).
+
+Changes apply live and are saved to
+`${XDG_CONFIG_HOME:-~/.config}/zarishell/settings.json`, a flat JSON object
+that you may also edit by hand (edits apply live too). Precedence: a key in
+`settings.json` wins over the theme's `theme.json`, which wins over the neutral
+defaults. A missing key follows the theme; every row has a reset button and
+every section a "Reset section" button, which remove the keys. Saving is
+debounced; an invalid file is ignored (one warning) and never overwritten.
+Nix does not manage this file.
+
+| Key | Default | Effect |
+| --- | --- | --- |
+| `scale` | 1 | UI scale: sizes, spacing, radii, fonts and icons. |
+| `radius` | 1 | Corner radius factor (0 = square). |
+| `spacing` | 1 | Spacing factor. |
+| `barHeight` | theme (42) | Bar height in px (before UI scale). |
+| `barOpacity` | theme | Bar background opacity, 0..1. |
+| `panelOpacity` | theme | Panel / dialog background opacity, 0..1. |
+| `accent` | theme | `"wallpaper"` or `"#rrggbb"`. |
+| `font` | theme | UI font family. |
+| `fontSize` | theme (13) | Base font size in px; the other sizes follow. |
+| `iconSize` | 16 | Base icon size in px; the other icons follow. |
+| `animationSpeed` | 1 | Animation speed factor (2 = twice as fast). |
+| `reduceMotion` | false | Turn transitions off (spinners keep turning). |
+| `avatarSize` | 112 | Lock screen avatar size in px. |
+| `panelWidth` | 1 | Width factor of panels, dialogs and the lock card. |
+| `dim` | 0.5 | Opacity of disabled / hint elements. |
+
+The login screen does not read `settings.json` (it runs as the greeter user,
+which cannot read your home); it always uses the theme.
 
 ## License
 
