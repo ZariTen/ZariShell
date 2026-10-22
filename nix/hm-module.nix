@@ -6,7 +6,7 @@ let
 in
 {
   options.programs.zarishell = {
-    enable = lib.mkEnableOption "ZariShell, an Aero-styled Quickshell desktop shell";
+    enable = lib.mkEnableOption "ZariShell, a themeable Quickshell desktop shell";
 
     package = lib.mkOption {
       type = lib.types.package;

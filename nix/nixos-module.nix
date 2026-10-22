@@ -37,14 +37,14 @@ let
 in
 {
   options.services.zarishell.greeter = {
-    enable = lib.mkEnableOption "the ZariShell Aero greetd greeter (Quickshell in cage)";
+    enable = lib.mkEnableOption "the ZariShell greetd greeter (Quickshell in cage)";
 
     quickshellPackage = lib.mkPackageOption pkgs "quickshell" { };
 
     wallpaper = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "Image copied into the greeter (must be world-readable at build time). null = gradient.";
+      description = "Image copied into the greeter (must be world-readable at build time). null = the theme's fallback background.";
     };
 
     mainMonitor = lib.mkOption {

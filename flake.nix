@@ -1,5 +1,5 @@
 {
-  description = "ZariShell: a dark Windows 7 Aero styled Quickshell desktop shell and greetd greeter";
+  description = "ZariShell: a themeable Quickshell desktop shell and greetd greeter";
 
   inputs.nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 

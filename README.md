@@ -1,6 +1,8 @@
 # ZariShell
 
-A Windows 7 Aero style desktop shell for Hyprland, built with [Quickshell](https://quickshell.org), plus a matching login screen.
+A themeable desktop shell for Hyprland built with [Quickshell](https://quickshell.org), plus a matching
+login screen. The shell code only draws neutral, flat parts; every look comes
+from a theme. One theme, Aero (tinted glass), is bundled and is the default.
 
 ## Install
 
@@ -30,26 +32,140 @@ services.zarishell.greeter.enable = true;
 ## Theming
 
 A theme is a folder under `themes/` (shared by the shell and the login
-screen). Aero is the first one and the default.
+screen):
 
 ```
 themes/<name>/
-  theme.json          tokens: accent, colors, metrics, fonts, motion
-  components/*.qml    optional looks for Button, Field, Highlight, Slider,
-                      Surface, Switch (list them in theme.json "components")
+  theme.json          tokens: name, accent, colors, metrics, fonts, motion,
+                      and "components" (the looks this theme overrides)
+  components/*.qml    optional looks for the components listed below
 ```
-
-Any token a theme leaves out falls back to a neutral default, and any
-component it does not override uses the flat look in `shell/base/`. Colors are
-`"#rrggbb"`, `"#aarrggbb"`, `[r, g, b, a]`, `"accent"` or
-`{ "h", "s", "l", "a" }` (a tone relative to the accent hue). `"accent"` is
-`"wallpaper"` (hue taken from the wallpaper) or a color. A component look reads
-its generic component as `control` (see `shell/Button.qml` and
-`themes/aero/components/Button.qml`).
 
 The active theme is `~/.config/zarishell/current` (for example a symlink to a
 theme folder) when it contains a `theme.json`, otherwise the packaged theme
 named by `$ZARISHELL_THEME` (default `aero`).
+
+Any token a theme leaves out falls back to the neutral default shown below, and
+any component it does not override uses the flat look in `shell/base/`. So an
+empty `{}` theme gives the plain base shell: flat translucent slate, 1px
+borders, no gloss, glow, blur or shadows.
+
+Colors are `"#rrggbb"`, `"#aarrggbb"`, `"transparent"`, `[r, g, b, a]` (0..1),
+`"accent"` or `{ "h", "s", "l", "a" }` (a tone whose hue is offset by `h` from
+the accent hue). A theme may add its own extra color names and read them in its
+components with `Theme.color("name", fallback)` (Aero uses `sheenTop`,
+`sheenMid` and `badgeTop`).
+
+### Top-level keys
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `name` | `""` | Display name. |
+| `accent` | `"#7a9cc6"` | Accent seed: a color, or `"wallpaper"` to take the hue from the current wallpaper. |
+| `components` | `[]` | Component looks / effects provided in `components/`. |
+
+### Colors
+
+| Token | Neutral default | Used for |
+| --- | --- | --- |
+| `surface` | `#24282e` | Desktop color behind the wallpaper; base of backdrops. |
+| `bar` | slate, a 0.92 | Taskbar and the lock / login bottom bars. |
+| `panel` | slate, a 0.96 | Panels, dialogs, toasts, logon card. |
+| `panelError` | red, a 0.94 | Critical toasts. |
+| `accent` | `"accent"` | Accent icons and text. |
+| `highlight` | `"accent"` | Hover, selection and active fills. |
+| `primary` | `"accent"` | Filled controls (slider fill, round go button, orbs). |
+| `textPrimary` | `#ffffff` | Text on `primary`. |
+| `primaryContainer` | accent tone, a 0.9 | Picture-frame background, launcher selection. |
+| `textPrimaryContainer` | `#ffffff` | Text on `primaryContainer`. |
+| `surfaceContainer` | white a 0.08 | Cards inside panels. |
+| `surfaceContainerHigh` | white a 0.14 | Raised cards. |
+| `surfaceContainerHighest` | white a 0.12 | Picture-frame mats. |
+| `inset` | black a 0.22 | Recessed wells (tracks, fields, trays). |
+| `insetBorder` | black a 0.30 | Edge of recessed wells. |
+| `border` | black a 0.35 | Outer 1px edge of controls, orbs and badges. |
+| `borderLight` | white a 0.10 | Surface edge, picture edge. |
+| `insetEdge` | white a 0.10 | Edge of framed bar trays. |
+| `outline` | white a 0.45 | Focus rings and strong outlines. |
+| `outlineVariant` | white a 0.16 | Subtle outlines. |
+| `outlineFaint` | white a 0.08 | Notification cards, inner edge of the launcher list. |
+| `divider` | white a 0.12 | Divider lines. |
+| `dividerStrong` | white a 0.22 | Strong divider lines (bar edge, split tiles). |
+| `textSurface` | `#ffffff` | Body text and icons. |
+| `textSurfaceVariant` | white a 0.70 | Secondary text. |
+| `textSoft` | white a 0.85 | Secondary display text (lock-screen date). |
+| `textShadow` | `transparent` | Shadow under text (none when transparent). |
+| `scrim` | black a 0.35 | Dim behind popups; base backdrop dim. |
+| `scrimStrong` | black a 0.6 | Dim behind modal dialogs (polkit). |
+| `backdrop` | `#000000` | Window color behind the lock / login backdrop. |
+| `buttonDefault` | accent tone, a 0.63 | Fill of the default dialog button. |
+| `badge` | `#d9463a` | Unread count badge. |
+| `error` | `#ff6b5e` | Error text and icons. |
+| `errorContainer` | `error` a 0.22 | Error banners. |
+| `errorOutline` | `error` a 0.6 | Error banner edge. |
+| `criticalContainer` | `error` a 0.3 | Critical notification cards. |
+| `danger` | `error` | Destructive action icon (shut down). |
+| `dangerHighlight` | `error` | Destructive action hover (shut down, restart). |
+| `success` | `#7fd45a` | Success and "normal" meters. |
+| `warning` | `#f2c94c` | Warnings and caps lock hint. |
+
+### Metrics
+
+| Token | Default | Used for |
+| --- | --- | --- |
+| `radiusSmall` | 3 | Small chips, bar cover art. |
+| `radius` | 5 | Controls, cards, pictures inside frames. |
+| `radiusLarge` | 8 | Panels and surfaces. |
+| `radiusFull` | 999 | Pills and circles (clamped to half the size). |
+| `radiusFrame` | 10 | Matted picture frames (avatars). |
+| `barRadius` | 0 | Full-width edge bars (taskbar, lock / login bottom bar). |
+| `spacingXs` / `spacingS` / `spacingM` / `spacingL` / `spacingXl` | 4 / 8 / 12 / 16 / 24 | Spacing scale (`spacingS` is also the avatar mat). |
+| `barHeight` | 42 | Taskbar height and exclusive zone. |
+| `shadowRoom` | 0 | Extra taskbar window height so a theme's shadow is not clipped. |
+| `gap` | 8 | Gap between screen edge / bar and panels. |
+
+### Fonts
+
+| Token | Default | Used for |
+| --- | --- | --- |
+| `font` | `sans-serif` | UI text. |
+| `iconFont` | `JetBrainsMono Nerd Font Propo` | Material Design glyphs. |
+| `fontSmall` / `fontBody` / `fontTitle` / `fontHeadline` | 11 / 13 / 15 / 22 | Text scale. |
+| `fontLarge` | 34 | Calendar clock. |
+| `fontDisplay` | 112 | Lock / login clock. |
+| `fontDisplayWeight` | 300 (Light) | Weight of the large clocks. |
+
+### Motion
+
+| Token | Default | Used for |
+| --- | --- | --- |
+| `durShort` / `durMedium` / `durLong` | 150 / 280 / 420 | Animation durations (ms). |
+| `emphasized` / `standard` | M3 curves | Bezier easing curves. |
+
+### Components
+
+Each generic component lives in `shell/<Name>.qml`; its look is loaded from
+`themes/<theme>/components/<Name>.qml` when the theme lists the name, else from
+`shell/base/<Name>.qml`. A look reads its component as `control` (see
+`shell/Button.qml` and `themes/aero/components/Button.qml`).
+
+| Component | Properties a look reads | Base look | Aero look |
+| --- | --- | --- | --- |
+| `Surface` | `radius`, `color`, `shadow`, `headerHeight` | Flat body with a `borderLight` edge. | Tinted glass with a sheen band, light inner edge and drop shadow. |
+| `Button` | `active`, `framed`, `radius`, `tint`, `hovered`, `pressed`, `lit`, `level` | Faint fill when framed, tint wash on hover / active. | Glossy glass face with a hover glow. |
+| `Highlight` | `tint`, `level`, `bordered`, `radius` | Even tint wash, optional tinted edge. | Tint rising from the bottom edge. |
+| `Switch` | `checked`, `hovered`, `pressed` | Pill track filled with `highlight` when on, round thumb. | Glossy track and thumb. |
+| `Slider` | `value`, `tone`, `interactive`, `hovered`, `pressed` | Inset track, solid fill colored by `tone`. | Glossy progress bar (green / amber / red / accent) with a round thumb. |
+| `Field` | `focused`, `prominent` | Inset well, accent edge when focused. | Recessed well; prominent fields get an accent focus glow. |
+| `Frame` | `padding`, `radius`, `innerRadius`, `color`, `bordered` | Nothing (drawn over the picture). | Glass reflection over the top of avatars and cover art. |
+| `Fill` | `color`, `radius`, `bordered`, `role` (`button`, `orb`, `badge`) | Solid shape. | Glossy two-tone orb; badges use `badgeTop`. |
+| `Backdrop` | `source`, `role` (`lock`, `login`) | Wallpaper (or `surface`) under `scrim`. | Blurred, darkened wallpaper under a vertical dim; gradient fallback on the login screen. |
+| `Divider` | `strong` | `divider` / `dividerStrong` line. | (base) |
+| `Glow` (effect) | none; a `layer.effect` for the lock / login clock | None (no effect). | Soft accent halo. |
+
+`Frame` (mat Surface plus clipped picture), `Fill` and `Backdrop` are used by
+the lock screen, login screen, bar and media panel; `Glow` is applied with
+`Theme.effect("Glow")` and is skipped when the theme does not provide it.
 
 ## License
 
