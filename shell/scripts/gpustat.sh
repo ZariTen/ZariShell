@@ -3,8 +3,9 @@
 #   vendor state busy% tempC vramUsedB vramTotalB freqMHz maxFreqMHz name
 # (-1 = unknown). GPUs are found by scanning /sys/class/drm/card*/device and
 # their own hwmon dir, so card/hwmon renumbering across boots doesn't matter.
-# AMD/Intel read sysfs; NVIDIA reads NVML via zarishell-nvml (falls back to
-# nvidia-smi). Suspended (runtime PM) GPUs are not queried so they stay asleep.
+# AMD/Intel read sysfs; NVIDIA uses nvidia-smi and is skipped (rows hidden)
+# when that fails. Suspended (runtime PM) GPUs are not queried so they stay
+# asleep.
 
 rd() {
     v=$(cat "$1" 2>/dev/null)
@@ -70,20 +71,17 @@ for card in /sys/class/drm/card*; do
             ;;
         nvidia)
             out=
-            if command -v zarishell-nvml >/dev/null 2>&1; then
-                out=$(zarishell-nvml "$slot" 2>/dev/null)
-            fi
-            if [ -z "$out" ] && command -v nvidia-smi >/dev/null 2>&1; then
+            if command -v nvidia-smi >/dev/null 2>&1; then
                 out=$(nvidia-smi -i "$slot" --format=csv,noheader,nounits \
                     --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name 2>/dev/null |
-                    head -n 1 | awk -F', *' 'NF >= 5 { printf "%s\t%s\t%.0f\t%.0f\t%s", $1, $2, $3 * 1048576, $4 * 1048576, $5 }')
+                    head -n 1 | awk -F', *' 'NF >= 5 && $1 ~ /^[0-9]+$/ { printf "%s\t%s\t%.0f\t%.0f\t%s", $1, $2, $3 * 1048576, $4 * 1048576, $5 }')
             fi
-            if [ -n "$out" ]; then
-                tab=$(printf '\t')
-                IFS=$tab read -r busy temp used total name <<END
+            # No usable data (missing or crashing nvidia-smi): hide this GPU.
+            [ -n "$out" ] || continue
+            tab=$(printf '\t')
+            IFS=$tab read -r busy temp used total name <<END
 $out
 END
-            fi
             ;;
         esac
     fi
