@@ -13,14 +13,11 @@ Singleton {
     property real mem: 0          // 0..1
     property real memUsedGb: 0
     property real memTotalGb: 0
-    property real cpuTemp: -1     // °C
-    property bool hasGpu: false
-    property string gpuName: ""
-    property real gpu: 0
-    property real gpuTemp: 0
-    property real gpuMem: 0
-    property real gpuMemUsedGb: 0
-    property real gpuMemTotalGb: 0
+    property real cpuTemp: -1     // deg C, -1 = unknown
+    // [{ vendor, state, name, busy, temp, memUsed, memTotal, freq, maxFreq }]
+    // busy 0..1, temp in C, mem in bytes, freq in MHz; -1 = unknown.
+    property var gpus: []
+    readonly property bool hasGpu: gpus.length > 0
     property var disks: []        // [{ mount, used, size }]
     property var lastCpu: null
 
@@ -31,12 +28,17 @@ Singleton {
         triggeredOnStart: true
         onTriggered: {
             basic.running = true;
-            if (root.detailed)
+            if (root.detailed) {
                 extra.running = true;
+                gpu.running = true;
+            }
         }
     }
 
-    onDetailedChanged: if (detailed) extra.running = true
+    onDetailedChanged: if (detailed) {
+        extra.running = true;
+        gpu.running = true;
+    }
 
     Process {
         id: basic
@@ -68,12 +70,11 @@ Singleton {
         }
     }
 
-    // Sections: CPU temp (millidegrees), nvidia-smi CSV, df output.
+    // Sections: CPU temp (millidegrees), df output.
     Process {
         id: extra
         command: ["sh", "-c",
             "for d in /sys/class/hwmon/hwmon*; do case $(cat $d/name 2>/dev/null) in coretemp|k10temp|zenpower|cpu_thermal) cat $d/temp1_input; break;; esac; done; echo ---; "
-            + "command -v nvidia-smi >/dev/null && nvidia-smi --query-gpu=utilization.gpu,temperature.gpu,memory.used,memory.total,name --format=csv,noheader,nounits 2>/dev/null | head -1; echo ---; "
             + "df -B1 --output=target,size,used / /home 2>/dev/null | tail -n +2"]
         stdout: StdioCollector {
             onStreamFinished: {
@@ -81,20 +82,9 @@ Singleton {
                 var t = parseInt((parts[0] || "").trim());
                 root.cpuTemp = isNaN(t) ? -1 : t / 1000;
 
-                var g = (parts[1] || "").trim().split(",").map(s => s.trim());
-                root.hasGpu = g.length >= 5 && g[0] !== "";
-                if (root.hasGpu) {
-                    root.gpu = Number(g[0]) / 100;
-                    root.gpuTemp = Number(g[1]);
-                    root.gpuMemUsedGb = Number(g[2]) / 1024;
-                    root.gpuMemTotalGb = Number(g[3]) / 1024;
-                    root.gpuMem = Number(g[3]) > 0 ? Number(g[2]) / Number(g[3]) : 0;
-                    root.gpuName = g.slice(4).join(",");
-                }
-
                 var seen = {};
                 var disks = [];
-                (parts[2] || "").trim().split("\n").forEach(l => {
+                (parts[1] || "").trim().split("\n").forEach(l => {
                     var f = l.trim().split(/\s+/);
                     if (f.length >= 3 && !seen[f[0]]) {
                         seen[f[0]] = true;
@@ -102,6 +92,35 @@ Singleton {
                     }
                 });
                 root.disks = disks;
+            }
+        }
+    }
+
+    // GPUs, auto-detected from /sys/class/drm (see scripts/gpustat.sh).
+    Process {
+        id: gpu
+        command: ["sh", Quickshell.shellDir + "/scripts/gpustat.sh"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var list = [];
+                text.trim().split("\n").forEach(l => {
+                    var f = l.split("\t");
+                    if (f.length < 9)
+                        return;
+                    var busy = Number(f[2]);
+                    list.push({
+                        vendor: f[0],
+                        state: f[1],
+                        busy: busy >= 0 ? Math.min(1, busy / 100) : -1,
+                        temp: Number(f[3]),
+                        memUsed: Number(f[4]),
+                        memTotal: Number(f[5]),
+                        freq: Number(f[6]),
+                        maxFreq: Number(f[7]),
+                        name: f.slice(8).join(" ")
+                    });
+                });
+                root.gpus = list;
             }
         }
     }

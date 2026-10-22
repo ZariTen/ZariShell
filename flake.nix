@@ -12,12 +12,12 @@
       packages = forAll (pkgs:
         let zs = pkgs.callPackage ./nix/packages.nix { };
         in {
-          inherit (zs) shell greeter screenshot-region;
+          inherit (zs) shell greeter screenshot-region nvml;
           default = zs.shell;
         });
 
       checks = forAll (pkgs: {
-        inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) shell greeter screenshot-region;
+        inherit (self.packages.${pkgs.stdenv.hostPlatform.system}) shell greeter screenshot-region nvml;
       });
 
       homeManagerModules.default = import ./nix/hm-module.nix;

@@ -1,16 +1,29 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
 
-// System monitor panel with glossy meter bars.
+// System monitor panel: one row per resource (icon well, label, figures and a
+// glossy meter bar). GPU rows only appear when a GPU is detected.
 Scope {
     id: root
+
+    readonly property string dot: "  \u00b7  "
 
     function gb(bytes) {
         return (bytes / 1073741824).toFixed(bytes >= 107374182400 ? 0 : 1) + " GB";
     }
 
-    // Meter colors shift green → amber → red with load (Win7 progress bar states).
+    function temp(c) {
+        return c >= 0 ? root.dot + Math.round(c) + " \u00b0C" : "";
+    }
+
+    function pct(v) {
+        return Math.round(v * 100) + "%";
+    }
+
+    // Meter colors shift green -> amber -> red with load (Win7 progress bar states).
     function fill(v) {
         if (v > 0.85)
             return ["#ffb0a0", "#e0412b", "#b8240f", "#ef5a3f"];
@@ -19,43 +32,86 @@ Scope {
         return ["#b6f39a", "#4fc22a", "#2f9e12", "#5fd23a"];
     }
 
-    component Meter: ColumnLayout {
+    component Meter: RowLayout {
+        id: meter
+
+        property int codepoint: 0
         property string label: ""
+        property string sublabel: ""    // e.g. the GPU model, elided
         property string detail: ""
         property real value: 0
-        readonly property var colors: root.fill(value)
+        property bool showBar: true
+        readonly property var colors: root.fill(meter.value)
 
         Layout.fillWidth: true
-        spacing: Theme.spacingXs
+        spacing: Theme.spacingM
 
-        RowLayout {
+        Rectangle {
+            Layout.preferredWidth: 32
+            Layout.preferredHeight: 32
+            Layout.alignment: Qt.AlignVCenter
+            radius: Theme.radius
+            color: Theme.surfaceContainer
+            border.width: 1
+            border.color: Theme.edgeLight
+
+            MdIcon {
+                anchors.centerIn: parent
+                codepoint: meter.codepoint
+                font.pixelSize: 18
+                color: Theme.textSurface
+            }
+        }
+
+        ColumnLayout {
             Layout.fillWidth: true
-            StyledText {
+            Layout.alignment: Qt.AlignVCenter
+            spacing: Theme.spacingXs
+
+            RowLayout {
                 Layout.fillWidth: true
-                text: parent.parent.label
-                font.weight: Font.DemiBold
+                spacing: Theme.spacingS
+
+                StyledText {
+                    text: meter.label
+                    font.weight: Font.DemiBold
+                }
+                StyledText {
+                    Layout.fillWidth: true
+                    text: meter.sublabel
+                    color: Theme.textSurfaceVariant
+                    font.pixelSize: Theme.fontSmall
+                }
+                StyledText {
+                    text: meter.detail
+                    color: Theme.textSurfaceVariant
+                    font.pixelSize: Theme.fontSmall
+                }
             }
-            StyledText {
-                text: parent.parent.detail
-                color: Theme.textSurfaceVariant
-                font.pixelSize: Theme.fontSmall
+
+            GlossySlider {
+                Layout.fillWidth: true
+                visible: meter.showBar
+                interactive: false
+                value: meter.value
+                fillTop: meter.colors[0]
+                fillMid: meter.colors[1]
+                fillDark: meter.colors[2]
+                fillBottom: meter.colors[3]
             }
         }
-        GlossySlider {
-            Layout.fillWidth: true
-            interactive: false
-            value: parent.value
-            fillTop: parent.colors[0]
-            fillMid: parent.colors[1]
-            fillDark: parent.colors[2]
-            fillBottom: parent.colors[3]
-        }
+    }
+
+    component Divider: Rectangle {
+        Layout.fillWidth: true
+        implicitHeight: 1
+        color: Theme.outlineVariant
     }
 
     DropPanel {
         name: "sysmon"
         align: "right"
-        cardWidth: 360
+        cardWidth: 380
 
         PanelHeader {
             codepoint: 0xF04C5 // md-speedometer
@@ -63,52 +119,76 @@ Scope {
         }
 
         Meter {
+            codepoint: 0xF0EE0 // md-cpu-64-bit
             label: "CPU"
             value: SysStats.cpu
-            detail: Math.round(SysStats.cpu * 100) + "%" + (SysStats.cpuTemp >= 0 ? "  ·  " + Math.round(SysStats.cpuTemp) + " °C" : "")
+            detail: root.pct(SysStats.cpu) + root.temp(SysStats.cpuTemp)
         }
 
         Meter {
+            codepoint: 0xF035B // md-memory
             label: "Memory"
             value: SysStats.mem
-            detail: SysStats.memUsedGb.toFixed(1) + " / " + SysStats.memTotalGb.toFixed(1) + " GB  ·  " + Math.round(SysStats.mem * 100) + "%"
+            detail: SysStats.memUsedGb.toFixed(1) + " / " + SysStats.memTotalGb.toFixed(1) + " GB" + root.dot + root.pct(SysStats.mem)
         }
 
-        Meter {
-            visible: SysStats.hasGpu
-            label: "GPU"
-            value: SysStats.gpu
-            detail: Math.round(SysStats.gpu * 100) + "%  ·  " + Math.round(SysStats.gpuTemp) + " °C"
+        // Model is the count, so delegates survive the 2s refresh and the
+        // bars animate instead of being recreated.
+        Repeater {
+            model: SysStats.gpus.length
+
+            delegate: ColumnLayout {
+                id: gpuRow
+
+                required property int index
+                readonly property var g: SysStats.gpus[index] || ({})
+                readonly property bool asleep: g.state === "suspended"
+                readonly property bool hasBusy: g.busy >= 0
+                readonly property bool hasClock: !hasBusy && g.freq >= 0 && g.maxFreq > 0
+
+                Layout.fillWidth: true
+                spacing: Theme.spacingM
+
+                Meter {
+                    codepoint: 0xF08AE // md-expansion-card
+                    label: SysStats.gpus.length > 1 ? "GPU " + (gpuRow.index + 1) : "GPU"
+                    sublabel: gpuRow.g.name || ""
+                    showBar: gpuRow.hasBusy || gpuRow.hasClock
+                    value: gpuRow.hasBusy ? gpuRow.g.busy : (gpuRow.hasClock ? gpuRow.g.freq / gpuRow.g.maxFreq : 0)
+                    detail: gpuRow.asleep ? "Sleeping"
+                        : gpuRow.hasBusy ? root.pct(gpuRow.g.busy) + root.temp(gpuRow.g.temp)
+                        : gpuRow.hasClock ? gpuRow.g.freq + " MHz" + root.temp(gpuRow.g.temp)
+                        : (gpuRow.g.temp >= 0 ? Math.round(gpuRow.g.temp) + " \u00b0C" : "No data")
+                }
+
+                Meter {
+                    visible: !gpuRow.asleep && gpuRow.g.memTotal > 0
+                    codepoint: 0xF061A // md-chip
+                    label: "Video memory"
+                    value: gpuRow.g.memTotal > 0 ? gpuRow.g.memUsed / gpuRow.g.memTotal : 0
+                    detail: root.gb(gpuRow.g.memUsed) + " / " + root.gb(gpuRow.g.memTotal)
+                }
+            }
         }
 
-        Meter {
-            visible: SysStats.hasGpu
-            label: "Video memory"
-            value: SysStats.gpuMem
-            detail: SysStats.gpuMemUsedGb.toFixed(1) + " / " + SysStats.gpuMemTotalGb.toFixed(1) + " GB"
-        }
-
-        StyledText {
-            visible: SysStats.hasGpu
-            Layout.topMargin: -Theme.spacingS
-            text: SysStats.gpuName
-            font.pixelSize: Theme.fontSmall
-            color: Theme.textSurfaceVariant
-        }
-
-        Rectangle {
-            Layout.fillWidth: true
-            implicitHeight: 1
-            color: Theme.outlineVariant
+        Divider {
+            visible: SysStats.disks.length > 0
         }
 
         Repeater {
-            model: SysStats.disks
+            model: SysStats.disks.length
+
             delegate: Meter {
-                required property var modelData
-                label: "Disk " + modelData.mount
-                value: modelData.size > 0 ? modelData.used / modelData.size : 0
-                detail: root.gb(modelData.used) + " / " + root.gb(modelData.size)
+                id: disk
+
+                required property int index
+                readonly property var d: SysStats.disks[index] || ({ mount: "", size: 0, used: 0 })
+
+                codepoint: 0xF02CA // md-harddisk
+                label: d.mount === "/" ? "System" : (d.mount === "/home" ? "Home" : "Disk")
+                sublabel: d.mount
+                value: d.size > 0 ? d.used / d.size : 0
+                detail: root.gb(d.used) + " / " + root.gb(d.size) + root.dot + root.pct(disk.value)
             }
         }
     }

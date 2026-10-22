@@ -47,8 +47,8 @@ in
 
     runtimePackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = with pkgs; [ brightnessctl cliphist wl-clipboard coreutils ];
-      description = "Programs the shell's Process {} calls need on the service PATH.";
+      default = with pkgs; [ brightnessctl cliphist wl-clipboard coreutils pciutils zs.nvml ];
+      description = "Programs the shell's Process {} calls need on the service PATH (pciutils and zarishell-nvml name and read GPUs for the system monitor).";
     };
 
     extraPackages = lib.mkOption {
