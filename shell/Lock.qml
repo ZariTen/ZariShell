@@ -79,7 +79,7 @@ Scope {
         locked: root.locked
 
         WlSessionLockSurface {
-            color: "black"
+            color: Theme.backdrop
 
             LockSurface {
                 anchors.fill: parent
@@ -109,7 +109,7 @@ Scope {
 
         PanelWindow {
             screen: Quickshell.screens[0]
-            color: "black"
+            color: Theme.backdrop
             aboveWindows: true
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay

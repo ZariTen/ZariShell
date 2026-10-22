@@ -6,8 +6,9 @@ import Quickshell.Io
 // Design tokens and component looks for the shell and the greeter.
 //
 // A theme is a folder: theme.json (tokens) plus optional components/<Name>.qml
-// files that replace the look of a generic component (Button, Switch, Slider,
-// Surface, Highlight, Field). theme.json lists those names in "components".
+// files that replace the look of a generic component (Backdrop, Button,
+// Divider, Field, Fill, Frame, Highlight, Slider, Surface, Switch) or add an
+// optional effect (Glow). theme.json lists those names in "components".
 //
 // Active theme: the folder at <XDG_CONFIG_HOME>/zarishell/current (meant to be
 // a user-writable symlink), else the packaged themes/<$ZARISHELL_THEME or
@@ -17,7 +18,7 @@ import Quickshell.Io
 // theme.json colors accept "#rrggbb" / "#aarrggbb", [r, g, b, a] (0..1),
 // "accent" (the accent seed) or { "h", "s", "l", "a" }: a tone whose hue is
 // offset by h from the accent hue. "accent" is "wallpaper" (hue sampled from
-// the current wallpaper) or a color.
+// the current wallpaper) or a color. Every token is listed in README.md.
 Singleton {
     id: root
 
@@ -50,6 +51,12 @@ Singleton {
     // theme lists it, else the neutral one in base/.
     function component(name) {
         return overrides.indexOf(name) >= 0 ? fileUrl(dir + "/components/" + name + ".qml") : Qt.resolvedUrl("base/" + name + ".qml");
+    }
+
+    // Optional layer effect a theme may provide (e.g. "Glow"); null when the
+    // theme has none, so `layer.enabled: Theme.effect(..) !== null` is a no-op.
+    function effect(name) {
+        return overrides.indexOf(name) >= 0 ? Qt.createComponent(component(name)) : null;
     }
 
     FileView {
@@ -110,7 +117,7 @@ Singleton {
             return accentSeed;
         if (Array.isArray(v))
             return Qt.rgba(v[0], v[1], v[2], v.length > 3 ? v[3] : 1);
-        if (v !== null && typeof v === "object")
+        if (v !== null && typeof v === "object" && v.hslHue === undefined)
             return tone(hue + (v.h || 0), v.s === undefined ? 0.5 : v.s, v.l === undefined ? 0.5 : v.l, v.a);
         return v;
     }
@@ -159,10 +166,25 @@ Singleton {
     readonly property color textSurfaceVariant: color("textSurfaceVariant", [1, 1, 1, 0.70])
     readonly property color outline: color("outline", [1, 1, 1, 0.45])
     readonly property color outlineVariant: color("outlineVariant", [1, 1, 1, 0.16])
-    readonly property color scrim: color("scrim", [0, 0, 0, 0.35])
+    readonly property color scrim: color("scrim", [0, 0, 0, 0.35])              // dim behind popups
+    readonly property color scrimStrong: color("scrimStrong", [0, 0, 0, 0.6])   // dim behind modal dialogs
+    readonly property color backdrop: color("backdrop", "#000000")             // behind the lock / login backdrop
+    readonly property color divider: color("divider", [1, 1, 1, 0.12])
+    readonly property color dividerStrong: color("dividerStrong", [1, 1, 1, 0.22])
+    readonly property color outlineFaint: color("outlineFaint", [1, 1, 1, 0.08]) // list cards, inner well edge
+    readonly property color insetEdge: color("insetEdge", [1, 1, 1, 0.10])     // edge of framed bar trays
+    readonly property color buttonDefault: color("buttonDefault", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.63 }) // default dialog button
+    readonly property color badge: color("badge", "#d9463a")                   // unread count badge
+    readonly property color textSoft: color("textSoft", [1, 1, 1, 0.85])       // secondary display text
+    readonly property color textShadow: color("textShadow", "transparent")     // shadow under body text
     readonly property color error: color("error", "#ff6b5e")
     readonly property color success: color("success", "#7fd45a")
     readonly property color warning: color("warning", "#f2c94c")
+    readonly property color errorContainer: color("errorContainer", Qt.rgba(error.r, error.g, error.b, 0.22))
+    readonly property color errorOutline: color("errorOutline", Qt.rgba(error.r, error.g, error.b, 0.6))
+    readonly property color criticalContainer: color("criticalContainer", Qt.rgba(error.r, error.g, error.b, 0.3)) // critical notification card
+    readonly property color danger: color("danger", error)                     // destructive action icon
+    readonly property color dangerHighlight: color("dangerHighlight", error)   // destructive action hover
 
     // ---- Shape and spacing ------------------------------------------------
     readonly property int radiusSmall: metric("radiusSmall", 3)
@@ -174,7 +196,10 @@ Singleton {
     readonly property int spacingM: metric("spacingM", 12)
     readonly property int spacingL: metric("spacingL", 16)
     readonly property int spacingXl: metric("spacingXl", 24)
+    readonly property int radiusFrame: metric("radiusFrame", 10)   // matted picture frames (avatars)
+    readonly property int barRadius: metric("barRadius", 0)        // full-width edge bars
     readonly property int barHeight: metric("barHeight", 42)
+    readonly property int shadowRoom: metric("shadowRoom", 0)      // extra bar window height for a theme's shadow
     readonly property int gap: metric("gap", 8)
 
     // ---- Type -------------------------------------------------------------
@@ -184,6 +209,9 @@ Singleton {
     readonly property int fontBody: fontValue("fontBody", 13)
     readonly property int fontTitle: fontValue("fontTitle", 15)
     readonly property int fontHeadline: fontValue("fontHeadline", 22)
+    readonly property int fontLarge: fontValue("fontLarge", 34)       // calendar clock
+    readonly property int fontDisplay: fontValue("fontDisplay", 112)  // lock / login clock
+    readonly property int fontDisplayWeight: fontValue("fontDisplayWeight", Font.Light)
 
     // ---- Motion (M3 emphasized / standard) ---------------------------------
     readonly property int durShort: motion("durShort", 150)

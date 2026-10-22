@@ -7,7 +7,7 @@ import Quickshell
 // Greeter.qml places the card on the detected main screen.
 ShellRoot {
     FloatingWindow {
-        color: "black"
+        color: Theme.backdrop
         implicitWidth: 1280
         implicitHeight: 800
         Greeter { anchors.fill: parent }

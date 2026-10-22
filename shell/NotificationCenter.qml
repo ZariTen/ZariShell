@@ -175,9 +175,9 @@ Scope {
                             width: ListView.view.width
                             implicitHeight: row.implicitHeight + Theme.spacingM * 2
                             radius: Theme.radius
-                            color: critical ? Qt.rgba(0.70, 0.18, 0.12, 0.40) : Theme.surfaceContainer
+                            color: critical ? Theme.criticalContainer : Theme.surfaceContainer
                             border.width: 1
-                            border.color: Qt.rgba(1, 1, 1, 0.08)
+                            border.color: Theme.outlineFaint
 
                             HoverLayer {
                                 radius: entry.radius

@@ -64,7 +64,7 @@ Scope {
 
             screen: modelData
             color: "transparent"
-            implicitHeight: Theme.barHeight + 6   // room for the shadow
+            implicitHeight: Theme.barHeight + Theme.shadowRoom
             exclusiveZone: Theme.barHeight
 
             anchors {
@@ -87,16 +87,15 @@ Scope {
                 anchors.right: parent.right
                 anchors.top: parent.top
                 height: Theme.barHeight
-                radius: 0
+                radius: Theme.barRadius
                 color: Theme.bar
 
-                // Thin bright line along the bottom edge, like the Win7 taskbar top edge.
-                Rectangle {
+                // Edge line along the bottom of the bar.
+                Divider {
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
-                    height: 1
-                    color: Qt.rgba(1, 1, 1, 0.22)
+                    strong: true
                 }
             }
 
@@ -144,15 +143,15 @@ Scope {
                                 anchors.bottomMargin: Theme.spacingXs
                                 width: 10
                                 height: 2
-                                radius: 1
+                                radius: Theme.radiusFull
                                 color: Theme.accent
                             }
                         }
                     }
                 }
 
-                // Windows on this monitor's active workspace, as taskbar icons.
-                Rectangle { implicitWidth: 1; implicitHeight: 26; color: Theme.surfaceContainerHighest; visible: winRow.count > 0 }
+                // Windows on this monitor's active workspace, as icons.
+                Divider { implicitHeight: 26; visible: winRow.count > 0 }
 
                 Island {
                     visible: winRow.count > 0
@@ -241,17 +240,11 @@ Scope {
                         implicitWidth: 24
                         implicitHeight: 24
 
-                        Rectangle {
+                        Fill {
                             anchors.fill: parent
                             visible: !art.visible
-                            radius: width / 2
-                            border.width: 1
-                            border.color: Theme.border
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: Qt.lighter(Theme.primary, 1.2) }
-                                GradientStop { position: 0.5; color: Qt.darker(Theme.primary, 1.6) }
-                                GradientStop { position: 1.0; color: Theme.primary }
-                            }
+                            role: "orb"
+                            bordered: true
 
                             MdIcon {
                                 anchors.centerIn: parent
@@ -287,7 +280,7 @@ Scope {
                             anchors.margins: -3
                             width: 13
                             height: 13
-                            radius: width / 2
+                            radius: Theme.radiusFull
                             color: Theme.primary
                             border.width: 1
                             border.color: Theme.border
@@ -443,20 +436,16 @@ Scope {
                             color: Notifs.unread > 0 ? Theme.accent : Theme.textSurface
                         }
 
-                        Rectangle {
+                        Fill {
                             visible: Notifs.unread > 0
                             anchors.right: parent.right
                             anchors.top: parent.top
                             anchors.margins: -Theme.spacingXs / 2
                             width: Math.max(15, badge.implicitWidth + Theme.spacingS - 1)
                             height: 15
-                            radius: height / 2
-                            border.width: 1
-                            border.color: Theme.border
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: "#ff8a7a" }
-                                GradientStop { position: 1.0; color: "#c4271b" }
-                            }
+                            role: "badge"
+                            color: Theme.badge
+                            bordered: true
                             scale: visible ? 1 : 0
                             Behavior on scale { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.OutBack } }
 
@@ -471,7 +460,7 @@ Scope {
                     }
                 }
 
-                // Clock: time over date, like the Win7 notification area
+                // Clock: time over date
                 Button {
                     implicitWidth: clockColumn.implicitWidth + Theme.spacingS * 2
                     implicitHeight: 34

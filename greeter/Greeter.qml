@@ -1,11 +1,10 @@
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Greetd
 
-// Aero logon screen driving greetd. Fills the whole cage output layout; every
+// Logon screen driving greetd. Fills the whole cage output layout; every
 // screen gets the wallpaper, only the detected main screen gets clock, card
 // and bar. Layout mirrors LockSurface.qml; colors/fonts come from Theme.qml.
 Item {
@@ -236,39 +235,10 @@ Item {
             height: modelData ? modelData.height : root.height
             clip: true
 
-            Rectangle {
+            Backdrop {
                 anchors.fill: parent
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.lighter(Theme.surface, 2.6) }
-                    GradientStop { position: 0.55; color: Theme.surface }
-                    GradientStop { position: 1.0; color: "#000000" }
-                }
-            }
-            Image {
-                id: wall
-                anchors.fill: parent
-                fillMode: Image.PreserveAspectCrop
                 source: Theme.fileUrl(Wallpaper.path)
-                asynchronous: true
-                visible: false
-            }
-            MultiEffect {
-                anchors.fill: parent
-                visible: wall.status === Image.Ready
-                source: wall
-                blurEnabled: true
-                blur: 1
-                blurMax: 64
-                brightness: -0.25
-                saturation: -0.1
-            }
-            Rectangle {
-                anchors.fill: parent
-                gradient: Gradient {
-                    GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.30) }
-                    GradientStop { position: 0.6; color: Qt.rgba(0, 0, 0, 0.50) }
-                    GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.78) }
-                }
+                role: "login"
             }
         }
     }
@@ -292,25 +262,22 @@ Item {
         Column {
             anchors.horizontalCenter: parent.horizontalCenter
             y: parent.height * 0.10
-            layer.enabled: true
-            layer.effect: MultiEffect {
-                shadowEnabled: true; shadowColor: Theme.accent; shadowOpacity: 0.6
-                shadowBlur: 1; shadowHorizontalOffset: 0; shadowVerticalOffset: 0; blurMax: 40
-            }
+            layer.enabled: layer.effect !== null
+            layer.effect: Theme.effect("Glow")
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatDateTime(clock.date, "HH:mm")
                 color: Theme.textSurface
                 font.family: Theme.font
-                font.pixelSize: 112
-                font.weight: Font.Light
+                font.pixelSize: Theme.fontDisplay
+                font.weight: Theme.fontDisplayWeight
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
                 color: Theme.textSurfaceVariant
                 font.family: Theme.font
-                font.pixelSize: 22
+                font.pixelSize: Theme.fontHeadline
             }
         }
 
@@ -352,7 +319,7 @@ Item {
                     spacing: Theme.spacingM
                     Button {
                         visible: root.users.length > 1
-                        implicitWidth: 28; implicitHeight: 28; radius: 14
+                        implicitWidth: 28; implicitHeight: 28; radius: Theme.radiusFull
                         onClicked: root.cycleUser(-1)
                         MdIcon { anchors.centerIn: parent; codepoint: 0xF0141 } // md-chevron_left
                     }
@@ -363,7 +330,7 @@ Item {
                     }
                     Button {
                         visible: root.users.length > 1
-                        implicitWidth: 28; implicitHeight: 28; radius: 14
+                        implicitWidth: 28; implicitHeight: 28; radius: Theme.radiusFull
                         onClicked: root.cycleUser(1)
                         MdIcon { anchors.centerIn: parent; codepoint: 0xF0142 } // md-chevron_right
                     }
@@ -382,7 +349,7 @@ Item {
                         spacing: Theme.spacingXs
                         StyledText {
                             text: root.currentUser.real || "Choose a user"
-                            font.pixelSize: 22
+                            font.pixelSize: Theme.fontHeadline
                             font.weight: Font.Medium
                         }
                         MdIcon { codepoint: 0xF0140; color: Theme.textSurfaceVariant } // md-chevron_down
@@ -463,20 +430,14 @@ Item {
                     Button {
                         implicitWidth: 34
                         implicitHeight: 34
-                        radius: 17
+                        radius: Theme.radiusFull
                         framed: true
                         active: password.text !== ""
                         onClicked: root.login()
-                        Rectangle {
+                        Fill {
                             anchors.fill: parent
                             anchors.margins: 1
-                            radius: width / 2
                             z: -1
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: Qt.lighter(Theme.primary, 1.3) }
-                                GradientStop { position: 0.5; color: Qt.darker(Theme.primary, 1.6) }
-                                GradientStop { position: 1.0; color: Theme.primary }
-                            }
                         }
                         MdIcon {
                             anchors.centerIn: parent
@@ -578,7 +539,7 @@ Item {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             height: 44
-            radius: 0
+            radius: Theme.barRadius
             shadow: false
 
             RowLayout {

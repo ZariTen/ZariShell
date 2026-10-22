@@ -420,9 +420,9 @@ QsPage {
         visible: page.error !== ""
         implicitHeight: bannerRow.implicitHeight + Theme.spacingS * 2
         radius: Theme.radius
-        color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.22)
+        color: Theme.errorContainer
         border.width: 1
-        border.color: Qt.rgba(Theme.error.r, Theme.error.g, Theme.error.b, 0.6)
+        border.color: Theme.errorOutline
 
         RowLayout {
             id: bannerRow
@@ -617,7 +617,7 @@ QsPage {
                             clip: true
                             color: Theme.textSurface
                             selectionColor: Theme.primary
-                            selectedTextColor: "#ffffff"
+                            selectedTextColor: Theme.textPrimary
                             font.family: Theme.font
                             font.pixelSize: Theme.fontBody
                             echoMode: eye.reveal ? TextInput.Normal : TextInput.Password

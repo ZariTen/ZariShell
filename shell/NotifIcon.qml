@@ -46,7 +46,7 @@ Item {
             anchors.centerIn: parent
             visible: !root.showImage && !icon.visible
             codepoint: root.critical ? 0xF0026 : 0xF009A
-            color: "#ffffff"
+            color: Theme.textSurface
             font.pixelSize: 20
         }
     }
@@ -59,7 +59,7 @@ Item {
         anchors.margins: -4
         width: 20
         height: 20
-        radius: 5
+        radius: Theme.radius
         color: Theme.panel
         border.width: 1
         border.color: Theme.borderLight

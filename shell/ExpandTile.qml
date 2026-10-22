@@ -28,13 +28,12 @@ Item {
         onClicked: mouse => split.clicked(mouse)
     }
 
-    Rectangle {
+    Divider {
         anchors.right: more.left
         anchors.rightMargin: Theme.spacingXs / 2
         anchors.verticalCenter: parent.verticalCenter
-        width: 1
         height: parent.height - 22
-        color: Qt.rgba(1, 1, 1, 0.22)
+        strong: true
     }
 
     Button {

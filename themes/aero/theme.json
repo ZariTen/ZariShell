@@ -2,7 +2,7 @@
   "name": "Aero",
   "description": "Windows 7 Aero glass: translucent tinted glass, glossy sheen, soft glow. The tint follows the wallpaper hue.",
   "accent": "wallpaper",
-  "components": ["Button", "Field", "Highlight", "Slider", "Surface", "Switch"],
+  "components": ["Backdrop", "Button", "Field", "Fill", "Frame", "Glow", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {
     "surface": { "h": 0, "s": 0.4, "l": 0.12 },
     "bar": { "h": -0.02, "s": 0.55, "l": 0.36, "a": 0.52 },
@@ -26,9 +26,23 @@
     "outline": [1, 1, 1, 0.45],
     "outlineVariant": [1, 1, 1, 0.16],
     "scrim": [0, 0, 0, 0.35],
+    "scrimStrong": [0, 0, 0, 0.6],
+    "backdrop": "#000000",
+    "divider": [1, 1, 1, 0.12],
+    "dividerStrong": [1, 1, 1, 0.22],
+    "outlineFaint": [1, 1, 1, 0.08],
+    "insetEdge": [1, 1, 1, 0.10],
+    "buttonDefault": { "h": 0, "s": 0.75, "l": 0.32, "a": 0.595 },
+    "badge": "#c4271b",
+    "textSoft": [1, 1, 1, 0.85],
+    "textShadow": [0, 0, 0, 0.45],
     "error": "#ff6b5e",
     "success": "#7fd45a",
     "warning": "#f2c94c",
+    "criticalContainer": [0.70, 0.18, 0.12, 0.40],
+    "danger": "#ff8a70",
+    "dangerHighlight": "#ff7a5c",
+    "badgeTop": "#ff8a7a",
     "sheenTop": [1, 1, 1, 0.20],
     "sheenMid": [1, 1, 1, 0.07]
   },
@@ -42,7 +56,10 @@
     "spacingM": 12,
     "spacingL": 16,
     "spacingXl": 24,
+    "radiusFrame": 10,
+    "barRadius": 0,
     "barHeight": 42,
+    "shadowRoom": 6,
     "gap": 8
   },
   "fonts": {
@@ -51,7 +68,10 @@
     "fontSmall": 11,
     "fontBody": 13,
     "fontTitle": 15,
-    "fontHeadline": 22
+    "fontHeadline": 22,
+    "fontLarge": 34,
+    "fontDisplay": 112,
+    "fontDisplayWeight": 300
   },
   "motion": {
     "durShort": 150,

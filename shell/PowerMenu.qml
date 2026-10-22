@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 
-// Win7-style shutdown dialog. Lock and Suspend run at once; Log out,
+// Shutdown dialog. Lock and Suspend run at once; Log out,
 // Restart and Shut down ask for confirmation first.
 Scope {
     id: root
@@ -68,7 +68,7 @@ Scope {
                     Layout.fillWidth: true
                     implicitHeight: 92
                     framed: true
-                    tint: modelData.id === "poweroff" || modelData.id === "reboot" ? "#ff7a5c" : Theme.highlight
+                    tint: modelData.id === "poweroff" || modelData.id === "reboot" ? Theme.dangerHighlight : Theme.highlight
                     onClicked: modelData.confirm ? root.pending = modelData.id : root.run(modelData.id)
 
                     ColumnLayout {
@@ -78,7 +78,7 @@ Scope {
                             Layout.alignment: Qt.AlignHCenter
                             codepoint: action.modelData.glyph
                             font.pixelSize: 32
-                            color: action.modelData.id === "poweroff" ? "#ff8a70" : "#ffffff"
+                            color: action.modelData.id === "poweroff" ? Theme.danger : Theme.textSurface
                         }
                         StyledText {
                             Layout.alignment: Qt.AlignHCenter

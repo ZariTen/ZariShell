@@ -198,14 +198,13 @@ Scope {
                                 }
                             }
 
-                            ClippingRectangle {
+                            Frame {
                                 id: art
                                 anchors.fill: parent
                                 visible: artImage.status === Image.Ready
                                 radius: Theme.radiusLarge
                                 color: "transparent"
-                                border.width: 1
-                                border.color: Theme.borderLight
+                                bordered: true
 
                                 Image {
                                     id: artImage
@@ -215,18 +214,6 @@ Scope {
                                     sourceSize.width: 256
                                     sourceSize.height: 256
                                     source: card.p ? card.p.trackArtUrl : ""
-                                }
-
-                                // Glass reflection over the cover
-                                Rectangle {
-                                    anchors.left: parent.left
-                                    anchors.right: parent.right
-                                    anchors.top: parent.top
-                                    height: parent.height * 0.45
-                                    gradient: Gradient {
-                                        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.22) }
-                                        GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.03) }
-                                    }
                                 }
                             }
                         }

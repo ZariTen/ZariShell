@@ -1,12 +1,10 @@
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.UPower
-import Quickshell.Widgets
 
-// Lock screen UI: blurred wallpaper, glowing clock, glass logon card.
+// Lock screen UI: backdrop, clock, logon card and a bottom bar.
 Item {
     id: surface
 
@@ -56,31 +54,11 @@ Item {
         onTriggered: caps.running = true
     }
 
-    // ── Background: blurred, darkened wallpaper ─────────────────────────
-    Image {
-        id: wall
+    // ── Background ───────────────────────────────────────────────────────
+    Backdrop {
         anchors.fill: parent
-        fillMode: Image.PreserveAspectCrop
         source: Theme.fileUrl(Wallpaper.path)
-        asynchronous: true
-        visible: false
-    }
-    MultiEffect {
-        anchors.fill: parent
-        source: wall
-        blurEnabled: true
-        blur: 1
-        blurMax: 64
-        brightness: -0.25
-        saturation: -0.1
-    }
-    Rectangle {
-        anchors.fill: parent
-        gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.35) }
-            GradientStop { position: 0.6; color: Qt.rgba(0, 0, 0, 0.55) }
-            GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.8) }
-        }
+        role: "lock"
     }
 
     // ── Clock ────────────────────────────────────────────────────────────
@@ -90,31 +68,23 @@ Item {
         y: parent.height * 0.12
         spacing: 0
 
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: Theme.accent
-            shadowOpacity: 0.6
-            shadowBlur: 1
-            shadowHorizontalOffset: 0
-            shadowVerticalOffset: 0
-            blurMax: 40
-        }
+        layer.enabled: layer.effect !== null
+        layer.effect: Theme.effect("Glow")
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: Qt.formatDateTime(clock.date, "HH:mm")
-            color: "#ffffff"
+            color: Theme.textSurface
             font.family: Theme.font
-            font.pixelSize: 112
-            font.weight: Font.Light
+            font.pixelSize: Theme.fontDisplay
+            font.weight: Theme.fontDisplayWeight
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
-            color: Qt.rgba(1, 1, 1, 0.85)
+            color: Theme.textSoft
             font.family: Theme.font
-            font.pixelSize: 22
+            font.pixelSize: Theme.fontHeadline
         }
     }
 
@@ -161,60 +131,38 @@ Item {
             anchors.margins: Theme.spacingXl
             spacing: Theme.spacingM
 
-            // Avatar in a glossy glass frame
-            Item {
+            // Avatar
+            Frame {
                 Layout.alignment: Qt.AlignHCenter
                 implicitWidth: 112
                 implicitHeight: 112
+                padding: Theme.spacingS
+                radius: Theme.radiusFrame
+                innerRadius: Theme.radius
 
-                Surface {
+                Image {
+                    id: face
                     anchors.fill: parent
-                    radius: 10
-                    color: Theme.surfaceContainerHighest
+                    fillMode: Image.PreserveAspectCrop
+                    sourceSize.width: 192
+                    sourceSize.height: 192
+                    source: Theme.fileUrl(Quickshell.env("HOME") + "/.face")
+                    asynchronous: true
+                    visible: status === Image.Ready
                 }
 
-                ClippingRectangle {
-                    anchors.fill: parent
-                    anchors.margins: 8
-                    radius: 5
-                    color: Theme.primaryContainer
-
-                    Image {
-                        id: face
-                        anchors.fill: parent
-                        fillMode: Image.PreserveAspectCrop
-                        sourceSize.width: 192
-                        sourceSize.height: 192
-                        source: Theme.fileUrl(Quickshell.env("HOME") + "/.face")
-                        asynchronous: true
-                        visible: status === Image.Ready
-                    }
-
-                    MdIcon {
-                        anchors.centerIn: parent
-                        visible: !face.visible
-                        codepoint: 0xF0004 // md-account
-                        font.pixelSize: 56
-                    }
-
-                    // Glass reflection
-                    Rectangle {
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        height: parent.height * 0.45
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.28) }
-                            GradientStop { position: 1.0; color: Qt.rgba(1, 1, 1, 0.02) }
-                        }
-                    }
+                MdIcon {
+                    anchors.centerIn: parent
+                    visible: !face.visible
+                    codepoint: 0xF0004 // md-account
+                    font.pixelSize: 56
                 }
             }
 
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: surface.realName
-                font.pixelSize: 22
+                font.pixelSize: Theme.fontHeadline
                 font.weight: Font.Medium
             }
 
@@ -226,7 +174,7 @@ Item {
                 font.pixelSize: Theme.fontSmall
             }
 
-            // Password field + glossy arrow button
+            // Password field + round go button
             RowLayout {
                 Layout.fillWidth: true
                 Layout.topMargin: Theme.spacingS
@@ -245,7 +193,7 @@ Item {
                         verticalAlignment: TextInput.AlignVCenter
                         echoMode: TextInput.Password
                         passwordCharacter: "●"
-                        color: "#ffffff"
+                        color: Theme.textSurface
                         font.family: Theme.font
                         font.pixelSize: Theme.fontBody
                         enabled: !surface.lock.busy
@@ -267,21 +215,15 @@ Item {
                 Button {
                     implicitWidth: 34
                     implicitHeight: 34
-                    radius: 17
+                    radius: Theme.radiusFull
                     framed: true
                     active: password.text !== ""
                     onClicked: surface.lock.tryUnlock(password.text)
 
-                    Rectangle {
+                    Fill {
                         anchors.fill: parent
                         anchors.margins: 1
-                        radius: width / 2
                         z: -1
-                        gradient: Gradient {
-                            GradientStop { position: 0.0; color: Qt.lighter(Theme.primary, 1.3) }
-                            GradientStop { position: 0.5; color: Qt.darker(Theme.primary, 1.6) }
-                            GradientStop { position: 1.0; color: Theme.primary }
-                        }
                     }
 
                     MdIcon {
@@ -322,7 +264,7 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: 44
-        radius: 0
+        radius: Theme.barRadius
         shadow: false
 
         RowLayout {

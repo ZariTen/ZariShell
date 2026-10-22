@@ -58,8 +58,8 @@ Scope {
             spacing: 0
             StyledText {
                 text: Qt.formatDateTime(clock.date, "HH:mm")
-                font.pixelSize: 34
-                font.weight: Font.Light
+                font.pixelSize: Theme.fontLarge
+                font.weight: Theme.fontDisplayWeight
             }
             StyledText {
                 text: root.locale.toString(clock.date, "dddd, d MMMM yyyy")

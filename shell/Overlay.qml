@@ -305,7 +305,7 @@ Scope {
                             radius: Theme.radius
                             color: "transparent"
                             border.width: 1
-                            border.color: Qt.rgba(1, 1, 1, 0.08)
+                            border.color: Theme.outlineFaint
                         }
 
                         ListView {
@@ -422,7 +422,7 @@ Scope {
                                 Layout.fillWidth: true
                                 color: Theme.textSurface
                                 selectionColor: Theme.primaryContainer
-                                selectedTextColor: "#ffffff"
+                                selectedTextColor: Theme.textPrimaryContainer
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontBody
                                 clip: true

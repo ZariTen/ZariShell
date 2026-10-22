@@ -14,7 +14,7 @@ Rectangle {
     radius: Theme.radius
     color: framed ? Theme.inset : "transparent"
     border.width: framed ? 1 : 0
-    border.color: Qt.rgba(1, 1, 1, 0.10)
+    border.color: Theme.insetEdge
 
     RowLayout {
         id: row

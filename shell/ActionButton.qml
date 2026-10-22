@@ -18,8 +18,7 @@ Button {
         anchors.margins: 1
         radius: button.radius
         visible: button.filled
-        color: Theme.primaryContainer
-        opacity: 0.7
+        color: Theme.buttonDefault
         z: -1
     }
 

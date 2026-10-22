@@ -50,7 +50,7 @@ Scope {
 
         Rectangle {
             anchors.fill: parent
-            color: Qt.rgba(0, 0, 0, 0.6)
+            color: Theme.scrimStrong
             opacity: card.shown ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: Theme.durMedium } }
         }
