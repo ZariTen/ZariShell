@@ -5,7 +5,7 @@ import QtQuick.Layouts
 import Quickshell
 
 // System monitor panel: one row per resource (icon well, label, figures and a
-// glossy meter bar). GPU rows only appear when a GPU is detected.
+// meter bar). GPU rows only appear when a GPU is detected.
 Scope {
     id: root
 
@@ -23,13 +23,9 @@ Scope {
         return Math.round(v * 100) + "%";
     }
 
-    // Meter colors shift green -> amber -> red with load (Win7 progress bar states).
-    function fill(v) {
-        if (v > 0.85)
-            return ["#ffb0a0", "#e0412b", "#b8240f", "#ef5a3f"];
-        if (v > 0.6)
-            return ["#ffe9a0", "#e8b52a", "#c48d0c", "#f0c43c"];
-        return ["#b6f39a", "#4fc22a", "#2f9e12", "#5fd23a"];
+    // Meter tone shifts normal -> warning -> critical with load.
+    function tone(v) {
+        return v > 0.85 ? "critical" : (v > 0.6 ? "warning" : "normal");
     }
 
     component Meter: RowLayout {
@@ -41,7 +37,6 @@ Scope {
         property string detail: ""
         property real value: 0
         property bool showBar: true
-        readonly property var colors: root.fill(meter.value)
 
         Layout.fillWidth: true
         spacing: Theme.spacingM
@@ -53,7 +48,7 @@ Scope {
             radius: Theme.radius
             color: Theme.surfaceContainer
             border.width: 1
-            border.color: Theme.edgeLight
+            border.color: Theme.borderLight
 
             MdIcon {
                 anchors.centerIn: parent
@@ -89,15 +84,12 @@ Scope {
                 }
             }
 
-            GlossySlider {
+            Slider {
                 Layout.fillWidth: true
                 visible: meter.showBar
                 interactive: false
                 value: meter.value
-                fillTop: meter.colors[0]
-                fillMid: meter.colors[1]
-                fillDark: meter.colors[2]
-                fillBottom: meter.colors[3]
+                tone: root.tone(meter.value)
             }
         }
     }

@@ -9,7 +9,7 @@ Item {
     property string home: ""
     property real frame: 8
 
-    Glass { anchors.fill: parent; radius: 10 * av.width / 112; tint: Qt.rgba(1, 1, 1, 0.12) }
+    Surface { anchors.fill: parent; radius: 10 * av.width / 112; color: Theme.surfaceContainerHighest }
     ClippingRectangle {
         anchors.fill: parent
         anchors.margins: av.frame

@@ -39,7 +39,7 @@ Item {
                 anchors.centerIn: parent
                 running: empty.busy
                 font.pixelSize: 32
-                color: Theme.glow
+                color: Theme.accent
             }
         }
 

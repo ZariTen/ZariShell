@@ -26,8 +26,8 @@ Scope {
 
     readonly property bool over: kind === "volume" && shown > 1.001
 
-    // Gradient stops for the fill: grey when muted, amber above 100%, else green.
-    readonly property var fill: kind === "muted" ? ["#9a9a9a", "#6b6b6b", "#555555", "#777777"] : (over ? ["#ffe9a0", "#e8b52a", "#c48d0c", "#f0c43c"] : ["#b6f39a", "#4fc22a", "#2f9e12", "#5fd23a"])
+    // Meter tone: muted, warning above 100%, else normal.
+    readonly property string tone: kind === "muted" ? "muted" : (over ? "warning" : "normal")
 
     PwObjectTracker {
         objects: root.sink ? [root.sink] : []
@@ -194,10 +194,10 @@ Scope {
                 Behavior on opacity { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
                 Behavior on y { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
 
-                Glass {
+                Surface {
                     anchors.fill: parent
                     radius: Theme.radiusLarge
-                    tint: Theme.glassTintStrong
+                    color: Theme.panel
                 }
 
                 RowLayout {
@@ -209,7 +209,7 @@ Scope {
                     MdIcon {
                         Layout.alignment: Qt.AlignVCenter
                         font.pixelSize: 24
-                        color: root.kind === "muted" ? Theme.outline : (root.over ? Theme.warning : Theme.glow)
+                        color: root.kind === "muted" ? Theme.outline : (root.over ? Theme.warning : Theme.accent)
                         codepoint: {
                             if (root.kind === "brightness")
                                 return 0xF00DF;
@@ -220,30 +220,13 @@ Scope {
                         }
                     }
 
-                    Rectangle {
+                    Slider {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                         implicitHeight: 14
-                        radius: 2
-                        color: Theme.inset
-                        border.width: 1
-                        border.color: Qt.rgba(1, 1, 1, 0.25)
-
-                        Rectangle {
-                            width: (parent.width - 2) * Math.max(0, Math.min(1, root.shown))
-                            x: 1
-                            y: 1
-                            height: parent.height - 2
-                            radius: 1
-                            // Win7 glossy progress fill
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: root.fill[0] }
-                                GradientStop { position: 0.45; color: root.fill[1] }
-                                GradientStop { position: 0.5; color: root.fill[2] }
-                                GradientStop { position: 1.0; color: root.fill[3] }
-                            }
-                            Behavior on width { NumberAnimation { duration: Theme.durShort; easing.type: Easing.OutCubic } }
-                        }
+                        interactive: false
+                        value: root.shown
+                        tone: root.tone
                     }
 
                     StyledText {

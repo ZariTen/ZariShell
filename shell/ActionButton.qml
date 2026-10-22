@@ -1,8 +1,8 @@
 import QtQuick
 
-// Win7 dark dialog button: framed glossy bevel; `filled` = default button
-// (accent tinted). Hover glows, press darkens.
-AeroButton {
+// Dialog button: always framed; `filled` = default button
+// (accent tinted). Hover / press looks come from Button.
+Button {
     id: button
 
     property string text: ""
@@ -10,7 +10,7 @@ AeroButton {
 
     implicitWidth: Math.max(86, label.implicitWidth + Theme.spacingL * 2)
     implicitHeight: 30
-    alwaysFramed: true
+    framed: true
     radius: Theme.radius
 
     Rectangle {

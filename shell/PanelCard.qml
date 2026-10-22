@@ -1,13 +1,13 @@
 import QtQuick
 
-// Glass window/dialog card with an enter/exit animation (fade + scale + rise).
+// Panel window/dialog card with an enter/exit animation (fade + scale + rise).
 // `shown` drives it; `animating` keeps the window mapped until exit finishes.
 Item {
     id: card
 
     property bool shown: false
-    property alias radius: glass.radius
-    property alias tint: glass.tint
+    property alias radius: surface.radius
+    property alias color: surface.color
     readonly property bool animating: opacity > 0
 
     anchors.centerIn: parent
@@ -19,11 +19,11 @@ Item {
     Behavior on scale { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     Behavior on anchors.verticalCenterOffset { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
 
-    Glass {
-        id: glass
+    Surface {
+        id: surface
         anchors.fill: parent
-        tint: Theme.glassTintStrong
-        sheenHeight: Math.min(0.48, 44 / Math.max(1, card.height))   // title-bar-like gloss band
+        color: Theme.panel
+        headerHeight: 44   // title-bar area
     }
 
     // Swallow clicks so the scrim behind doesn't close the panel.

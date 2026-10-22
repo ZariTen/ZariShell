@@ -79,7 +79,7 @@ Scope {
                 codepoint: 0xF0493 // md-cog
                 title: "Quick settings"
 
-                AeroButton {
+                Button {
                     implicitWidth: 28
                     implicitHeight: 28
                     onClicked: ShellState.toggle("power")
@@ -146,7 +146,7 @@ Scope {
                 visible: root.sink !== null && root.sink.audio !== null
                 spacing: Theme.spacingS
 
-                AeroButton {
+                Button {
                     implicitWidth: 28
                     implicitHeight: 28
                     onClicked: root.sink.audio.muted = !root.sink.audio.muted
@@ -156,7 +156,7 @@ Scope {
                         codepoint: !root.sink || !root.sink.audio || root.sink.audio.muted || v <= 0 ? 0xF0581 : (v < 0.34 ? 0xF057F : (v < 0.67 ? 0xF0580 : 0xF057E))
                     }
                 }
-                GlossySlider {
+                Slider {
                     Layout.fillWidth: true
                     value: root.sink && root.sink.audio && !root.sink.audio.muted ? Math.min(1, root.sink.audio.volume) : 0
                     onMoved: v => {
@@ -183,7 +183,7 @@ Scope {
                     Layout.preferredWidth: 28
                     codepoint: 0xF00DF
                 }
-                GlossySlider {
+                Slider {
                     Layout.fillWidth: true
                     value: root.brightness
                     onMoved: v => {

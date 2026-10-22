@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Title row for glass panels: glyph + title (+ optional trailing items).
+// Title row for panels: glyph + title (+ optional trailing items).
 RowLayout {
     property int codepoint: 0
     property string title: ""
@@ -13,7 +13,7 @@ RowLayout {
     MdIcon {
         Layout.alignment: Qt.AlignVCenter
         codepoint: parent.codepoint
-        color: Theme.glow
+        color: Theme.accent
     }
     StyledText {
         Layout.alignment: Qt.AlignVCenter

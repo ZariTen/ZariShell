@@ -20,7 +20,7 @@ Item {
         radius: Theme.radius
         color: root.critical ? Theme.error : Theme.primaryContainer
         border.width: root.showImage ? 1 : 0
-        border.color: Theme.edgeLight
+        border.color: Theme.borderLight
 
         Image {
             id: picture
@@ -60,9 +60,9 @@ Item {
         width: 20
         height: 20
         radius: 5
-        color: Theme.glassTintStrong
+        color: Theme.panel
         border.width: 1
-        border.color: Theme.edgeLight
+        border.color: Theme.borderLight
 
         IconImage {
             id: badgeIcon

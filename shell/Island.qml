@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 
 // A row of bar content. Plain (no surface of its own) since the taskbar
-// strip is already glass; `framed` gives it a recessed Win7 tray look.
+// strip is already a surface; `framed` gives it a recessed tray look.
 Rectangle {
     default property alias content: row.data
     property alias spacing: row.spacing

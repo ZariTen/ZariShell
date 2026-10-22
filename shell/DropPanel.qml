@@ -4,7 +4,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 
-// Generic glass panel on the focused monitor, opened via ShellState.panel.
+// Generic drop-down panel on the focused monitor, opened via ShellState.panel.
 // align: "left" | "center" | "right" drops it under the bar; centered: true
 // makes it a dimmed, centered dialog. Children go into a ColumnLayout.
 PanelWindow {
@@ -78,10 +78,10 @@ PanelWindow {
         Behavior on y { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
         Behavior on scale { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
 
-        Glass {
+        Surface {
             anchors.fill: parent
-            tint: Theme.glassTintStrong
-            sheenHeight: Math.min(0.48, 44 / Math.max(1, card.height))
+            color: Theme.panel
+            headerHeight: 44
         }
 
         MouseArea {

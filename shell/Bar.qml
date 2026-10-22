@@ -80,15 +80,15 @@ Scope {
                 precision: SystemClock.Minutes
             }
 
-            // Taskbar glass strip
-            Glass {
+            // Taskbar strip
+            Surface {
                 id: strip
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
                 height: Theme.barHeight
                 radius: 0
-                tint: Theme.glassTint
+                color: Theme.bar
 
                 // Thin bright line along the bottom edge, like the Win7 taskbar top edge.
                 Rectangle {
@@ -113,7 +113,7 @@ Scope {
                     Repeater {
                         model: Hyprland.workspaces
 
-                        delegate: AeroButton {
+                        delegate: Button {
                             id: ws
                             required property var modelData
                             readonly property bool occupied: modelData.toplevels.values.length > 0
@@ -122,7 +122,7 @@ Scope {
                             implicitWidth: modelData.active ? 44 : 32
                             implicitHeight: 30
                             active: modelData.active
-                            glowColor: modelData.urgent ? Theme.error : Theme.glowFill
+                            tint: modelData.urgent ? Theme.error : Theme.highlight
                             onClicked: modelData.activate()
 
                             Behavior on implicitWidth {
@@ -145,14 +145,14 @@ Scope {
                                 width: 10
                                 height: 2
                                 radius: 1
-                                color: Theme.glow
+                                color: Theme.accent
                             }
                         }
                     }
                 }
 
                 // Windows on this monitor's active workspace, as taskbar icons.
-                Rectangle { implicitWidth: 1; implicitHeight: 26; color: Qt.rgba(1, 1, 1, 0.12); visible: winRow.count > 0 }
+                Rectangle { implicitWidth: 1; implicitHeight: 26; color: Theme.surfaceContainerHighest; visible: winRow.count > 0 }
 
                 Island {
                     visible: winRow.count > 0
@@ -169,7 +169,7 @@ Scope {
                             }
                         }
 
-                        delegate: AeroButton {
+                        delegate: Button {
                             id: win
                             required property var modelData
                             readonly property string appId: modelData.wayland ? modelData.wayland.appId : ""
@@ -209,14 +209,14 @@ Scope {
             }
 
             // ── Center: media ────────────────────────────────────────────
-            AeroButton {
+            Button {
                 id: media
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: strip.verticalCenter
                 visible: root.player !== null
                 implicitWidth: mediaRow.implicitWidth + Theme.spacingM * 2
                 implicitHeight: 32
-                alwaysFramed: true
+                framed: true
                 active: ShellState.panel === "media"
                 acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                 // Left: media panel; middle: play/pause; right: next track.
@@ -246,7 +246,7 @@ Scope {
                             visible: !art.visible
                             radius: width / 2
                             border.width: 1
-                            border.color: Theme.edgeDark
+                            border.color: Theme.border
                             gradient: Gradient {
                                 GradientStop { position: 0.0; color: Qt.lighter(Theme.primary, 1.2) }
                                 GradientStop { position: 0.5; color: Qt.darker(Theme.primary, 1.6) }
@@ -267,7 +267,7 @@ Scope {
                             radius: Theme.radiusSmall
                             color: "transparent"
                             border.width: 1
-                            border.color: Theme.edgeLight
+                            border.color: Theme.borderLight
 
                             Image {
                                 id: artImage
@@ -290,7 +290,7 @@ Scope {
                             radius: width / 2
                             color: Theme.primary
                             border.width: 1
-                            border.color: Theme.edgeDark
+                            border.color: Theme.border
 
                             MdIcon {
                                 anchors.centerIn: parent
@@ -315,7 +315,7 @@ Scope {
                 spacing: Theme.spacingXs
 
                 // System monitor indicator (CPU / RAM)
-                AeroButton {
+                Button {
                     implicitWidth: sysRow.implicitWidth + Theme.spacingS * 2
                     implicitHeight: 26
                     active: ShellState.panel === "sysmon"
@@ -326,9 +326,9 @@ Scope {
                         anchors.centerIn: parent
                         spacing: Theme.spacingXs
 
-                        MdIcon { codepoint: 0xF061A; font.pixelSize: 14; color: Theme.glow } // md-chip
+                        MdIcon { codepoint: 0xF061A; font.pixelSize: 14; color: Theme.accent } // md-chip
                         StyledText { text: Math.round(SysStats.cpu * 100) + "%"; font.pixelSize: Theme.fontSmall }
-                        MdIcon { Layout.leftMargin: Theme.spacingXs; codepoint: 0xF035B; font.pixelSize: 14; color: Theme.glow } // md-memory
+                        MdIcon { Layout.leftMargin: Theme.spacingXs; codepoint: 0xF035B; font.pixelSize: 14; color: Theme.accent } // md-memory
                         StyledText { text: Math.round(SysStats.mem * 100) + "%"; font.pixelSize: Theme.fontSmall }
                     }
                 }
@@ -340,7 +340,7 @@ Scope {
                     Repeater {
                         model: SystemTray.items
 
-                        delegate: AeroButton {
+                        delegate: Button {
                             id: trayIcon
                             required property var modelData
                             implicitWidth: 26
@@ -368,7 +368,7 @@ Scope {
 
                     // System: network, volume and battery in one button.
                     // Opens quick settings; scroll adjusts the volume.
-                    AeroButton {
+                    Button {
                         id: system
                         implicitWidth: systemRow.implicitWidth + Theme.spacingS * 2
                         implicitHeight: 26
@@ -430,7 +430,7 @@ Scope {
                     }
 
                     // Notification center (bell + unread badge)
-                    AeroButton {
+                    Button {
                         id: bellButton
                         implicitWidth: 26
                         implicitHeight: 26
@@ -440,7 +440,7 @@ Scope {
                         MdIcon {
                             anchors.centerIn: parent
                             codepoint: Notifs.unread > 0 ? 0xF009E : 0xF009A
-                            color: Notifs.unread > 0 ? Theme.glow : Theme.textSurface
+                            color: Notifs.unread > 0 ? Theme.accent : Theme.textSurface
                         }
 
                         Rectangle {
@@ -452,7 +452,7 @@ Scope {
                             height: 15
                             radius: height / 2
                             border.width: 1
-                            border.color: Theme.edgeDark
+                            border.color: Theme.border
                             gradient: Gradient {
                                 GradientStop { position: 0.0; color: "#ff8a7a" }
                                 GradientStop { position: 1.0; color: "#c4271b" }
@@ -472,7 +472,7 @@ Scope {
                 }
 
                 // Clock: time over date, like the Win7 notification area
-                AeroButton {
+                Button {
                     implicitWidth: clockColumn.implicitWidth + Theme.spacingS * 2
                     implicitHeight: 34
                     active: ShellState.panel === "calendar"

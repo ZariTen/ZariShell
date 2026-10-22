@@ -255,7 +255,7 @@ Scope {
                 onClicked: ShellState.close()
             }
 
-            // Centered glass window for every list panel.
+            // Centered window for every list panel.
             PanelCard {
                 id: card
                 shown: window.focusedHere
@@ -275,7 +275,7 @@ Scope {
 
                         MdIcon {
                             codepoint: root.mode === "clipboard" ? 0xF0147 : (root.mode === "switcher" ? 0xF05B6 : 0xF1105)
-                            color: Theme.glow
+                            color: Theme.accent
                         }
                         StyledText {
                             Layout.fillWidth: true
@@ -319,7 +319,7 @@ Scope {
                             boundsBehavior: Flickable.StopAtBounds
                             highlightMoveDuration: Theme.durShort
                             highlightResizeDuration: 0
-                            highlight: GlowFill {
+                            highlight: Highlight {
                                 radius: Theme.radius
                                 bordered: true
                                 level: 0.9
@@ -364,7 +364,7 @@ Scope {
                                             visible: !icon.visible
                                             codepoint: row.entry.glyph
                                             font.pixelSize: 20
-                                            color: row.current ? Theme.glow : Theme.textSurfaceVariant
+                                            color: row.current ? Theme.accent : Theme.textSurfaceVariant
                                         }
                                     }
 
@@ -405,14 +405,11 @@ Scope {
                         }
                     }
 
-                    // Search box at the bottom, Win7 style
-                    Rectangle {
+                    // Search box at the bottom
+                    Field {
                         Layout.fillWidth: true
                         implicitHeight: 32
-                        radius: Theme.radius
-                        color: Theme.inset
-                        border.width: 1
-                        border.color: search.activeFocus ? Theme.glow : Qt.rgba(1, 1, 1, 0.25)
+                        input: search
 
                         RowLayout {
                             anchors.fill: parent

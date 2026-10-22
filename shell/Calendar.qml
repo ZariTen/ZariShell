@@ -63,7 +63,7 @@ Scope {
             }
             StyledText {
                 text: root.locale.toString(clock.date, "dddd, d MMMM yyyy")
-                color: Theme.glow
+                color: Theme.accent
             }
         }
 
@@ -78,13 +78,13 @@ Scope {
             Layout.fillWidth: true
             spacing: Theme.spacingXs
 
-            AeroButton {
+            Button {
                 implicitWidth: 28
                 implicitHeight: 28
                 onClicked: root.shift(-1)
                 MdIcon { anchors.centerIn: parent; codepoint: 0xF0141 } // md-chevron_left
             }
-            AeroButton {
+            Button {
                 Layout.fillWidth: true
                 implicitHeight: 28
                 onClicked: root.goToday()
@@ -97,7 +97,7 @@ Scope {
                     font.weight: Font.DemiBold
                 }
             }
-            AeroButton {
+            Button {
                 implicitWidth: 28
                 implicitHeight: 28
                 onClicked: root.shift(1)
@@ -141,7 +141,7 @@ Scope {
                     Layout.minimumWidth: 0
                     Layout.preferredHeight: 32
 
-                    GlowFill {
+                    Highlight {
                         anchors.fill: parent
                         anchors.margins: 1
                         radius: Theme.radius

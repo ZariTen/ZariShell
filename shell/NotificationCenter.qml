@@ -78,10 +78,10 @@ Scope {
                 Behavior on y { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
                 Behavior on height { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
 
-                Glass {
+                Surface {
                     anchors.fill: parent
-                    tint: Theme.glassTintStrong
-                    sheenHeight: Math.min(0.48, 44 / Math.max(1, card.height))
+                    color: Theme.panel
+                    headerHeight: 44
                 }
 
                 MouseArea {

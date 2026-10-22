@@ -294,7 +294,7 @@ Item {
             y: parent.height * 0.10
             layer.enabled: true
             layer.effect: MultiEffect {
-                shadowEnabled: true; shadowColor: Theme.glow; shadowOpacity: 0.6
+                shadowEnabled: true; shadowColor: Theme.accent; shadowOpacity: 0.6
                 shadowBlur: 1; shadowHorizontalOffset: 0; shadowVerticalOffset: 0; blurMax: 40
             }
             Text {
@@ -332,10 +332,10 @@ Item {
                 NumberAnimation { target: shake; property: "x"; to: 0; duration: 40 }
             }
 
-            Glass {
+            Surface {
                 anchors.fill: parent
-                tint: Theme.glassTintStrong
-                sheenHeight: Math.min(0.48, 60 / Math.max(1, card.height))
+                color: Theme.panel
+                headerHeight: 60
             }
 
             ColumnLayout {
@@ -350,7 +350,7 @@ Item {
                 RowLayout {
                     Layout.alignment: Qt.AlignHCenter
                     spacing: Theme.spacingM
-                    AeroButton {
+                    Button {
                         visible: root.users.length > 1
                         implicitWidth: 28; implicitHeight: 28; radius: 14
                         onClicked: root.cycleUser(-1)
@@ -361,7 +361,7 @@ Item {
                         user: root.userName
                         home: root.currentUser.home
                     }
-                    AeroButton {
+                    Button {
                         visible: root.users.length > 1
                         implicitWidth: 28; implicitHeight: 28; radius: 14
                         onClicked: root.cycleUser(1)
@@ -370,7 +370,7 @@ Item {
                 }
 
                 // Name: click to open the user picker.
-                AeroButton {
+                Button {
                     Layout.alignment: Qt.AlignHCenter
                     visible: !root.typingUser
                     implicitWidth: nameRow.implicitWidth + Theme.spacingL * 2
@@ -390,9 +390,10 @@ Item {
                 }
 
                 // Typed user name ("Other user…")
-                AeroField {
+                Field {
                     Layout.fillWidth: true
                     visible: root.typingUser
+                    prominent: true
                     input: userInput
                     TextInput {
                         id: userInput
@@ -429,8 +430,9 @@ Item {
                     Layout.topMargin: Theme.spacingS
                     spacing: Theme.spacingS
 
-                    AeroField {
+                    Field {
                         Layout.fillWidth: true
+                        prominent: true
                         input: password
                         TextInput {
                             id: password
@@ -458,11 +460,11 @@ Item {
                         }
                     }
 
-                    AeroButton {
+                    Button {
                         implicitWidth: 34
                         implicitHeight: 34
                         radius: 17
-                        alwaysFramed: true
+                        framed: true
                         active: password.text !== ""
                         onClicked: root.login()
                         Rectangle {
@@ -516,7 +518,7 @@ Item {
             height: pickCol.implicitHeight + Theme.spacingS * 2
             z: 10
 
-            Glass { anchors.fill: parent; tint: Theme.glassTintStrong }
+            Surface { anchors.fill: parent; color: Theme.panel }
             MouseArea { anchors.fill: parent } // swallow clicks
             ColumnLayout {
                 id: pickCol
@@ -527,7 +529,7 @@ Item {
                 spacing: 2
                 Repeater {
                     model: root.users
-                    AeroButton {
+                    Button {
                         required property var modelData
                         Layout.fillWidth: true
                         implicitHeight: 44
@@ -549,7 +551,7 @@ Item {
                         }
                     }
                 }
-                AeroButton {
+                Button {
                     Layout.fillWidth: true
                     implicitHeight: 36
                     onClicked: {
@@ -571,7 +573,7 @@ Item {
 
         // Bottom bar: branding, session selector, power
         Process { id: power }
-        Glass {
+        Surface {
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: parent.bottom
@@ -585,7 +587,7 @@ Item {
                 anchors.rightMargin: Theme.spacingS
                 spacing: Theme.spacingS
 
-                MdIcon { codepoint: 0xF1105; color: Theme.glow; font.pixelSize: 20 }
+                MdIcon { codepoint: 0xF1105; color: Theme.accent; font.pixelSize: 20 }
                 StyledText {
                     text: GreeterConfig.hostLabel
                     font.pixelSize: Theme.fontTitle
@@ -594,7 +596,7 @@ Item {
                 Item { Layout.fillWidth: true }
 
                 // Session: click to cycle through detected sessions.
-                AeroButton {
+                Button {
                     implicitWidth: sRow.implicitWidth + Theme.spacingM * 2
                     implicitHeight: 32
                     onClicked: root.cycleSession()
@@ -602,7 +604,7 @@ Item {
                         id: sRow
                         anchors.centerIn: parent
                         spacing: Theme.spacingXs
-                        MdIcon { codepoint: 0xF0379; color: Theme.glow } // md-monitor
+                        MdIcon { codepoint: 0xF0379; color: Theme.accent } // md-monitor
                         StyledText { text: root.currentSession.name }
                         MdIcon {
                             visible: root.sessions.length > 1
@@ -618,7 +620,7 @@ Item {
                         { icon: 0xF0709, label: "Restart", action: "reboot" },     // md-restart
                         { icon: 0xF0425, label: "Shut down", action: "poweroff" }  // md-power
                     ]
-                    AeroButton {
+                    Button {
                         required property var modelData
                         implicitWidth: pRow.implicitWidth + Theme.spacingM * 2
                         implicitHeight: 32
@@ -629,7 +631,7 @@ Item {
                             spacing: Theme.spacingXs
                             MdIcon {
                                 codepoint: modelData.icon
-                                color: modelData.action === "poweroff" ? Theme.error : Theme.glow
+                                color: modelData.action === "poweroff" ? Theme.error : Theme.accent
                             }
                             StyledText { text: modelData.label }
                         }

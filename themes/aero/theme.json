@@ -1,0 +1,63 @@
+{
+  "name": "Aero",
+  "description": "Windows 7 Aero glass: translucent tinted glass, glossy sheen, soft glow. The tint follows the wallpaper hue.",
+  "accent": "wallpaper",
+  "components": ["Button", "Field", "Highlight", "Slider", "Surface", "Switch"],
+  "colors": {
+    "surface": { "h": 0, "s": 0.4, "l": 0.12 },
+    "bar": { "h": -0.02, "s": 0.55, "l": 0.36, "a": 0.52 },
+    "panel": { "h": 0, "s": 0.5, "l": 0.28, "a": 0.80 },
+    "panelError": [0.62, 0.14, 0.10, 0.82],
+    "accent": { "h": -0.06, "s": 0.95, "l": 0.64 },
+    "highlight": { "h": -0.05, "s": 0.6, "l": 0.62 },
+    "primary": { "h": -0.03, "s": 0.9, "l": 0.55 },
+    "textPrimary": "#ffffff",
+    "primaryContainer": { "h": 0, "s": 0.75, "l": 0.32, "a": 0.85 },
+    "textPrimaryContainer": "#ffffff",
+    "surfaceContainer": { "h": 0, "s": 0.6, "l": 0.62, "a": 0.16 },
+    "surfaceContainerHigh": { "h": 0, "s": 0.6, "l": 0.62, "a": 0.26 },
+    "surfaceContainerHighest": [1, 1, 1, 0.12],
+    "inset": { "h": 0, "s": 0.55, "l": 0.16, "a": 0.50 },
+    "insetBorder": { "h": 0, "s": 0.5, "l": 0.10, "a": 0.65 },
+    "border": [0, 0, 0, 0.75],
+    "borderLight": [1, 1, 1, 0.26],
+    "textSurface": "#ffffff",
+    "textSurfaceVariant": [1, 1, 1, 0.72],
+    "outline": [1, 1, 1, 0.45],
+    "outlineVariant": [1, 1, 1, 0.16],
+    "scrim": [0, 0, 0, 0.35],
+    "error": "#ff6b5e",
+    "success": "#7fd45a",
+    "warning": "#f2c94c",
+    "sheenTop": [1, 1, 1, 0.20],
+    "sheenMid": [1, 1, 1, 0.07]
+  },
+  "metrics": {
+    "radiusSmall": 3,
+    "radius": 5,
+    "radiusLarge": 8,
+    "radiusFull": 999,
+    "spacingXs": 4,
+    "spacingS": 8,
+    "spacingM": 12,
+    "spacingL": 16,
+    "spacingXl": 24,
+    "barHeight": 42,
+    "gap": 8
+  },
+  "fonts": {
+    "font": "Noto Sans",
+    "iconFont": "JetBrainsMono Nerd Font Propo",
+    "fontSmall": 11,
+    "fontBody": 13,
+    "fontTitle": 15,
+    "fontHeadline": 22
+  },
+  "motion": {
+    "durShort": 150,
+    "durMedium": 280,
+    "durLong": 420,
+    "emphasized": [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1],
+    "standard": [0.2, 0, 0, 1, 1, 1]
+  }
+}

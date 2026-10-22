@@ -22,7 +22,7 @@ Item {
     implicitHeight: 46
 
     // Highlighted (e.g. connected) entry
-    GlowFill {
+    Highlight {
         anchors.fill: parent
         radius: Theme.radius
         bordered: true
@@ -36,7 +36,7 @@ Item {
     }
 
     // Keyboard focus: same look as hover
-    GlowFill {
+    Highlight {
         anchors.fill: parent
         radius: Theme.radius
         bordered: true
@@ -65,7 +65,7 @@ Item {
                 anchors.centerIn: parent
                 running: row.busy
                 font.pixelSize: 18
-                color: Theme.glow
+                color: Theme.accent
             }
         }
 

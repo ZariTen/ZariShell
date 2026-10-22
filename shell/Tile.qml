@@ -1,8 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 
-// Glossy quick-settings toggle tile: icon, label, sublabel; glows when on.
-AeroButton {
+// Quick-settings toggle tile: icon, label, sublabel; lit when on.
+Button {
     id: tile
 
     property int codepoint: 0
@@ -12,7 +12,7 @@ AeroButton {
 
     Layout.fillWidth: true
     implicitHeight: 56
-    alwaysFramed: true
+    framed: true
 
     RowLayout {
         anchors.fill: parent
@@ -24,7 +24,7 @@ AeroButton {
             Layout.alignment: Qt.AlignVCenter
             codepoint: tile.codepoint
             font.pixelSize: 20
-            color: tile.active ? "#ffffff" : Theme.textSurfaceVariant
+            color: tile.active ? Theme.textSurface : Theme.textSurfaceVariant
         }
         ColumnLayout {
             Layout.fillWidth: true

@@ -113,10 +113,10 @@ Scope {
                 Behavior on y { NumberAnimation { duration: Theme.durLong; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
                 Behavior on height { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
 
-                Glass {
+                Surface {
                     anchors.fill: parent
-                    tint: Theme.glassTintStrong
-                    sheenHeight: Math.min(0.48, 44 / Math.max(1, card.height))
+                    color: Theme.panel
+                    headerHeight: 44
                 }
 
                 MouseArea {
@@ -138,7 +138,7 @@ Scope {
 
                         MdIcon {
                             codepoint: 0xF075A // md-music
-                            color: Theme.glow
+                            color: Theme.accent
                         }
                         StyledText {
                             Layout.fillWidth: true
@@ -157,12 +157,12 @@ Scope {
                         Repeater {
                             model: root.players
 
-                            delegate: AeroButton {
+                            delegate: Button {
                                 id: chip
                                 required property var modelData
                                 implicitWidth: chipText.implicitWidth + Theme.spacingM * 2
                                 implicitHeight: 26
-                                alwaysFramed: true
+                                framed: true
                                 active: modelData === card.p
                                 onClicked: ShellState.chosenPlayer = chip.modelData
 
@@ -185,7 +185,7 @@ Scope {
                             implicitWidth: 128
                             implicitHeight: 128
 
-                            Glass {
+                            Surface {
                                 anchors.fill: parent
                                 radius: Theme.radiusLarge
                                 visible: !art.visible
@@ -194,7 +194,7 @@ Scope {
                                     anchors.centerIn: parent
                                     codepoint: 0xF075A
                                     font.pixelSize: 56
-                                    color: Theme.glow
+                                    color: Theme.accent
                                 }
                             }
 
@@ -205,7 +205,7 @@ Scope {
                                 radius: Theme.radiusLarge
                                 color: "transparent"
                                 border.width: 1
-                                border.color: Theme.edgeLight
+                                border.color: Theme.borderLight
 
                                 Image {
                                     id: artImage
@@ -248,7 +248,7 @@ Scope {
                                 Layout.fillWidth: true
                                 visible: text !== ""
                                 text: card.p ? card.p.trackArtist : ""
-                                color: Theme.glow
+                                color: Theme.accent
                             }
                             StyledText {
                                 Layout.fillWidth: true
@@ -266,65 +266,16 @@ Scope {
                         visible: card.p !== null && card.p.lengthSupported && card.p.length > 0
                         spacing: 2
 
-                        Rectangle {
-                            id: track
-                            readonly property real progress: seek.pressed ? seek.dragRatio : (card.p && card.p.length > 0 ? Math.min(1, card.p.position / card.p.length) : 0)
-
+                        Slider {
+                            id: seek
                             Layout.fillWidth: true
                             implicitHeight: 12
-                            radius: 2
-                            color: Theme.inset
-                            border.width: 1
-                            border.color: Qt.rgba(1, 1, 1, 0.25)
-
-                            Rectangle {
-                                x: 1
-                                y: 1
-                                width: (parent.width - 2) * track.progress
-                                height: parent.height - 2
-                                radius: 1
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: Qt.lighter(Theme.glow, 1.35) }
-                                    GradientStop { position: 0.45; color: Theme.glow }
-                                    GradientStop { position: 0.5; color: Qt.darker(Theme.glow, 1.5) }
-                                    GradientStop { position: 1.0; color: Theme.glow }
-                                }
-                            }
-
-                            // Thumb
-                            Rectangle {
-                                visible: card.p !== null && card.p.canSeek
-                                x: Math.max(0, Math.min(parent.width - width, (parent.width - 2) * track.progress - width / 2))
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 14
-                                height: 14
-                                radius: 7
-                                border.width: 1
-                                border.color: Theme.edgeDark
-                                scale: seek.containsMouse || seek.pressed ? 1.15 : 1
-                                Behavior on scale { NumberAnimation { duration: Theme.durShort } }
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: "#ffffff" }
-                                    GradientStop { position: 1.0; color: "#9fb7c9" }
-                                }
-                            }
-
-                            MouseArea {
-                                id: seek
-                                property real dragRatio: 0
-                                anchors.fill: parent
-                                anchors.topMargin: -6
-                                anchors.bottomMargin: -6
-                                enabled: card.p !== null && card.p.canSeek
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                function ratioAt(x) { return Math.max(0, Math.min(1, x / width)); }
-                                onPressed: mouse => dragRatio = ratioAt(mouse.x)
-                                onPositionChanged: mouse => { if (pressed) dragRatio = ratioAt(mouse.x); }
-                                onReleased: mouse => {
-                                    if (card.p && card.p.canSeek)
-                                        card.p.position = ratioAt(mouse.x) * card.p.length;
-                                }
+                            tone: "accent"
+                            interactive: card.p !== null && card.p.canSeek
+                            value: card.p && card.p.length > 0 ? Math.min(1, card.p.position / card.p.length) : 0
+                            onReleased: v => {
+                                if (card.p && card.p.canSeek)
+                                    card.p.position = v * card.p.length;
                             }
                         }
 
@@ -332,7 +283,7 @@ Scope {
                             Layout.fillWidth: true
                             StyledText {
                                 Layout.fillWidth: true
-                                text: root.fmt(card.p ? (seek.pressed ? seek.dragRatio * card.p.length : card.p.position) : 0)
+                                text: root.fmt(card.p ? (seek.pressed ? seek.shown * card.p.length : card.p.position) : 0)
                                 font.pixelSize: Theme.fontSmall
                                 color: Theme.textSurfaceVariant
                             }
@@ -350,7 +301,7 @@ Scope {
                         visible: root.hasVolume
                         spacing: Theme.spacingS
 
-                        AeroButton {
+                        Button {
                             implicitWidth: 28
                             implicitHeight: 28
                             onClicked: root.toggleMute()
@@ -361,72 +312,17 @@ Scope {
                             }
                         }
 
-                        Rectangle {
-                            id: volTrack
-                            readonly property real level: volDrag.pressed ? volDrag.ratio : root.volume
-
+                        Slider {
+                            id: volSlider
                             Layout.fillWidth: true
-                            implicitHeight: 10
-                            radius: 2
-                            color: Theme.inset
-                            border.width: 1
-                            border.color: Qt.rgba(1, 1, 1, 0.25)
-
-                            // Win7 glossy green fill
-                            Rectangle {
-                                x: 1
-                                y: 1
-                                width: (parent.width - 2) * Math.min(1, volTrack.level)
-                                height: parent.height - 2
-                                radius: 1
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: "#b6f39a" }
-                                    GradientStop { position: 0.45; color: "#4fc22a" }
-                                    GradientStop { position: 0.5; color: "#2f9e12" }
-                                    GradientStop { position: 1.0; color: "#5fd23a" }
-                                }
-                            }
-
-                            Rectangle {
-                                x: Math.max(0, Math.min(parent.width - width, (parent.width - 2) * Math.min(1, volTrack.level) - width / 2))
-                                anchors.verticalCenter: parent.verticalCenter
-                                width: 12
-                                height: 12
-                                radius: 6
-                                border.width: 1
-                                border.color: Theme.edgeDark
-                                scale: volDrag.containsMouse || volDrag.pressed ? 1.15 : 1
-                                Behavior on scale { NumberAnimation { duration: Theme.durShort } }
-                                gradient: Gradient {
-                                    GradientStop { position: 0.0; color: "#ffffff" }
-                                    GradientStop { position: 1.0; color: "#9fb7c9" }
-                                }
-                            }
-
-                            MouseArea {
-                                id: volDrag
-                                property real ratio: 0
-                                anchors.fill: parent
-                                anchors.topMargin: -6
-                                anchors.bottomMargin: -6
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                function ratioAt(x) { return Math.max(0, Math.min(1, x / width)); }
-                                onPressed: mouse => { ratio = ratioAt(mouse.x); root.setVolume(ratio); }
-                                onPositionChanged: mouse => {
-                                    if (pressed) {
-                                        ratio = ratioAt(mouse.x);
-                                        root.setVolume(ratio);
-                                    }
-                                }
-                                onWheel: wheel => root.setVolume(root.volume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05))
-                            }
+                            value: root.volume
+                            onMoved: v => root.setVolume(v)
                         }
 
                         StyledText {
                             Layout.preferredWidth: 40
                             horizontalAlignment: Text.AlignRight
-                            text: root.muted ? "Muted" : Math.round(volTrack.level * 100) + "%"
+                            text: root.muted ? "Muted" : Math.round((volSlider.pressed ? volSlider.shown : root.volume) * 100) + "%"
                             font.pixelSize: Theme.fontSmall
                             color: Theme.textSurfaceVariant
                         }
@@ -437,7 +333,7 @@ Scope {
                         Layout.alignment: Qt.AlignHCenter
                         spacing: Theme.spacingS
 
-                        AeroButton {
+                        Button {
                             visible: card.p !== null && card.p.shuffleSupported
                             implicitWidth: 34
                             implicitHeight: 34
@@ -446,24 +342,24 @@ Scope {
                             MdIcon {
                                 anchors.centerIn: parent
                                 codepoint: card.p && card.p.shuffle ? 0xF049D : 0xF049E
-                                color: card.p && card.p.shuffle ? Theme.glow : Theme.textSurfaceVariant
+                                color: card.p && card.p.shuffle ? Theme.accent : Theme.textSurfaceVariant
                             }
                         }
 
-                        AeroButton {
+                        Button {
                             implicitWidth: 44
                             implicitHeight: 40
-                            alwaysFramed: true
+                            framed: true
                             enabled: card.p !== null && card.p.canGoPrevious
                             opacity: enabled ? 1 : 0.4
                             onClicked: card.p.previous()
                             MdIcon { anchors.centerIn: parent; codepoint: 0xF04AE; font.pixelSize: 22 }
                         }
 
-                        AeroButton {
+                        Button {
                             implicitWidth: 56
                             implicitHeight: 48
-                            alwaysFramed: true
+                            framed: true
                             active: true
                             enabled: card.p !== null && card.p.canTogglePlaying
                             opacity: enabled ? 1 : 0.4
@@ -475,17 +371,17 @@ Scope {
                             }
                         }
 
-                        AeroButton {
+                        Button {
                             implicitWidth: 44
                             implicitHeight: 40
-                            alwaysFramed: true
+                            framed: true
                             enabled: card.p !== null && card.p.canGoNext
                             opacity: enabled ? 1 : 0.4
                             onClicked: card.p.next()
                             MdIcon { anchors.centerIn: parent; codepoint: 0xF04AD; font.pixelSize: 22 }
                         }
 
-                        AeroButton {
+                        Button {
                             visible: card.p !== null && card.p.loopSupported
                             implicitWidth: 34
                             implicitHeight: 34
@@ -497,7 +393,7 @@ Scope {
                             MdIcon {
                                 anchors.centerIn: parent
                                 codepoint: !card.p || card.p.loopState === MprisLoopState.None ? 0xF0457 : (card.p.loopState === MprisLoopState.Track ? 0xF0458 : 0xF0456)
-                                color: card.p && card.p.loopState !== MprisLoopState.None ? Theme.glow : Theme.textSurfaceVariant
+                                color: card.p && card.p.loopState !== MprisLoopState.None ? Theme.accent : Theme.textSurfaceVariant
                             }
                         }
                     }

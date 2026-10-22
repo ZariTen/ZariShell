@@ -37,7 +37,7 @@ Item {
         color: Qt.rgba(1, 1, 1, 0.22)
     }
 
-    AeroButton {
+    Button {
         id: more
         anchors.right: parent.right
         anchors.rightMargin: Theme.spacingXs

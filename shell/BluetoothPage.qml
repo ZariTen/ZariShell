@@ -90,7 +90,7 @@ QsPage {
     }
 
     trailing: [
-        AeroButton {
+        Button {
             implicitWidth: 28
             implicitHeight: 28
             enabled: page.powered
@@ -113,7 +113,7 @@ QsPage {
                 }
             }
         },
-        AeroSwitch {
+        Switch {
             checked: page.powered
             enabled: page.adapter !== null && !page.powering
             onToggled: page.adapter.enabled = !page.adapter.enabled
@@ -232,13 +232,13 @@ QsPage {
                 text: page.group(entry.dev) === 0 ? "My devices" : "Nearby devices"
                 font.pixelSize: Theme.fontSmall
                 font.weight: Font.DemiBold
-                color: Theme.glow
+                color: Theme.accent
             }
 
             QsRow {
                 Layout.fillWidth: true
                 codepoint: page.glyph(entry.dev.icon)
-                iconColor: entry.dev.connected ? Theme.glow : Theme.textSurface
+                iconColor: entry.dev.connected ? Theme.accent : Theme.textSurface
                 title: entry.dev.name !== "" ? entry.dev.name : entry.dev.address
                 busy: entry.busy
                 highlighted: entry.dev.connected
@@ -276,7 +276,7 @@ QsPage {
                         color: Theme.textSurfaceVariant
                     }
                 }
-                AeroButton {
+                Button {
                     visible: entry.dev.paired && !entry.dev.connected && !entry.busy
                     implicitWidth: 26
                     implicitHeight: 26

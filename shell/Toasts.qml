@@ -67,10 +67,10 @@ Scope {
                         radius: Theme.radiusLarge
                         color: "transparent"
 
-                        Glass {
+                        Surface {
                             anchors.fill: parent
-                            tint: toast.critical ? Qt.rgba(0.62, 0.14, 0.10, 0.82) : Theme.glassTintStrong
-                            sheenHeight: Math.min(0.48, 30 / Math.max(1, toast.height))
+                            color: toast.critical ? Theme.panelError : Theme.panel
+                            headerHeight: 30
                         }
 
                         // Slide in from the right.
@@ -133,7 +133,7 @@ Scope {
                                         Layout.fillWidth: true
                                         text: Notifs.appLabel(toast.modelData)
                                         font.pixelSize: Theme.fontSmall
-                                        color: toast.critical ? Theme.error : Theme.glow
+                                        color: toast.critical ? Theme.error : Theme.accent
                                     }
                                     Item {
                                         implicitWidth: 20

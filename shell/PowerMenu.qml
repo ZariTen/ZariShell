@@ -62,13 +62,13 @@ Scope {
             Repeater {
                 model: root.actions
 
-                delegate: AeroButton {
+                delegate: Button {
                     id: action
                     required property var modelData
                     Layout.fillWidth: true
                     implicitHeight: 92
-                    alwaysFramed: true
-                    glowColor: modelData.id === "poweroff" || modelData.id === "reboot" ? "#ff7a5c" : Theme.glowFill
+                    framed: true
+                    tint: modelData.id === "poweroff" || modelData.id === "reboot" ? "#ff7a5c" : Theme.highlight
                     onClicked: modelData.confirm ? root.pending = modelData.id : root.run(modelData.id)
 
                     ColumnLayout {

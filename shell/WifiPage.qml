@@ -388,7 +388,7 @@ QsPage {
     }
 
     trailing: [
-        AeroButton {
+        Button {
             implicitWidth: 28
             implicitHeight: 28
             enabled: page.radioOn && !page.scanning
@@ -406,7 +406,7 @@ QsPage {
                 codepoint: 0xF0450 // md-refresh
             }
         },
-        AeroSwitch {
+        Switch {
             checked: page.radioOn
             enabled: page.radioKnown && !radioToggle.running
             onToggled: page.setRadio()
@@ -540,7 +540,7 @@ QsPage {
             QsRow {
                 Layout.fillWidth: true
                 codepoint: page.signalIcon(entry.net.signal)
-                iconColor: entry.net.inUse ? Theme.glow : Theme.textSurface
+                iconColor: entry.net.inUse ? Theme.accent : Theme.textSurface
                 title: entry.net.ssid
                 busy: entry.busy
                 highlighted: entry.net.inUse
@@ -594,14 +594,10 @@ QsPage {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Theme.spacingS
 
-                    Rectangle {
+                    Field {
                         Layout.fillWidth: true
                         implicitHeight: 32
-                        radius: Theme.radius
-                        color: Theme.inset
-                        border.width: 1
-                        border.color: pw.activeFocus ? Theme.glow : Qt.rgba(1, 1, 1, 0.25)
-                        Behavior on border.color { ColorAnimation { duration: Theme.durShort } }
+                        input: pw
 
                         StyledText {
                             anchors.left: parent.left
@@ -634,7 +630,7 @@ QsPage {
                                 event.accepted = true;
                             }
                         }
-                        AeroButton {
+                        Button {
                             id: eye
 
                             property bool reveal: false

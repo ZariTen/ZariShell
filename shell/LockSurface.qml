@@ -93,7 +93,7 @@ Item {
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowEnabled: true
-            shadowColor: Theme.glow
+            shadowColor: Theme.accent
             shadowOpacity: 0.6
             shadowBlur: 1
             shadowHorizontalOffset: 0
@@ -147,10 +147,10 @@ Item {
             }
         }
 
-        Glass {
+        Surface {
             anchors.fill: parent
-            tint: Theme.glassTintStrong
-            sheenHeight: Math.min(0.48, 60 / Math.max(1, card.height))
+            color: Theme.panel
+            headerHeight: 60
         }
 
         ColumnLayout {
@@ -167,10 +167,10 @@ Item {
                 implicitWidth: 112
                 implicitHeight: 112
 
-                Glass {
+                Surface {
                     anchors.fill: parent
                     radius: 10
-                    tint: Qt.rgba(1, 1, 1, 0.12)
+                    color: Theme.surfaceContainerHighest
                 }
 
                 ClippingRectangle {
@@ -232,31 +232,10 @@ Item {
                 Layout.topMargin: Theme.spacingS
                 spacing: Theme.spacingS
 
-                Item {
+                Field {
                     Layout.fillWidth: true
-                    implicitHeight: 34
-
-                    // Aero focus glow
-                    Rectangle {
-                        anchors.fill: parent
-                        anchors.margins: -3
-                        radius: Theme.radius + 3
-                        color: "transparent"
-                        border.width: 3
-                        border.color: Theme.glow
-                        opacity: password.activeFocus ? 0.55 : 0
-                        layer.enabled: true
-                        layer.effect: MultiEffect { blurEnabled: true; blur: 0.6; blurMax: 12 }
-                        Behavior on opacity { NumberAnimation { duration: Theme.durMedium } }
-                    }
-
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: Theme.radius
-                        color: Qt.rgba(0, 0, 0, 0.55)
-                        border.width: 1
-                        border.color: password.activeFocus ? Theme.glow : Qt.rgba(1, 1, 1, 0.3)
-                    }
+                    prominent: true
+                    input: password
 
                     TextInput {
                         id: password
@@ -285,11 +264,11 @@ Item {
                     }
                 }
 
-                AeroButton {
+                Button {
                     implicitWidth: 34
                     implicitHeight: 34
                     radius: 17
-                    alwaysFramed: true
+                    framed: true
                     active: password.text !== ""
                     onClicked: surface.lock.tryUnlock(password.text)
 
@@ -338,7 +317,7 @@ Item {
     }
 
     // ── Bottom bar: branding, media, battery ─────────────────────────────
-    Glass {
+    Surface {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -354,7 +333,7 @@ Item {
 
             MdIcon {
                 codepoint: 0xF1105
-                color: Theme.glow
+                color: Theme.accent
                 font.pixelSize: 20
             }
             StyledText {
@@ -365,7 +344,7 @@ Item {
 
             Item { Layout.fillWidth: true }
 
-            AeroButton {
+            Button {
                 visible: ShellState.player !== null
                 implicitWidth: lockMedia.implicitWidth + Theme.spacingM * 2
                 implicitHeight: 32
@@ -377,7 +356,7 @@ Item {
                     spacing: Theme.spacingS
                     MdIcon {
                         codepoint: ShellState.player && ShellState.player.isPlaying ? 0xF03E4 : 0xF040A
-                        color: Theme.glow
+                        color: Theme.accent
                     }
                     StyledText {
                         Layout.maximumWidth: 320
