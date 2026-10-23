@@ -10,10 +10,11 @@ import Quickshell.Io
 // Divider, Field, Fill, Frame, Highlight, Slider, Surface, Switch) or add an
 // optional effect (Glow). theme.json lists those names in "components".
 //
-// Active theme: the folder at <XDG_CONFIG_HOME>/zarishell/current (meant to be
-// a user-writable symlink), else the packaged themes/<$ZARISHELL_THEME or
-// "aero"> next to this file. Every token falls back to the neutral defaults
-// below, so an empty theme gives the plain flat base look.
+// Active theme: the folder at <XDG_CONFIG_HOME>/zarishell/current (a symlink
+// updated by the theme picker or `quickshell -c shell ipc call theme ...`),
+// else the packaged themes/<$ZARISHELL_THEME or "aero"> next to this file.
+// Every token falls back to the neutral defaults below, so an empty theme
+// (such as themes/base) gives the plain flat base look.
 //
 // theme.json colors accept "#rrggbb" / "#aarrggbb", [r, g, b, a] (0..1),
 // "accent" (the accent seed) or { "h", "s", "l", "a" }: a tone whose hue is
@@ -25,17 +26,37 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    // ---- Theme resolution -------------------------------------------------
-    readonly property string userPath: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/zarishell/current"
+    // ---- Theme resolution and live switching ------------------------------
+    readonly property string configDir: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/zarishell"
+    readonly property string userPath: configDir + "/current"
+    readonly property string userThemesDir: configDir + "/themes"
+    readonly property string packagedThemesDir: Quickshell.shellDir + "/themes"
     readonly property string packagedName: Quickshell.env("ZARISHELL_THEME") || "aero"
-    readonly property string packagedPath: Quickshell.shellDir + "/themes/" + packagedName
+    readonly property string packagedPath: packagedThemesDir + "/" + packagedName
     readonly property var userSpec: parse(userFile.text(), userFile.path)
     readonly property var packagedSpec: parse(packagedFile.text(), packagedFile.path)
-    readonly property bool userActive: userSpec !== null
+
+    // Atomic active-theme snapshot { id, source, dir, spec, rev } so
+    // component() never observes a mismatched (dir, spec.components) pair.
+    property var state: null
+    property bool inLoad: false
+    property string pendingLinkTarget: ""
+    property var themes: []
+
+    readonly property var active: state !== null ? state : ({
+        id: userSpec !== null ? "current" : packagedName,
+        source: userSpec !== null ? "user" : "packaged",
+        dir: userSpec !== null ? userPath : packagedPath,
+        spec: (userSpec !== null ? userSpec : packagedSpec) || ({}),
+        rev: 0
+    })
+
+    readonly property bool userActive: active.source !== "packaged"
     // Folder of the active theme and its parsed theme.json.
-    readonly property string dir: userActive ? userPath : packagedPath
-    readonly property var spec: (userActive ? userSpec : packagedSpec) || ({})
-    readonly property string name: typeof spec.name === "string" ? spec.name : ""
+    readonly property string dir: active.dir
+    readonly property var spec: active.spec
+    readonly property string currentId: active.id
+    readonly property string name: typeof spec.name === "string" && spec.name !== "" ? spec.name : currentId
     readonly property var overrides: Array.isArray(spec.components) ? spec.components : []
 
     function parse(text, path) {
@@ -50,16 +71,262 @@ Singleton {
         }
     }
 
+    function baseName(p) {
+        var clean = p.replace(/\/+$/, "");
+        var idx = clean.lastIndexOf("/");
+        return idx >= 0 ? clean.slice(idx + 1) : clean;
+    }
+
+    function classifyPath(p) {
+        if (p.indexOf(userThemesDir + "/") === 0)
+            return "user";
+        if (p.indexOf(packagedThemesDir + "/") === 0)
+            return "packaged";
+        return "custom";
+    }
+
+    function sortThemes(list) {
+        var rank = { "aero": 0, "base": 1 };
+        list.sort(function(a, b) {
+            var ra = rank[a.id] !== undefined ? rank[a.id] : 2;
+            var rb = rank[b.id] !== undefined ? rank[b.id] : 2;
+            if (ra !== rb)
+                return ra - rb;
+            return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+        });
+        return list;
+    }
+
+    function makeEntry(id, tPath, tReal, src, parsed) {
+        return {
+            id: id,
+            name: typeof parsed.name === "string" && parsed.name !== "" ? parsed.name : id,
+            description: typeof parsed.description === "string" ? parsed.description : "",
+            source: src,
+            path: tPath,
+            realPath: tReal,
+            spec: parsed,
+            componentsCount: Array.isArray(parsed.components) ? parsed.components.length : 0
+        };
+    }
+
+    function loadDir(targetDir, id, source, bumpRev) {
+        var jsonPath = targetDir + "/theme.json";
+        inLoad = true;
+        if (activeFile.path !== jsonPath)
+            activeFile.path = jsonPath;
+        else
+            activeFile.reload();
+        activeFile.waitForJob();
+        inLoad = false;
+
+        var parsed = parse(activeFile.text(), jsonPath);
+        if (parsed === null)
+            return false;
+
+        var nextRev = active.rev + (bumpRev ? 1 : 0);
+        state = {
+            id: id,
+            source: source,
+            dir: targetDir,
+            spec: parsed,
+            rev: nextRev
+        };
+
+        var list = themes.slice();
+        var found = false;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].id === id) {
+                list[i] = makeEntry(id, targetDir, list[i].realPath || targetDir, source, parsed);
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            list.push(makeEntry(id, targetDir, targetDir, source, parsed));
+        themes = sortThemes(list);
+        return true;
+    }
+
+    function writeSymlink(targetDir) {
+        pendingLinkTarget = targetDir;
+        if (linkProc.running)
+            linkProc.running = false;
+        linkProc.running = true;
+    }
+
+    function setTheme(nameOrPath) {
+        var q = (nameOrPath || "").trim();
+        if (q === "")
+            return currentId;
+
+        var candidates = [];
+        for (var i = 0; i < themes.length; i++) {
+            var t = themes[i];
+            if (t.id === q || t.path === q || t.realPath === q || t.id.toLowerCase() === q.toLowerCase() || t.name.toLowerCase() === q.toLowerCase()) {
+                candidates.push({ id: t.id, path: t.path, source: t.source });
+                break;
+            }
+        }
+
+        if (q.indexOf("/") === 0 || q.indexOf("~/") === 0) {
+            var expanded = q.indexOf("~/") === 0 ? (Quickshell.env("HOME") + q.slice(1)) : q;
+            var clean = expanded.replace(/\/+$/, "");
+            candidates.push({ id: baseName(clean), path: clean, source: classifyPath(clean) });
+        } else {
+            candidates.push({ id: q, path: userThemesDir + "/" + q, source: "user" });
+            candidates.push({ id: q, path: packagedThemesDir + "/" + q, source: "packaged" });
+        }
+
+        for (var j = 0; j < candidates.length; j++) {
+            var c = candidates[j];
+            if (loadDir(c.path, c.id, c.source, true)) {
+                writeSymlink(c.path);
+                return currentId;
+            }
+        }
+
+        console.warn("Theme: unknown or invalid theme '" + q + "'");
+        return currentId;
+    }
+
+    function stepTheme(delta) {
+        if (themes.length === 0)
+            return currentId;
+        var idx = -1;
+        for (var i = 0; i < themes.length; i++) {
+            if (themes[i].id === currentId) {
+                idx = i;
+                break;
+            }
+        }
+        var nextIdx = idx >= 0 ? (idx + delta + themes.length) % themes.length : 0;
+        return setTheme(themes[nextIdx].id);
+    }
+
+    function reload() {
+        loadDir(active.dir, active.id, active.source, true);
+        scan();
+        return currentId;
+    }
+
+    function scan() {
+        if (!scanProc.running)
+            scanProc.running = true;
+    }
+
+    function ingestScan(text) {
+        var lines = text.split("\n");
+        var link = "";
+        var real = "";
+        var list = [];
+        var byId = {};
+        var byReal = {};
+        var i = 0;
+
+        if (i < lines.length && lines[i].indexOf("CURRENT\t") === 0) {
+            var cur = lines[i].split("\t");
+            link = cur[1] || "";
+            real = cur[2] || "";
+            i += 1;
+        }
+
+        while (i < lines.length) {
+            var header = lines[i];
+            if (header.indexOf("THEME\t") !== 0) {
+                i += 1;
+                continue;
+            }
+            var parts = header.split("\t");
+            var tPath = parts[1] || "";
+            var tReal = parts[2] || tPath;
+            i += 1;
+            var bodyLines = [];
+            while (i < lines.length && lines[i] !== "END_THEME") {
+                bodyLines.push(lines[i]);
+                i += 1;
+            }
+            if (i < lines.length && lines[i] === "END_THEME")
+                i += 1;
+
+            var parsed = parse(bodyLines.join("\n"), tPath + "/theme.json");
+            if (parsed === null)
+                continue;
+
+            var id = baseName(tPath);
+            if (byId[id] || byReal[tReal])
+                continue;
+
+            var entry = makeEntry(id, tPath, tReal, classifyPath(tPath), parsed);
+            byId[id] = entry;
+            byReal[tReal] = entry;
+            list.push(entry);
+        }
+
+        themes = sortThemes(list);
+
+        if (linkProc.running)
+            return;
+
+        var matched = null;
+        if (real !== "") {
+            for (var j = 0; j < themes.length; j++) {
+                if (themes[j].realPath === real || themes[j].path === real || themes[j].path === link) {
+                    matched = themes[j];
+                    break;
+                }
+            }
+        }
+        if (matched === null && link !== "") {
+            var linkId = baseName(link);
+            if (byId[linkId])
+                matched = byId[linkId];
+        }
+        if (matched === null && byId[packagedName])
+            matched = byId[packagedName];
+        if (matched === null && themes.length > 0)
+            matched = themes[0];
+
+        if (matched !== null) {
+            var firstInit = state === null;
+            var sameTarget = firstInit
+                ? ((userSpec !== null && (real === matched.realPath || link === matched.path)) || (userSpec === null && matched.path === packagedPath))
+                : (active.dir === matched.path && JSON.stringify(active.spec) === JSON.stringify(matched.spec));
+            var targetJson = matched.path + "/theme.json";
+            if (activeFile.path !== targetJson) {
+                inLoad = true;
+                activeFile.path = targetJson;
+                activeFile.waitForJob();
+                inLoad = false;
+            }
+            state = {
+                id: matched.id,
+                source: matched.source,
+                dir: matched.path,
+                spec: matched.spec,
+                rev: active.rev + (sameTarget ? 0 : 1)
+            };
+            if (link !== "" && matched.path !== "" && (real === "" || (matched.source === "packaged" && real !== matched.realPath)))
+                writeSymlink(matched.path);
+        }
+    }
+
+    Component.onCompleted: scan()
+
     // URL of the look for a generic component: the theme's override when the
     // theme lists it, else the neutral one in base/.
     function component(name) {
-        return overrides.indexOf(name) >= 0 ? fileUrl(dir + "/components/" + name + ".qml") : Qt.resolvedUrl("base/" + name + ".qml");
+        var a = active;
+        var comps = Array.isArray(a.spec.components) ? a.spec.components : [];
+        return comps.indexOf(name) >= 0 ? fileUrl(a.dir + "/components/" + name + ".qml") + "?r=" + a.rev : Qt.resolvedUrl("base/" + name + ".qml");
     }
 
     // Optional layer effect a theme may provide (e.g. "Glow"); null when the
     // theme has none, so `layer.enabled: Theme.effect(..) !== null` is a no-op.
     function effect(name) {
-        return overrides.indexOf(name) >= 0 ? Qt.createComponent(component(name)) : null;
+        var a = active;
+        var comps = Array.isArray(a.spec.components) ? a.spec.components : [];
+        return comps.indexOf(name) >= 0 ? Qt.createComponent(component(name)) : null;
     }
 
     FileView {
@@ -74,6 +341,57 @@ Singleton {
         path: root.packagedPath + "/theme.json"
         blockLoading: true
         printErrors: false
+    }
+
+    FileView {
+        id: activeFile
+        blockLoading: true
+        watchChanges: true
+        printErrors: false
+        onFileChanged: if (!root.inLoad) root.reload()
+    }
+
+    Process {
+        id: linkProc
+        command: ["sh", "-c", "mkdir -p \"$1\" && ln -sfn \"$2\" \"$3\"", "sh", root.configDir, root.pendingLinkTarget, root.userPath]
+        onExited: root.scan()
+    }
+
+    Process {
+        id: scanProc
+        command: [
+            "sh", "-c",
+            "link=$(readlink \"$1\" 2>/dev/null || true)\n" +
+            "real=$(readlink -f \"$1\" 2>/dev/null || true)\n" +
+            "printf 'CURRENT\\t%s\\t%s\\n' \"$link\" \"$real\"\n" +
+            "for d in \"$2\"/* \"$3\"/*; do\n" +
+            "  [ -f \"$d/theme.json\" ] || continue\n" +
+            "  rd=$(readlink -f \"$d\" 2>/dev/null || printf '%s' \"$d\")\n" +
+            "  printf 'THEME\\t%s\\t%s\\n' \"$d\" \"$rd\"\n" +
+            "  cat \"$d/theme.json\"\n" +
+            "  printf '\\nEND_THEME\\n'\n" +
+            "done\n" +
+            "if [ -n \"$real\" ] && [ -f \"$real/theme.json\" ]; then\n" +
+            "  printf 'THEME\\t%s\\t%s\\n' \"$real\" \"$real\"\n" +
+            "  cat \"$real/theme.json\"\n" +
+            "  printf '\\nEND_THEME\\n'\n" +
+            "fi\n",
+            "sh", root.userPath, root.userThemesDir, root.packagedThemesDir
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: root.ingestScan(text)
+        }
+    }
+
+    IpcHandler {
+        target: "theme"
+
+        function list(): string { return root.themes.map(t => t.id).join("\n"); }
+        function current(): string { return root.currentId; }
+        function set(name: string): string { return root.setTheme(name); }
+        function next(): string { return root.stepTheme(1); }
+        function prev(): string { return root.stepTheme(-1); }
+        function reload(): string { return root.reload(); }
     }
 
     // ---- Accent -----------------------------------------------------------
@@ -124,6 +442,24 @@ Singleton {
         if (v !== null && typeof v === "object" && v.hslHue === undefined)
             return tone(hue + (v.h || 0), v.s === undefined ? 0.5 : v.s, v.l === undefined ? 0.5 : v.l, v.a);
         return v;
+    }
+
+    // Resolve a color token from an arbitrary theme.json object (used by the
+    // theme picker to render preview swatches for inactive themes).
+    function specColor(s, key, fallback) {
+        var mode = s && typeof s.accent === "string" && s.accent !== "" ? s.accent : "#7a9cc6";
+        var wAcc = mode === "wallpaper";
+        var seed = wAcc ? Qt.hsla(wallpaperHue, 0.6, 0.6, 1) : Qt.lighter(mode, 1);
+        var h = wAcc ? wallpaperHue : Math.max(0, seed.hslHue);
+        var sec = s && s.colors;
+        var v = sec !== null && typeof sec === "object" && sec[key] !== undefined ? sec[key] : fallback;
+        if (v === "accent")
+            return seed;
+        if (Array.isArray(v))
+            return Qt.rgba(v[0], v[1], v[2], v.length > 3 ? v[3] : 1);
+        if (v !== null && typeof v === "object" && v.hslHue === undefined)
+            return tone(h + (v.h || 0), v.s === undefined ? 0.5 : v.s, v.l === undefined ? 0.5 : v.l, v.a);
+        return Qt.lighter(v, 1);
     }
 
     // Theme color by name (also for theme-specific extras used by a theme's

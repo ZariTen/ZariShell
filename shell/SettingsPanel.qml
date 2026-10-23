@@ -14,6 +14,8 @@ Scope {
     readonly property bool open: ShellState.panel === "settings"
     readonly property string section: ShellState.settingsSection
 
+    onOpenChanged: if (open) Theme.scan()
+
     // Rows: key, label, kind ("slider" | "switch" | "font" | "accent"),
     // slider range/step, unit ("pct" | "px" | "x") and the value used when
     // the key is unset (the theme's value).
@@ -41,8 +43,6 @@ Scope {
             { key: "panelWidth", label: "Panel width", kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
             { key: "dim", label: "Dimmed items", kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }
         ] },
-        // Theme picker goes here later (see Settings.qml); for now it only
-        // shows the active theme.
         { id: "theme", title: "Theme", glyph: 0xF00E3, rows: [] }
     ]
     readonly property var current: {
@@ -225,6 +225,11 @@ Scope {
                                 text: "Reset section"
                                 onClicked: if (enabled) Settings.resetKeys(root.keysOf(root.current))
                             }
+                            ActionButton {
+                                visible: root.current.id === "theme"
+                                text: "Reload"
+                                onClicked: Theme.reload()
+                            }
                         }
 
                         Flickable {
@@ -246,20 +251,104 @@ Scope {
                                     delegate: SettingsRow {}
                                 }
 
-                                // Theme section (picker stub)
+                                // Theme picker
                                 ColumnLayout {
                                     visible: root.current.id === "theme"
                                     Layout.fillWidth: true
                                     spacing: Theme.spacingS
-                                    StyledText {
-                                        text: "Active theme: " + (Theme.name || "(unnamed)") + (Theme.userActive ? " (from ~/.config/zarishell/current)" : " (packaged)")
+
+                                    Repeater {
+                                        model: Theme.themes
+                                        Button {
+                                            id: themeCard
+                                            required property var modelData
+                                            readonly property bool isCurrent: modelData.id === Theme.currentId
+                                            Layout.fillWidth: true
+                                            implicitHeight: cardRow.implicitHeight + Theme.spacingM * 2
+                                            framed: true
+                                            active: isCurrent
+                                            onClicked: Theme.setTheme(modelData.id)
+
+                                            RowLayout {
+                                                id: cardRow
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                anchors.leftMargin: Theme.spacingM
+                                                anchors.rightMargin: Theme.spacingM
+                                                spacing: Theme.spacingM
+
+                                                RowLayout {
+                                                    spacing: Theme.spacingXs
+                                                    Repeater {
+                                                        model: [
+                                                            Theme.specColor(themeCard.modelData.spec, "surface", "#24282e"),
+                                                            Theme.specColor(themeCard.modelData.spec, "panel", [0.24, 0.26, 0.30, 0.96]),
+                                                            Theme.specColor(themeCard.modelData.spec, "primaryContainer", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.9 }),
+                                                            Theme.specColor(themeCard.modelData.spec, "accent", "accent")
+                                                        ]
+                                                        Rectangle {
+                                                            required property color modelData
+                                                            implicitWidth: Theme.px(16)
+                                                            implicitHeight: Theme.px(16)
+                                                            radius: Theme.radiusFull
+                                                            color: Qt.rgba(modelData.r, modelData.g, modelData.b, 1)
+                                                            border.width: 1
+                                                            border.color: Theme.border
+                                                        }
+                                                    }
+                                                }
+
+                                                ColumnLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: Theme.px(2)
+
+                                                    RowLayout {
+                                                        Layout.fillWidth: true
+                                                        spacing: Theme.spacingS
+
+                                                        StyledText {
+                                                            text: themeCard.modelData.name
+                                                            font.weight: Font.DemiBold
+                                                        }
+
+                                                        StyledText {
+                                                            text: (themeCard.modelData.source === "packaged" ? "built-in" : themeCard.modelData.source)
+                                                                + (themeCard.modelData.componentsCount > 0 ? " / " + themeCard.modelData.componentsCount + " components" : "")
+                                                            font.pixelSize: Theme.fontSmall
+                                                            color: Theme.textSurfaceVariant
+                                                        }
+
+                                                        Item { Layout.fillWidth: true }
+                                                    }
+
+                                                    StyledText {
+                                                        visible: themeCard.modelData.description !== ""
+                                                        Layout.fillWidth: true
+                                                        wrapMode: Text.Wrap
+                                                        text: themeCard.modelData.description
+                                                        color: Theme.textSurfaceVariant
+                                                        font.pixelSize: Theme.fontSmall
+                                                    }
+                                                }
+
+                                                MdIcon {
+                                                    visible: themeCard.isCurrent
+                                                    codepoint: 0xF012C // md-check
+                                                    color: Theme.accent
+                                                    font.pixelSize: Theme.iconPx(18)
+                                                }
+                                            }
+                                        }
                                     }
+
                                     StyledText {
                                         Layout.fillWidth: true
+                                        Layout.topMargin: Theme.spacingXs
                                         wrapMode: Text.Wrap
                                         color: Theme.textSurfaceVariant
                                         font.pixelSize: Theme.fontSmall
-                                        text: "A theme picker will live here. For now, point ~/.config/zarishell/current at a theme folder, or set ZARISHELL_THEME."
+                                        text: "Place user themes in ~/.config/zarishell/themes/<name>/theme.json (with optional components/*.qml) and click Reload, or switch via IPC with `quickshell -c shell ipc call theme set <name>`."
                                     }
                                 }
                             }

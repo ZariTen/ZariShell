@@ -15,10 +15,6 @@ import Quickshell.Io
 //
 // JsonAdapter is not used on purpose: it serializes every declared property,
 // so it cannot tell "unset" (follow the theme) from a stored value.
-//
-// Theme picker (later): a "theme" key naming a folder under themes/ or
-// ~/.config/zarishell/themes would go here; Theme.qml would resolve it before
-// the "current" symlink. Not implemented yet.
 Singleton {
     id: root
 

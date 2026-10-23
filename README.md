@@ -2,7 +2,8 @@
 
 A themeable desktop shell for Hyprland built with [Quickshell](https://quickshell.org), plus a matching
 login screen. The shell code only draws neutral, flat parts; every look comes
-from a theme. One theme, Aero (tinted glass), is bundled and is the default.
+from a theme. Two themes, Aero (tinted glass, the default) and Base (flat
+neutral slate), are bundled.
 
 ## Install
 
@@ -41,9 +42,26 @@ themes/<name>/
   components/*.qml    optional looks for the components listed below
 ```
 
-The active theme is `~/.config/zarishell/current` (for example a symlink to a
-theme folder) when it contains a `theme.json`, otherwise the packaged theme
-named by `$ZARISHELL_THEME` (default `aero`).
+Themes are discovered from `${XDG_CONFIG_HOME:-~/.config}/zarishell/themes/<name>/theme.json`
+(user themes, which take precedence on name collisions) and the packaged
+`themes/<name>/theme.json` (`aero` and `base`). The active theme is
+`~/.config/zarishell/current` (a symlink to the active theme folder) when it
+contains a `theme.json`, otherwise the theme named by `$ZARISHELL_THEME`
+(default `aero`).
+
+Switch themes live without restarting from the **Theme** tab in the settings
+panel, or over IPC:
+
+```sh
+quickshell -c shell ipc call theme list
+quickshell -c shell ipc call theme current
+quickshell -c shell ipc call theme set base   # theme id or path to folder
+quickshell -c shell ipc call theme next       # also: prev
+quickshell -c shell ipc call theme reload     # rescan themes and reload QML looks
+```
+
+Switching updates `~/.config/zarishell/current` so the choice persists across
+restarts.
 
 User settings (see [Settings](#settings)) are applied on top of these tokens.
 Any token a theme leaves out falls back to the neutral default shown below, and
@@ -62,6 +80,7 @@ components with `Theme.color("name", fallback)` (Aero uses `sheenTop`,
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `name` | `""` | Display name. |
+| `description` | `""` | Short summary shown in the theme picker. |
 | `accent` | `"#7a9cc6"` | Accent seed: a color, or `"wallpaper"` to take the hue from the current wallpaper. |
 | `components` | `[]` | Component looks / effects provided in `components/`. |
 
