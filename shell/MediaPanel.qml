@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Services.Mpris
 import Quickshell.Wayland
 import Quickshell.Widgets
@@ -10,6 +9,7 @@ import Quickshell.Widgets
 Scope {
     id: root
 
+    // -- State and derived properties ---------------------------------------
     readonly property bool open: ShellState.panel === "media"
     readonly property var player: ShellState.player
     readonly property var players: Mpris.players.values
@@ -20,9 +20,10 @@ Scope {
     readonly property bool muted: hasVolume && player.volume <= 0
     property real restoreVolume: 0.5
 
-    function setVolume(v) {
+    // -- Helper functions ---------------------------------------------------
+    function setVolume(volumeLevel) {
         if (hasVolume)
-            player.volume = Math.max(0, Math.min(1, v));
+            player.volume = Math.max(0, Math.min(1, volumeLevel));
     }
 
     function toggleMute() {
@@ -36,26 +37,34 @@ Scope {
         }
     }
 
-    function fmt(seconds) {
+    function formatDuration(seconds) {
         if (!isFinite(seconds) || seconds < 0)
             seconds = 0;
-        var s = Math.floor(seconds);
-        var h = Math.floor(s / 3600);
-        var m = Math.floor((s % 3600) / 60);
-        var sec = s % 60;
-        var mm = h > 0 && m < 10 ? "0" + m : "" + m;
-        return (h > 0 ? h + ":" : "") + mm + ":" + (sec < 10 ? "0" : "") + sec;
+        var totalSeconds = Math.floor(seconds);
+        var hours = Math.floor(totalSeconds / 3600);
+        var minutes = Math.floor((totalSeconds % 3600) / 60);
+        var remainingSeconds = totalSeconds % 60;
+        var paddedMinutes = hours > 0 && minutes < 10 ? "0" + minutes : "" + minutes;
+        return (hours > 0 ? hours + ":" : "") + paddedMinutes + ":" + (remainingSeconds < 10 ? "0" : "") + remainingSeconds;
     }
 
-    // Mpris position isn't pushed live; poke it while visible and playing.
-    Timer {
-        running: root.open && root.player !== null && root.player.isPlaying
-        interval: 1000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: root.player.positionChanged()
+    function nextLoopState(loopState) {
+        if (loopState === MprisLoopState.None)
+            return MprisLoopState.Playlist;
+        if (loopState === MprisLoopState.Playlist)
+            return MprisLoopState.Track;
+        return MprisLoopState.None;
     }
 
+    function loopStateGlyph(loopState) {
+        if (!root.player || loopState === MprisLoopState.None)
+            return 0xF0457;
+        if (loopState === MprisLoopState.Track)
+            return 0xF0458;
+        return 0xF0456;
+    }
+
+    // -- Visual tree --------------------------------------------------------
     Variants {
         model: Quickshell.screens
 
@@ -63,14 +72,7 @@ Scope {
             id: window
 
             required property var modelData
-            readonly property var monitor: Hyprland.monitorFor(modelData)
-            readonly property bool focusedHere: {
-                if (!root.open)
-                    return false;
-                if (Hyprland.focusedMonitor === null)
-                    return modelData === Quickshell.screens[0];
-                return monitor !== null && monitor.name === Hyprland.focusedMonitor.name;
-            }
+            readonly property bool focusedHere: root.open && ShellState.isFocusedScreen(modelData)
 
             screen: modelData
             visible: focusedHere || card.opacity > 0
@@ -99,7 +101,7 @@ Scope {
                 id: card
 
                 readonly property bool shown: window.focusedHere
-                readonly property var p: root.player
+                readonly property var activePlayer: root.player
 
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: Theme.barHeight + Theme.gap + (shown ? 0 : -16)
@@ -142,7 +144,7 @@ Scope {
                         }
                         StyledText {
                             Layout.fillWidth: true
-                            text: card.p ? (card.p.identity || "Media") : "Nothing playing"
+                            text: card.activePlayer ? (card.activePlayer.identity || "Media") : "Nothing playing"
                             font.pixelSize: Theme.fontTitle
                             font.weight: Font.DemiBold
                         }
@@ -163,13 +165,13 @@ Scope {
                                 implicitWidth: chipText.implicitWidth + Theme.spacingM * 2
                                 implicitHeight: Theme.px(26)
                                 framed: true
-                                active: modelData === card.p
+                                active: modelData === card.activePlayer
                                 onClicked: ShellState.chosenPlayer = chip.modelData
 
                                 StyledText {
                                     id: chipText
                                     anchors.centerIn: parent
-                                    text: (chip.modelData.isPlaying ? "▶ " : "") + (chip.modelData.identity || "Player")
+                                    text: (chip.modelData.isPlaying ? "\u25b6 " : "") + (chip.modelData.identity || "Player")
                                     font.pixelSize: Theme.fontSmall
                                 }
                             }
@@ -213,7 +215,7 @@ Scope {
                                     asynchronous: true
                                     sourceSize.width: 256
                                     sourceSize.height: 256
-                                    source: card.p ? card.p.trackArtUrl : ""
+                                    source: card.activePlayer ? card.activePlayer.trackArtUrl : ""
                                 }
                             }
                         }
@@ -225,7 +227,7 @@ Scope {
 
                             StyledText {
                                 Layout.fillWidth: true
-                                text: card.p ? (card.p.trackTitle || "Unknown title") : ""
+                                text: card.activePlayer ? (card.activePlayer.trackTitle || "Unknown title") : ""
                                 font.pixelSize: Theme.fontTitle + 2
                                 font.weight: Font.Bold
                                 wrapMode: Text.WordWrap
@@ -234,13 +236,13 @@ Scope {
                             StyledText {
                                 Layout.fillWidth: true
                                 visible: text !== ""
-                                text: card.p ? card.p.trackArtist : ""
+                                text: card.activePlayer ? card.activePlayer.trackArtist : ""
                                 color: Theme.accent
                             }
                             StyledText {
                                 Layout.fillWidth: true
                                 visible: text !== ""
-                                text: card.p ? card.p.trackAlbum : ""
+                                text: card.activePlayer ? card.activePlayer.trackAlbum : ""
                                 color: Theme.textSurfaceVariant
                                 font.pixelSize: Theme.fontSmall + 1
                             }
@@ -250,7 +252,7 @@ Scope {
                     // Seek bar
                     ColumnLayout {
                         Layout.fillWidth: true
-                        visible: card.p !== null && card.p.lengthSupported && card.p.length > 0
+                        visible: card.activePlayer !== null && card.activePlayer.lengthSupported && card.activePlayer.length > 0
                         spacing: Theme.px(2)
 
                         Slider {
@@ -258,11 +260,11 @@ Scope {
                             Layout.fillWidth: true
                             implicitHeight: Theme.px(12)
                             tone: "accent"
-                            interactive: card.p !== null && card.p.canSeek
-                            value: card.p && card.p.length > 0 ? Math.min(1, card.p.position / card.p.length) : 0
-                            onReleased: v => {
-                                if (card.p && card.p.canSeek)
-                                    card.p.position = v * card.p.length;
+                            interactive: card.activePlayer !== null && card.activePlayer.canSeek
+                            value: card.activePlayer && card.activePlayer.length > 0 ? Math.min(1, card.activePlayer.position / card.activePlayer.length) : 0
+                            onReleased: ratio => {
+                                if (card.activePlayer && card.activePlayer.canSeek)
+                                    card.activePlayer.position = ratio * card.activePlayer.length;
                             }
                         }
 
@@ -270,12 +272,12 @@ Scope {
                             Layout.fillWidth: true
                             StyledText {
                                 Layout.fillWidth: true
-                                text: root.fmt(card.p ? (seek.pressed ? seek.shown * card.p.length : card.p.position) : 0)
+                                text: root.formatDuration(card.activePlayer ? (seek.pressed ? seek.shown * card.activePlayer.length : card.activePlayer.position) : 0)
                                 font.pixelSize: Theme.fontSmall
                                 color: Theme.textSurfaceVariant
                             }
                             StyledText {
-                                text: root.fmt(card.p ? card.p.length : 0)
+                                text: root.formatDuration(card.activePlayer ? card.activePlayer.length : 0)
                                 font.pixelSize: Theme.fontSmall
                                 color: Theme.textSurfaceVariant
                             }
@@ -294,7 +296,7 @@ Scope {
                             onClicked: root.toggleMute()
                             MdIcon {
                                 anchors.centerIn: parent
-                                codepoint: root.muted ? 0xF0581 : (root.volume < 0.34 ? 0xF057F : (root.volume < 0.67 ? 0xF0580 : 0xF057E))
+                                codepoint: ShellState.volumeGlyph(root.volume, root.muted)
                                 color: root.muted ? Theme.outline : Theme.textSurface
                             }
                         }
@@ -303,7 +305,7 @@ Scope {
                             id: volSlider
                             Layout.fillWidth: true
                             value: root.volume
-                            onMoved: v => root.setVolume(v)
+                            onMoved: ratio => root.setVolume(ratio)
                         }
 
                         StyledText {
@@ -321,15 +323,15 @@ Scope {
                         spacing: Theme.spacingS
 
                         Button {
-                            visible: card.p !== null && card.p.shuffleSupported
+                            visible: card.activePlayer !== null && card.activePlayer.shuffleSupported
                             implicitWidth: Theme.px(34)
                             implicitHeight: Theme.px(34)
-                            active: card.p !== null && card.p.shuffle
-                            onClicked: card.p.shuffle = !card.p.shuffle
+                            active: card.activePlayer !== null && card.activePlayer.shuffle
+                            onClicked: card.activePlayer.shuffle = !card.activePlayer.shuffle
                             MdIcon {
                                 anchors.centerIn: parent
-                                codepoint: card.p && card.p.shuffle ? 0xF049D : 0xF049E
-                                color: card.p && card.p.shuffle ? Theme.accent : Theme.textSurfaceVariant
+                                codepoint: card.activePlayer && card.activePlayer.shuffle ? 0xF049D : 0xF049E
+                                color: card.activePlayer && card.activePlayer.shuffle ? Theme.accent : Theme.textSurfaceVariant
                             }
                         }
 
@@ -337,9 +339,9 @@ Scope {
                             implicitWidth: Theme.px(44)
                             implicitHeight: Theme.px(40)
                             framed: true
-                            enabled: card.p !== null && card.p.canGoPrevious
+                            enabled: card.activePlayer !== null && card.activePlayer.canGoPrevious
                             opacity: enabled ? 1 : Theme.dim(0.4)
-                            onClicked: card.p.previous()
+                            onClicked: card.activePlayer.previous()
                             MdIcon { anchors.centerIn: parent; codepoint: 0xF04AE; font.pixelSize: Theme.iconPx(22) }
                         }
 
@@ -348,12 +350,12 @@ Scope {
                             implicitHeight: Theme.px(48)
                             framed: true
                             active: true
-                            enabled: card.p !== null && card.p.canTogglePlaying
+                            enabled: card.activePlayer !== null && card.activePlayer.canTogglePlaying
                             opacity: enabled ? 1 : Theme.dim(0.4)
-                            onClicked: card.p.togglePlaying()
+                            onClicked: card.activePlayer.togglePlaying()
                             MdIcon {
                                 anchors.centerIn: parent
-                                codepoint: card.p && card.p.isPlaying ? 0xF03E4 : 0xF040A
+                                codepoint: card.activePlayer && card.activePlayer.isPlaying ? 0xF03E4 : 0xF040A
                                 font.pixelSize: Theme.iconPx(28)
                             }
                         }
@@ -362,30 +364,37 @@ Scope {
                             implicitWidth: Theme.px(44)
                             implicitHeight: Theme.px(40)
                             framed: true
-                            enabled: card.p !== null && card.p.canGoNext
+                            enabled: card.activePlayer !== null && card.activePlayer.canGoNext
                             opacity: enabled ? 1 : Theme.dim(0.4)
-                            onClicked: card.p.next()
+                            onClicked: card.activePlayer.next()
                             MdIcon { anchors.centerIn: parent; codepoint: 0xF04AD; font.pixelSize: Theme.iconPx(22) }
                         }
 
                         Button {
-                            visible: card.p !== null && card.p.loopSupported
+                            visible: card.activePlayer !== null && card.activePlayer.loopSupported
                             implicitWidth: Theme.px(34)
                             implicitHeight: Theme.px(34)
-                            active: card.p !== null && card.p.loopState !== MprisLoopState.None
-                            onClicked: {
-                                var s = card.p.loopState;
-                                card.p.loopState = s === MprisLoopState.None ? MprisLoopState.Playlist : (s === MprisLoopState.Playlist ? MprisLoopState.Track : MprisLoopState.None);
-                            }
+                            active: card.activePlayer !== null && card.activePlayer.loopState !== MprisLoopState.None
+                            onClicked: card.activePlayer.loopState = root.nextLoopState(card.activePlayer.loopState)
                             MdIcon {
                                 anchors.centerIn: parent
-                                codepoint: !card.p || card.p.loopState === MprisLoopState.None ? 0xF0457 : (card.p.loopState === MprisLoopState.Track ? 0xF0458 : 0xF0456)
-                                color: card.p && card.p.loopState !== MprisLoopState.None ? Theme.accent : Theme.textSurfaceVariant
+                                codepoint: root.loopStateGlyph(card.activePlayer ? card.activePlayer.loopState : MprisLoopState.None)
+                                color: card.activePlayer && card.activePlayer.loopState !== MprisLoopState.None ? Theme.accent : Theme.textSurfaceVariant
                             }
                         }
                     }
                 }
             }
         }
+    }
+
+    // -- Background objects -------------------------------------------------
+    // Mpris position isn't pushed live; poke it while visible and playing.
+    Timer {
+        running: root.open && root.player !== null && root.player.isPlaying
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: root.player.positionChanged()
     }
 }

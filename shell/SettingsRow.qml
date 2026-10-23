@@ -5,26 +5,31 @@ import QtQuick.Layouts
 // `modelData` is a row spec from SettingsPanel.qml.
 Item {
     id: row
+
+    // -- Public / derived properties ----------------------------------------
     required property var modelData
     readonly property bool isSet: Settings.has(modelData.key)
-    readonly property var value: Settings.get(modelData.key, modelData.def)
+    readonly property var currentValue: Settings.get(modelData.key, modelData.def)
+    readonly property real displayedSliderValue: slider.pendingValue >= 0 ? slider.pendingValue : Number(currentValue)
 
     Layout.fillWidth: true
     implicitHeight: Theme.px(40)
 
-    function fmt(spec, v) {
-        if (spec.unit === "pct")
-            return Math.round(v * 100) + "%";
-        if (spec.unit === "px")
-            return Math.round(v) + " px";
-        return v.toFixed(2) + "x";
+    // -- Helper functions ---------------------------------------------------
+    function formatValue(rowSpec, numericValue) {
+        if (rowSpec.unit === "pct")
+            return Math.round(numericValue * 100) + "%";
+        if (rowSpec.unit === "px")
+            return Math.round(numericValue) + " px";
+        return numericValue.toFixed(2) + "x";
     }
 
-    function snap(spec, ratio) {
-        var v = spec.min + Math.round(ratio * (spec.max - spec.min) / spec.step) * spec.step;
-        return Math.round(Math.max(spec.min, Math.min(spec.max, v)) * 100) / 100;
+    function snapValue(rowSpec, ratio) {
+        var stepped = rowSpec.min + Math.round(ratio * (rowSpec.max - rowSpec.min) / rowSpec.step) * rowSpec.step;
+        return Math.round(Math.max(rowSpec.min, Math.min(rowSpec.max, stepped)) * 100) / 100;
     }
 
+    // -- Visual tree --------------------------------------------------------
     Surface {
         anchors.fill: parent
         radius: Theme.radius
@@ -47,21 +52,27 @@ Item {
         // Slider
         Slider {
             id: slider
+            property real pendingValue: -1
+
             visible: row.modelData.kind === "slider"
             Layout.fillWidth: true
             tone: "accent"
-            property real pending: -1
-            value: row.modelData.kind !== "slider" ? 0 : ((pending >= 0 ? pending : row.value) - row.modelData.min) / (row.modelData.max - row.modelData.min)
-            onMoved: v => {
-                if (row.modelData.onRelease)
-                    pending = row.snap(row.modelData, v);
-                else
-                    Settings.set(row.modelData.key, row.snap(row.modelData, v));
+            value: {
+                if (row.modelData.kind !== "slider")
+                    return 0;
+                return (row.displayedSliderValue - row.modelData.min) / (row.modelData.max - row.modelData.min);
             }
-            onReleased: v => {
+            onMoved: ratio => {
+                var snapped = row.snapValue(row.modelData, ratio);
+                if (row.modelData.onRelease)
+                    pendingValue = snapped;
+                else
+                    Settings.set(row.modelData.key, snapped);
+            }
+            onReleased: ratio => {
                 if (row.modelData.onRelease) {
-                    Settings.set(row.modelData.key, row.snap(row.modelData, v));
-                    pending = -1;
+                    Settings.set(row.modelData.key, row.snapValue(row.modelData, ratio));
+                    pendingValue = -1;
                 }
             }
         }
@@ -69,7 +80,7 @@ Item {
             visible: row.modelData.kind === "slider"
             Layout.preferredWidth: Theme.px(56)
             horizontalAlignment: Text.AlignRight
-            text: row.modelData.kind === "slider" ? row.fmt(row.modelData, slider.pending >= 0 ? slider.pending : row.value) : ""
+            text: row.modelData.kind === "slider" ? row.formatValue(row.modelData, row.displayedSliderValue) : ""
             color: Theme.textSurfaceVariant
         }
 
@@ -80,7 +91,7 @@ Item {
         }
         Switch {
             visible: row.modelData.kind === "switch"
-            checked: row.modelData.kind === "switch" && row.value === true
+            checked: row.modelData.kind === "switch" && row.currentValue === true
             onToggled: Settings.set(row.modelData.key, !checked)
         }
 
@@ -121,19 +132,22 @@ Item {
             Layout.fillWidth: true
             spacing: Theme.spacingXs
             Repeater {
-                model: [{ v: "", t: "Theme" }, { v: "wallpaper", t: "Wallpaper" }]
+                model: [
+                    { value: "", label: "Theme" },
+                    { value: "wallpaper", label: "Wallpaper" }
+                ]
                 Button {
                     id: choiceButton
                     required property var modelData
-                    implicitWidth: choice.implicitWidth + Theme.spacingM * 2
+                    implicitWidth: choiceLabel.implicitWidth + Theme.spacingM * 2
                     implicitHeight: Theme.px(30)
                     framed: true
-                    active: Settings.get("accent", "") === modelData.v
-                    onClicked: modelData.v === "" ? Settings.reset("accent") : Settings.set("accent", modelData.v)
+                    active: Settings.get("accent", "") === modelData.value
+                    onClicked: modelData.value === "" ? Settings.reset("accent") : Settings.set("accent", modelData.value)
                     StyledText {
-                        id: choice
+                        id: choiceLabel
                         anchors.centerIn: parent
-                        text: choiceButton.modelData.t
+                        text: choiceButton.modelData.label
                     }
                 }
             }
@@ -156,7 +170,11 @@ Item {
                     clip: true
                     maximumLength: 9
                     text: /^#/.test(Settings.get("accent", "")) ? Settings.get("accent", "") : ""
-                    onAccepted: if (/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(text.trim())) Settings.set("accent", text.trim())
+                    onAccepted: {
+                        var trimmedHex = text.trim();
+                        if (/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmedHex))
+                            Settings.set("accent", trimmedHex);
+                    }
                     StyledText {
                         anchors.fill: parent
                         visible: hexInput.text === ""

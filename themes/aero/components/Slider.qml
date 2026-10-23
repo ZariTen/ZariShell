@@ -7,11 +7,17 @@ import qs
 Rectangle {
     id: look
 
-    readonly property var stops: control.tone === "critical" ? ["#ffb0a0", "#e0412b", "#b8240f", "#ef5a3f"]
-        : control.tone === "warning" ? ["#ffe9a0", "#e8b52a", "#c48d0c", "#f0c43c"]
-        : control.tone === "muted" ? ["#9a9a9a", "#6b6b6b", "#555555", "#777777"]
-        : control.tone === "accent" ? [Qt.lighter(Theme.accent, 1.35), Theme.accent, Qt.darker(Theme.accent, 1.5), Theme.accent]
-        : ["#b6f39a", "#4fc22a", "#2f9e12", "#5fd23a"]
+    readonly property var stops: {
+        if (control.tone === "critical")
+            return ["#ffb0a0", "#e0412b", "#b8240f", "#ef5a3f"];
+        if (control.tone === "warning")
+            return ["#ffe9a0", "#e8b52a", "#c48d0c", "#f0c43c"];
+        if (control.tone === "muted")
+            return ["#9a9a9a", "#6b6b6b", "#555555", "#777777"];
+        if (control.tone === "accent")
+            return [Qt.lighter(Theme.accent, 1.35), Theme.accent, Qt.darker(Theme.accent, 1.5), Theme.accent];
+        return ["#b6f39a", "#4fc22a", "#2f9e12", "#5fd23a"];
+    }
 
     radius: 2
     color: Theme.inset

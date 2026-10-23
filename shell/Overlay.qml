@@ -9,6 +9,7 @@ import Quickshell.Widgets
 Scope {
     id: root
 
+    // -- State and derived properties ---------------------------------------
     property string query: ""
     property var clipIds: []
     property var clipPreviews: []
@@ -16,88 +17,96 @@ Scope {
     // Launch-frequency ranking: {desktopEntryId: count} in $XDG_STATE_HOME/quickshell/launches.json.
     readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/quickshell"
     property var launchCounts: ({})
-    FileView {
-        id: launchFile
-        path: root.stateDir + "/launches.json"
-        printErrors: false
-        onLoaded: {
-            try {
-                var d = JSON.parse(text());
-                root.launchCounts = d && typeof d === "object" && !Array.isArray(d) ? d : {};
-            } catch (e) {
-                root.launchCounts = {};
-            }
-        }
-        onLoadFailed: root.launchCounts = {}
-    }
-    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", root.stateDir])
     // Sorting uses a snapshot taken when the launcher opens, so recording a
     // launch never reorders the list underneath the item being activated.
     property var rankCounts: ({})
-    function launchCount(app) {
-        return root.rankCounts[app.id] || 0;
-    }
     // Last pointer position in scene coordinates; hover only selects when the
     // pointer actually moves, not when the list scrolls under a still cursor.
     property point lastPointer: Qt.point(-1, -1)
-    function recordLaunch(app) {
-        var c = Object.assign({}, root.launchCounts);
-        c[app.id] = (c[app.id] || 0) + 1;
-        root.launchCounts = c;
-        launchFile.setText(JSON.stringify(c));
-    }
+
     readonly property bool listPanel: ShellState.panel === "launcher" || ShellState.panel === "clipboard" || ShellState.panel === "switcher"
     // Remember the last list panel so contents stay put during the exit animation.
     property string mode: "launcher"
-    Connections {
-        target: ShellState
-        function onPanelChanged() {
-            if (root.listPanel)
-                root.mode = ShellState.panel;
-        }
+
+    readonly property int headerGlyph: {
+        if (mode === "clipboard")
+            return 0xF0147;
+        if (mode === "switcher")
+            return 0xF05B6;
+        return 0xF1105;
+    }
+
+    readonly property string headerTitle: {
+        if (mode === "clipboard")
+            return "Clipboard history";
+        if (mode === "switcher")
+            return "Switch window";
+        return "All Programs";
+    }
+
+    readonly property string searchPlaceholder: {
+        if (mode === "clipboard")
+            return "Search clipboard";
+        if (mode === "switcher")
+            return "Search windows";
+        return "Search programs and files";
     }
 
     readonly property var apps: {
-        var all = DesktopEntries.applications.values;
+        var allApps = DesktopEntries.applications.values;
         var needle = root.query.toLowerCase();
-        var prefix = [];
-        var other = [];
-        for (var i = 0; i < all.length; i++) {
-            var app = all[i];
-            var name = app.name.toLowerCase();
+        var prefixMatches = [];
+        var otherMatches = [];
+        for (var i = 0; i < allApps.length; i++) {
+            var app = allApps[i];
+            var appName = app.name.toLowerCase();
             if (needle === "")
-                other.push(app);
-            else if (name.indexOf(needle) === 0)
-                prefix.push(app);
-            else if (name.indexOf(needle) !== -1 || (app.genericName || "").toLowerCase().indexOf(needle) !== -1 || app.keywords.join(" ").toLowerCase().indexOf(needle) !== -1)
-                other.push(app);
+                otherMatches.push(app);
+            else if (appName.indexOf(needle) === 0)
+                prefixMatches.push(app);
+            else if (appName.indexOf(needle) !== -1
+                || (app.genericName || "").toLowerCase().indexOf(needle) !== -1
+                || app.keywords.join(" ").toLowerCase().indexOf(needle) !== -1)
+                otherMatches.push(app);
         }
-        var sortByName = (a, b) => root.launchCount(b) - root.launchCount(a) || a.name.localeCompare(b.name);
-        prefix.sort(sortByName);
-        other.sort(sortByName);
-        return prefix.concat(other).slice(0, 60);
+        var compareApps = (firstApp, secondApp) => root.launchCount(secondApp) - root.launchCount(firstApp) || firstApp.name.localeCompare(secondApp.name);
+        prefixMatches.sort(compareApps);
+        otherMatches.sort(compareApps);
+        return prefixMatches.concat(otherMatches).slice(0, 60);
     }
 
     readonly property var windows: {
-        var all = Hyprland.toplevels.values;
-        var found = [];
+        var allToplevels = Hyprland.toplevels.values;
+        var matchingWindows = [];
         var needle = root.query.toLowerCase();
-        for (var i = 0; i < all.length; i++) {
-            var title = all[i].title.toLowerCase();
+        for (var i = 0; i < allToplevels.length; i++) {
+            var title = allToplevels[i].title.toLowerCase();
             if (needle === "" || title.indexOf(needle) !== -1)
-                found.push(all[i]);
+                matchingWindows.push(allToplevels[i]);
         }
-        return found;
+        return matchingWindows;
     }
 
     readonly property var clipHits: {
-        var found = [];
+        var matchingIndices = [];
         var needle = root.query.toLowerCase();
-        for (var i = 0; i < root.clipPreviews.length && found.length < 40; i++) {
+        for (var i = 0; i < root.clipPreviews.length && matchingIndices.length < 40; i++) {
             if (needle === "" || root.clipPreviews[i].toLowerCase().indexOf(needle) !== -1)
-                found.push(i);
+                matchingIndices.push(i);
         }
-        return found;
+        return matchingIndices;
+    }
+
+    // -- Helper functions ---------------------------------------------------
+    function launchCount(app) {
+        return root.rankCounts[app.id] || 0;
+    }
+
+    function recordLaunch(app) {
+        var updatedCounts = Object.assign({}, root.launchCounts);
+        updatedCounts[app.id] = (updatedCounts[app.id] || 0) + 1;
+        root.launchCounts = updatedCounts;
+        launchFile.setText(JSON.stringify(updatedCounts));
     }
 
     function itemCount() {
@@ -112,20 +121,31 @@ Scope {
     function item(index) {
         if (mode === "launcher") {
             var app = apps[index];
-            return { title: app.name, subtitle: app.comment || app.genericName || "", icon: app.icon, glyph: 0xF003B };
+            return {
+                title: app.name,
+                subtitle: app.comment || app.genericName || "",
+                icon: app.icon,
+                glyph: 0xF003B
+            };
         }
         if (mode === "clipboard") {
-            var text = clipPreviews[clipHits[index]].replace(/\s+/g, " ");
-            var image = /^\[\[ binary data/.test(text);
-            return { title: text, subtitle: "", icon: "", glyph: image ? 0xF02E9 : 0xF0147 };
+            var previewText = clipPreviews[clipHits[index]].replace(/\s+/g, " ");
+            var isBinaryImage = /^\[\[ binary data/.test(previewText);
+            return {
+                title: previewText,
+                subtitle: "",
+                icon: "",
+                glyph: isBinaryImage ? 0xF02E9 : 0xF0147
+            };
         }
-        var win = windows[index];
-        var appId = win.wayland ? win.wayland.appId : "";
-        var entry = appId !== "" ? DesktopEntries.heuristicLookup(appId) : null;
+        var windowItem = windows[index];
+        var appId = windowItem.wayland ? windowItem.wayland.appId : "";
+        var desktopEntry = appId !== "" ? DesktopEntries.heuristicLookup(appId) : null;
+        var workspaceSuffix = windowItem.workspace ? "  \u00b7  workspace " + windowItem.workspace.name : "";
         return {
-            title: win.title,
-            subtitle: (entry ? entry.name : appId) + (win.workspace ? "  ·  workspace " + win.workspace.name : ""),
-            icon: entry ? entry.icon : appId,
+            title: windowItem.title,
+            subtitle: (desktopEntry ? desktopEntry.name : appId) + workspaceSuffix,
+            icon: desktopEntry ? desktopEntry.icon : appId,
             glyph: 0xF05B6
         };
     }
@@ -146,10 +166,10 @@ Scope {
                 });
             root.recordLaunch(app);
         } else if (mode === "clipboard") {
-            var id = clipIds[clipHits[index]];
-            if (/^\d+$/.test(id)) {
-                clipPaste.command = ["sh", "-c", "cliphist decode " + id + " | wl-copy"];
-                clipPaste.running = true;
+            var entryId = clipIds[clipHits[index]];
+            if (/^\d+$/.test(entryId)) {
+                clipPasteProcess.command = ["sh", "-c", "cliphist decode \"$1\" | wl-copy", "sh", entryId];
+                clipPasteProcess.running = true;
             }
         } else if (windows[index].wayland) {
             windows[index].wayland.activate();
@@ -158,48 +178,10 @@ Scope {
     }
 
     function refreshClipboard() {
-        clipList.running = true;
+        clipListProcess.running = true;
     }
 
-    IpcHandler {
-        target: "panel"
-
-        function toggle(name: string): void {
-            ShellState.toggle(name);
-            if (name === "clipboard" && ShellState.panel === "clipboard")
-                root.refreshClipboard();
-        }
-
-        function close(): void {
-            ShellState.close();
-        }
-    }
-
-    Process {
-        id: clipList
-        command: ["cliphist", "list"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var lines = text.trim() === "" ? [] : text.trim().split("\n");
-                var ids = [];
-                var previews = [];
-                for (var i = 0; i < lines.length && ids.length < 80; i++) {
-                    var tab = lines[i].indexOf("\t");
-                    if (tab < 1)
-                        continue;
-                    ids.push(lines[i].slice(0, tab));
-                    previews.push(lines[i].slice(tab + 1));
-                }
-                root.clipIds = ids;
-                root.clipPreviews = previews;
-            }
-        }
-    }
-
-    Process {
-        id: clipPaste
-    }
-
+    // -- Visual tree --------------------------------------------------------
     Variants {
         model: Quickshell.screens
 
@@ -207,14 +189,7 @@ Scope {
             id: window
 
             required property var modelData
-            readonly property var monitor: Hyprland.monitorFor(modelData)
-            readonly property bool focusedHere: {
-                if (!root.listPanel)
-                    return false;
-                if (Hyprland.focusedMonitor === null)
-                    return modelData === Quickshell.screens[0];
-                return monitor !== null && monitor.name === Hyprland.focusedMonitor.name;
-            }
+            readonly property bool focusedHere: root.listPanel && ShellState.isFocusedScreen(modelData)
 
             screen: modelData
             visible: focusedHere || card.animating
@@ -274,12 +249,12 @@ Scope {
                         spacing: Theme.spacingS
 
                         MdIcon {
-                            codepoint: root.mode === "clipboard" ? 0xF0147 : (root.mode === "switcher" ? 0xF05B6 : 0xF1105)
+                            codepoint: root.headerGlyph
                             color: Theme.accent
                         }
                         StyledText {
                             Layout.fillWidth: true
-                            text: root.mode === "clipboard" ? "Clipboard history" : (root.mode === "switcher" ? "Switch window" : "All Programs")
+                            text: root.headerTitle
                             font.pixelSize: Theme.fontTitle
                             font.weight: Font.DemiBold
                         }
@@ -393,10 +368,10 @@ Scope {
                                     hoverEnabled: true
                                     cursorShape: Qt.PointingHandCursor
                                     onPositionChanged: mouse => {
-                                        var p = mapToItem(null, mouse.x, mouse.y);
-                                        var moved = root.lastPointer.x >= 0 && (p.x !== root.lastPointer.x || p.y !== root.lastPointer.y);
-                                        root.lastPointer = p;
-                                        if (moved)
+                                        var scenePoint = mapToItem(null, mouse.x, mouse.y);
+                                        var pointerMoved = root.lastPointer.x >= 0 && (scenePoint.x !== root.lastPointer.x || scenePoint.y !== root.lastPointer.y);
+                                        root.lastPointer = scenePoint;
+                                        if (pointerMoved)
                                             list.currentIndex = row.index;
                                     }
                                     onClicked: root.activate(row.index)
@@ -432,7 +407,7 @@ Scope {
                                     visible: search.text === ""
                                     color: Theme.textSurfaceVariant
                                     font.italic: true
-                                    text: root.mode === "clipboard" ? "Search clipboard" : (root.mode === "switcher" ? "Search windows" : "Search programs and files")
+                                    text: root.searchPlaceholder
                                 }
 
                                 onTextChanged: {
@@ -456,5 +431,71 @@ Scope {
                 }
             }
         }
+    }
+
+    // -- Lifecycle and background objects -----------------------------------
+    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", root.stateDir])
+
+    Connections {
+        target: ShellState
+        function onPanelChanged() {
+            if (root.listPanel)
+                root.mode = ShellState.panel;
+        }
+    }
+
+    FileView {
+        id: launchFile
+        path: root.stateDir + "/launches.json"
+        printErrors: false
+        onLoaded: {
+            try {
+                var parsed = JSON.parse(text());
+                root.launchCounts = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+            } catch (parseError) {
+                root.launchCounts = {};
+            }
+        }
+        onLoadFailed: root.launchCounts = {}
+    }
+
+    IpcHandler {
+        target: "panel"
+
+        function toggle(name: string): void {
+            ShellState.toggle(name);
+            if (name === "clipboard" && ShellState.panel === "clipboard")
+                root.refreshClipboard();
+        }
+
+        function close(): void {
+            ShellState.close();
+        }
+    }
+
+    Process {
+        id: clipListProcess
+        command: ["cliphist", "list"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var trimmed = text.trim();
+                var lines = trimmed === "" ? [] : trimmed.split("\n");
+                var ids = [];
+                var previews = [];
+                for (var i = 0; i < lines.length && ids.length < 80; i++) {
+                    var tabIndex = lines[i].indexOf("\t");
+                    if (tabIndex < 1)
+                        continue;
+                    ids.push(lines[i].slice(0, tabIndex));
+                    previews.push(lines[i].slice(tabIndex + 1));
+                }
+                root.clipIds = ids;
+                root.clipPreviews = previews;
+            }
+        }
+    }
+
+    Process {
+        id: clipPasteProcess
     }
 }

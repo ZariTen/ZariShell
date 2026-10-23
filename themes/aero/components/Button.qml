@@ -21,7 +21,13 @@ Item {
             anchors.margins: 1
             radius: Math.max(0, control.radius - 1)
             border.width: 1
-            border.color: control.pressed ? Qt.rgba(1, 1, 1, 0.18) : (control.lit ? Qt.rgba(control.tint.r, control.tint.g, control.tint.b, 0.55) : Theme.borderLight)
+            border.color: {
+                if (control.pressed)
+                    return Qt.rgba(1, 1, 1, 0.18);
+                if (control.lit)
+                    return Qt.rgba(control.tint.r, control.tint.g, control.tint.b, 0.55);
+                return Theme.borderLight;
+            }
             Behavior on border.color { ColorAnimation { duration: Theme.durShort } }
             gradient: Gradient {
                 GradientStop { position: 0.0; color: control.pressed ? Qt.rgba(0, 0, 0, 0.35) : Qt.rgba(1, 1, 1, control.lit ? 0.28 : 0.16) }

@@ -16,8 +16,16 @@ Item {
     property alias pressed: mouse.pressed
     property alias acceptedButtons: mouse.acceptedButtons
     readonly property bool lit: active || mouse.containsMouse
+
     // 0..1 highlight strength: hover brightens, active stays calm, press dims.
-    readonly property real level: mouse.pressed ? 0.35 : (active ? (mouse.containsMouse ? 1 : 0.9) : (mouse.containsMouse ? 0.6 : 0))
+    readonly property real level: {
+        if (mouse.pressed)
+            return 0.35;
+        if (active)
+            return mouse.containsMouse ? 1 : 0.9;
+        return mouse.containsMouse ? 0.6 : 0;
+    }
+
     signal clicked(var mouse)
     signal wheel(var wheel)
 
@@ -36,7 +44,7 @@ Item {
         anchors.fill: parent
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        onClicked: m => control.clicked(m)
-        onWheel: w => control.wheel(w)
+        onClicked: mouseEvent => control.clicked(mouseEvent)
+        onWheel: wheelEvent => control.wheel(wheelEvent)
     }
 }

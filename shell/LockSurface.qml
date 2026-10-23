@@ -8,60 +8,22 @@ import Quickshell.Services.UPower
 Item {
     id: surface
 
+    // -- Public API ---------------------------------------------------------
     required property var lock
+
+    // -- Internal state -----------------------------------------------------
     property string realName: Quickshell.env("USER") || "user"
     property bool capsLock: false
 
-    SystemClock {
-        id: clock
-        precision: SystemClock.Seconds
-    }
-
-    // Real name from passwd (GECOS field).
-    FileView {
-        path: "/etc/passwd"
-        onLoaded: {
-            var user = Quickshell.env("USER");
-            var lines = text().split("\n");
-            for (var i = 0; i < lines.length; i++) {
-                var f = lines[i].split(":");
-                if (f[0] === user && f[4]) {
-                    surface.realName = f[4].split(",")[0];
-                    break;
-                }
-            }
-        }
-    }
-
-    // Caps Lock state from Hyprland (no native QML API for it).
-    Process {
-        id: caps
-        command: ["hyprctl", "devices", "-j"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    var kbs = JSON.parse(text).keyboards || [];
-                    surface.capsLock = kbs.some(k => k.capsLock);
-                } catch (e) {}
-            }
-        }
-    }
-    Timer {
-        running: surface.visible
-        interval: 1000
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: caps.running = true
-    }
-
-    // ── Background ───────────────────────────────────────────────────────
+    // -- Visual tree --------------------------------------------------------
+    // -- Background ---------------------------------------------------------
     Backdrop {
         anchors.fill: parent
         source: Theme.fileUrl(Wallpaper.path)
         role: "lock"
     }
 
-    // ── Clock ────────────────────────────────────────────────────────────
+    // -- Clock --------------------------------------------------------------
     Column {
         id: clockBlock
         anchors.horizontalCenter: parent.horizontalCenter
@@ -88,7 +50,7 @@ Item {
         }
     }
 
-    // ── Logon card ───────────────────────────────────────────────────────
+    // -- Logon card ---------------------------------------------------------
     Item {
         id: card
         anchors.horizontalCenter: parent.horizontalCenter
@@ -106,15 +68,6 @@ Item {
             NumberAnimation { target: shake; property: "x"; to: -8; duration: Theme.dur(60) }
             NumberAnimation { target: shake; property: "x"; to: 5; duration: Theme.dur(50) }
             NumberAnimation { target: shake; property: "x"; to: 0; duration: Theme.dur(40) }
-        }
-
-        Connections {
-            target: surface.lock
-            function onFailed() {
-                password.text = "";
-                shakeAnim.restart();
-                password.forceActiveFocus();
-            }
         }
 
         Surface {
@@ -192,7 +145,7 @@ Item {
                         anchors.rightMargin: Theme.spacingM
                         verticalAlignment: TextInput.AlignVCenter
                         echoMode: TextInput.Password
-                        passwordCharacter: "●"
+                        passwordCharacter: "\u25cf"
                         color: Theme.textSurface
                         font.family: Theme.font
                         font.pixelSize: Theme.fontBody
@@ -205,7 +158,7 @@ Item {
                         StyledText {
                             anchors.fill: parent
                             visible: password.text === ""
-                            text: surface.lock.busy ? "Checking…" : "Password"
+                            text: surface.lock.busy ? "Checking\u2026" : "Password"
                             color: Theme.textSurfaceVariant
                             font.italic: true
                         }
@@ -258,7 +211,7 @@ Item {
         }
     }
 
-    // ── Bottom bar: branding, media, battery ─────────────────────────────
+    // -- Bottom bar: branding, media, battery -------------------------------
     Surface {
         anchors.left: parent.left
         anchors.right: parent.right
@@ -319,6 +272,59 @@ Item {
                     text: Math.round(UPower.displayDevice.percentage) + "%"
                 }
             }
+        }
+    }
+
+    // -- Background objects -------------------------------------------------
+    SystemClock {
+        id: clock
+        precision: SystemClock.Seconds
+    }
+
+    // Real name from passwd (GECOS field).
+    FileView {
+        path: "/etc/passwd"
+        onLoaded: {
+            var user = Quickshell.env("USER");
+            var lines = text().split("\n");
+            for (var i = 0; i < lines.length; i++) {
+                var fields = lines[i].split(":");
+                if (fields[0] === user && fields[4]) {
+                    surface.realName = fields[4].split(",")[0];
+                    break;
+                }
+            }
+        }
+    }
+
+    // Caps Lock state from Hyprland (no native QML API for it).
+    Process {
+        id: capsLockProcess
+        command: ["hyprctl", "devices", "-j"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    var keyboards = JSON.parse(text).keyboards || [];
+                    surface.capsLock = keyboards.some(keyboard => keyboard.capsLock);
+                } catch (e) {}
+            }
+        }
+    }
+
+    Timer {
+        running: surface.visible
+        interval: 1000
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: capsLockProcess.running = true
+    }
+
+    Connections {
+        target: surface.lock
+        function onFailed() {
+            password.text = "";
+            shakeAnim.restart();
+            password.forceActiveFocus();
         }
     }
 }

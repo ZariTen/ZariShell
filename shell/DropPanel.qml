@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 
 // Generic drop-down panel on the focused monitor, opened via ShellState.panel.
@@ -18,17 +17,10 @@ PanelWindow {
     default property alias content: column.data
     readonly property bool open: ShellState.panel === name
     property alias spacing: column.spacing
+
     signal back
 
-    screen: {
-        var all = Quickshell.screens;
-        var focused = Hyprland.focusedMonitor;
-        for (var i = 0; focused && i < all.length; i++) {
-            if (all[i].name === focused.name)
-                return all[i];
-        }
-        return all[0];
-    }
+    screen: ShellState.focusedScreen()
     visible: open || card.opacity > 0
     color: "transparent"
     aboveWindows: true
@@ -64,7 +56,13 @@ PanelWindow {
 
         readonly property real restY: panel.centered ? (panel.height - height) / 2 : Theme.barHeight + Theme.gap
 
-        x: panel.align === "left" ? Theme.gap : (panel.align === "center" || panel.centered ? (panel.width - width) / 2 : panel.width - width - Theme.gap)
+        x: {
+            if (panel.align === "left")
+                return Theme.gap;
+            if (panel.align === "center" || panel.centered)
+                return (panel.width - width) / 2;
+            return panel.width - width - Theme.gap;
+        }
         y: restY + (panel.open ? 0 : -14)
         width: panel.cardWidth
         height: column.implicitHeight + Theme.spacingL * 2

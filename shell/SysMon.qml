@@ -9,25 +9,43 @@ import Quickshell
 Scope {
     id: root
 
-    readonly property string dot: "  \u00b7  "
+    // -- Internal constants and helpers -------------------------------------
+    readonly property string separatorDot: "  \u00b7  "
 
-    function gb(bytes) {
-        return (bytes / 1073741824).toFixed(bytes >= 107374182400 ? 0 : 1) + " GB";
+    function formatGigabytes(bytes) {
+        var gigabytes = bytes / 1073741824;
+        var decimals = bytes >= 107374182400 ? 0 : 1;
+        return gigabytes.toFixed(decimals) + " GB";
     }
 
-    function temp(c) {
-        return c >= 0 ? root.dot + Math.round(c) + " \u00b0C" : "";
+    function formatTemperature(celsius) {
+        if (celsius < 0)
+            return "";
+        return root.separatorDot + Math.round(celsius) + " \u00b0C";
     }
 
-    function pct(v) {
-        return Math.round(v * 100) + "%";
+    function formatPercent(ratio) {
+        return Math.round(ratio * 100) + "%";
     }
 
     // Meter tone shifts normal -> warning -> critical with load.
-    function tone(v) {
-        return v > 0.85 ? "critical" : (v > 0.6 ? "warning" : "normal");
+    function meterTone(ratio) {
+        if (ratio > 0.85)
+            return "critical";
+        if (ratio > 0.6)
+            return "warning";
+        return "normal";
     }
 
+    function diskLabel(mountPoint) {
+        if (mountPoint === "/")
+            return "System";
+        if (mountPoint === "/home")
+            return "Home";
+        return "Disk";
+    }
+
+    // -- Inline components --------------------------------------------------
     component Meter: RowLayout {
         id: meter
 
@@ -89,17 +107,18 @@ Scope {
                 visible: meter.showBar
                 interactive: false
                 value: meter.value
-                tone: root.tone(meter.value)
+                tone: root.meterTone(meter.value)
             }
         }
     }
 
-    component Divider: Rectangle {
+    component SectionDivider: Rectangle {
         Layout.fillWidth: true
         implicitHeight: 1
         color: Theme.outlineVariant
     }
 
+    // -- Visual tree --------------------------------------------------------
     DropPanel {
         name: "sysmon"
         align: "right"
@@ -114,14 +133,14 @@ Scope {
             codepoint: 0xF0EE0 // md-cpu-64-bit
             label: "CPU"
             value: SysStats.cpu
-            detail: root.pct(SysStats.cpu) + root.temp(SysStats.cpuTemp)
+            detail: root.formatPercent(SysStats.cpu) + root.formatTemperature(SysStats.cpuTemp)
         }
 
         Meter {
             codepoint: 0xF035B // md-memory
             label: "Memory"
             value: SysStats.mem
-            detail: SysStats.memUsedGb.toFixed(1) + " / " + SysStats.memTotalGb.toFixed(1) + " GB" + root.dot + root.pct(SysStats.mem)
+            detail: SysStats.memUsedGb.toFixed(1) + " / " + SysStats.memTotalGb.toFixed(1) + " GB" + root.separatorDot + root.formatPercent(SysStats.mem)
         }
 
         // Model is the count, so delegates survive the 2s refresh and the
@@ -133,10 +152,10 @@ Scope {
                 id: gpuRow
 
                 required property int index
-                readonly property var g: SysStats.gpus[index] || ({})
-                readonly property bool asleep: g.state === "suspended"
-                readonly property bool hasBusy: g.busy >= 0
-                readonly property bool hasClock: !hasBusy && g.freq >= 0 && g.maxFreq > 0
+                readonly property var gpu: SysStats.gpus[index] || ({})
+                readonly property bool isAsleep: gpu.state === "suspended"
+                readonly property bool hasBusyRatio: gpu.busy >= 0
+                readonly property bool hasClockRatio: !hasBusyRatio && gpu.freq >= 0 && gpu.maxFreq > 0
 
                 Layout.fillWidth: true
                 spacing: Theme.spacingM
@@ -144,26 +163,39 @@ Scope {
                 Meter {
                     codepoint: 0xF08AE // md-expansion-card
                     label: SysStats.gpus.length > 1 ? "GPU " + (gpuRow.index + 1) : "GPU"
-                    sublabel: gpuRow.g.name || ""
-                    showBar: gpuRow.hasBusy || gpuRow.hasClock
-                    value: gpuRow.hasBusy ? gpuRow.g.busy : (gpuRow.hasClock ? gpuRow.g.freq / gpuRow.g.maxFreq : 0)
-                    detail: gpuRow.asleep ? "Sleeping"
-                        : gpuRow.hasBusy ? root.pct(gpuRow.g.busy) + root.temp(gpuRow.g.temp)
-                        : gpuRow.hasClock ? gpuRow.g.freq + " MHz" + root.temp(gpuRow.g.temp)
-                        : (gpuRow.g.temp >= 0 ? Math.round(gpuRow.g.temp) + " \u00b0C" : "No data")
+                    sublabel: gpuRow.gpu.name || ""
+                    showBar: gpuRow.hasBusyRatio || gpuRow.hasClockRatio
+                    value: {
+                        if (gpuRow.hasBusyRatio)
+                            return gpuRow.gpu.busy;
+                        if (gpuRow.hasClockRatio)
+                            return gpuRow.gpu.freq / gpuRow.gpu.maxFreq;
+                        return 0;
+                    }
+                    detail: {
+                        if (gpuRow.isAsleep)
+                            return "Sleeping";
+                        if (gpuRow.hasBusyRatio)
+                            return root.formatPercent(gpuRow.gpu.busy) + root.formatTemperature(gpuRow.gpu.temp);
+                        if (gpuRow.hasClockRatio)
+                            return gpuRow.gpu.freq + " MHz" + root.formatTemperature(gpuRow.gpu.temp);
+                        if (gpuRow.gpu.temp >= 0)
+                            return Math.round(gpuRow.gpu.temp) + " \u00b0C";
+                        return "No data";
+                    }
                 }
 
                 Meter {
-                    visible: !gpuRow.asleep && gpuRow.g.memTotal > 0
+                    visible: !gpuRow.isAsleep && gpuRow.gpu.memTotal > 0
                     codepoint: 0xF061A // md-chip
                     label: "Video memory"
-                    value: gpuRow.g.memTotal > 0 ? gpuRow.g.memUsed / gpuRow.g.memTotal : 0
-                    detail: root.gb(gpuRow.g.memUsed) + " / " + root.gb(gpuRow.g.memTotal)
+                    value: gpuRow.gpu.memTotal > 0 ? gpuRow.gpu.memUsed / gpuRow.gpu.memTotal : 0
+                    detail: root.formatGigabytes(gpuRow.gpu.memUsed) + " / " + root.formatGigabytes(gpuRow.gpu.memTotal)
                 }
             }
         }
 
-        Divider {
+        SectionDivider {
             visible: SysStats.disks.length > 0
         }
 
@@ -171,16 +203,16 @@ Scope {
             model: SysStats.disks.length
 
             delegate: Meter {
-                id: disk
+                id: diskMeter
 
                 required property int index
-                readonly property var d: SysStats.disks[index] || ({ mount: "", size: 0, used: 0 })
+                readonly property var diskEntry: SysStats.disks[index] || ({ mount: "", size: 0, used: 0 })
 
                 codepoint: 0xF02CA // md-harddisk
-                label: d.mount === "/" ? "System" : (d.mount === "/home" ? "Home" : "Disk")
-                sublabel: d.mount
-                value: d.size > 0 ? d.used / d.size : 0
-                detail: root.gb(d.used) + " / " + root.gb(d.size) + root.dot + root.pct(disk.value)
+                label: root.diskLabel(diskEntry.mount)
+                sublabel: diskEntry.mount
+                value: diskEntry.size > 0 ? diskEntry.used / diskEntry.size : 0
+                detail: root.formatGigabytes(diskEntry.used) + " / " + root.formatGigabytes(diskEntry.size) + root.separatorDot + root.formatPercent(diskMeter.value)
             }
         }
     }

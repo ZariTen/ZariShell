@@ -1,16 +1,16 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import Quickshell.Wayland
-import Quickshell.Widgets
 
 Scope {
     id: root
 
+    // -- Derived state ------------------------------------------------------
     readonly property var live: Notifs.popups
 
+    // -- Visual tree --------------------------------------------------------
     Variants {
         model: Quickshell.screens
 
@@ -18,14 +18,9 @@ Scope {
             id: toastWindow
 
             required property var modelData
-            readonly property var monitor: Hyprland.monitorFor(modelData)
-            readonly property bool showHere: {
-                if (root.live.length === 0 || ShellState.panel === "notifications")
-                    return false;
-                if (Hyprland.focusedMonitor === null)
-                    return modelData === Quickshell.screens[0];
-                return monitor !== null && monitor.name === Hyprland.focusedMonitor.name;
-            }
+            readonly property bool showHere: root.live.length > 0
+                && ShellState.panel !== "notifications"
+                && ShellState.isFocusedScreen(modelData)
 
             screen: modelData
             visible: showHere
@@ -74,14 +69,6 @@ Scope {
                         }
 
                         // Slide in from the right.
-                        // Popup expiry only hides the toast; it stays in the notification center.
-                        Timer {
-                            id: expire
-                            interval: 5000
-                            running: !toast.critical
-                            onTriggered: Notifs.expirePopup(toast.modelData)
-                        }
-
                         transform: Translate { id: slide; x: 0 }
                         NumberAnimation on opacity { from: 0; to: 1; duration: Theme.durMedium }
                         Component.onCompleted: slideIn.start()
@@ -99,8 +86,8 @@ Scope {
                         MouseArea {
                             anchors.fill: parent
                             hoverEnabled: true
-                            onEntered: expire.stop()
-                            onExited: if (!toast.critical) expire.restart()
+                            onEntered: expireTimer.stop()
+                            onExited: if (!toast.critical) expireTimer.restart()
                             onClicked: {
                                 if (toast.modelData.actions.length > 0)
                                     toast.modelData.actions[0].invoke();
@@ -186,6 +173,14 @@ Scope {
                                     }
                                 }
                             }
+                        }
+
+                        // Popup expiry only hides the toast; it stays in the notification center.
+                        Timer {
+                            id: expireTimer
+                            interval: 5000
+                            running: !toast.critical
+                            onTriggered: Notifs.expirePopup(toast.modelData)
                         }
                     }
                 }

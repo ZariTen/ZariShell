@@ -6,9 +6,15 @@ import qs
 Item {
     id: look
 
-    readonly property color fill: control.tone === "critical" ? Theme.error
-        : control.tone === "warning" ? Theme.warning
-        : control.tone === "muted" ? Theme.outline : Theme.accent
+    readonly property color fill: {
+        if (control.tone === "critical")
+            return Theme.error;
+        if (control.tone === "warning")
+            return Theme.warning;
+        if (control.tone === "muted")
+            return Theme.outline;
+        return Theme.accent;
+    }
 
     Rectangle {
         anchors.fill: parent

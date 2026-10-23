@@ -11,7 +11,7 @@ import Quickshell.Io
 QsPage {
     id: page
 
-    // Status; also feeds the Wi-Fi tile.
+    // -- Public status and state (also feeds the Wi-Fi tile) ----------------
     property bool radioOn: false
     property bool radioKnown: false
     property string device: ""         // wifi interface, "" when there is none
@@ -27,19 +27,22 @@ QsPage {
     property string error: ""
     property bool wantRescan: false
     readonly property bool hasDevice: device !== ""
+
     readonly property var sorted: {
         var list = networks.slice();
-        list.sort((a, b) => {
-            if (a.inUse !== b.inUse)
-                return a.inUse ? -1 : 1;
-            var ka = saved.indexOf(a.ssid) !== -1;
-            var kb = saved.indexOf(b.ssid) !== -1;
-            if (ka !== kb)
-                return ka ? -1 : 1;
-            return b.signal - a.signal || a.ssid.localeCompare(b.ssid);
+        list.sort((firstNet, secondNet) => {
+            if (firstNet.inUse !== secondNet.inUse)
+                return firstNet.inUse ? -1 : 1;
+            var firstSaved = saved.indexOf(firstNet.ssid) !== -1;
+            var secondSaved = saved.indexOf(secondNet.ssid) !== -1;
+            if (firstSaved !== secondSaved)
+                return firstSaved ? -1 : 1;
+            return secondNet.signal - firstNet.signal || firstNet.ssid.localeCompare(secondNet.ssid);
         });
         return list;
     }
+
+    // -- Signals ------------------------------------------------------------
     signal networkChanged
 
     codepoint: 0xF05A9 // md-wifi
@@ -58,26 +61,34 @@ QsPage {
         held = null;
     }
 
+    // -- Helper functions ---------------------------------------------------
     // nmcli -t escapes ':' and '\' with a backslash.
     function splitTerse(line) {
-        var out = [];
-        var cur = "";
+        var fields = [];
+        var currentField = "";
         for (var i = 0; i < line.length; i++) {
-            var c = line.charAt(i);
-            if (c === "\\" && i + 1 < line.length)
-                cur += line.charAt(++i);
-            else if (c === ":") {
-                out.push(cur);
-                cur = "";
-            } else
-                cur += c;
+            var ch = line.charAt(i);
+            if (ch === "\\" && i + 1 < line.length)
+                currentField += line.charAt(++i);
+            else if (ch === ":") {
+                fields.push(currentField);
+                currentField = "";
+            } else {
+                currentField += ch;
+            }
         }
-        out.push(cur);
-        return out;
+        fields.push(currentField);
+        return fields;
     }
 
-    function signalIcon(s) {
-        return s < 25 ? 0xF091F : (s < 50 ? 0xF0922 : (s < 75 ? 0xF0925 : 0xF0928));
+    function signalIcon(signalPercent) {
+        if (signalPercent < 25)
+            return 0xF091F;
+        if (signalPercent < 50)
+            return 0xF0922;
+        if (signalPercent < 75)
+            return 0xF0925;
+        return 0xF0928;
     }
 
     function isSaved(ssid) {
@@ -102,37 +113,37 @@ QsPage {
     function parseList(text) {
         if (text.trim() === "" && listQuery.mode !== "no")
             return;
-        var best = {};
-        var active = "";
-        text.split("\n").forEach(l => {
-            if (l === "")
+        var bestBySsid = {};
+        var connectedSsid = "";
+        text.split("\n").forEach(line => {
+            if (line === "")
                 return;
-            var f = page.splitTerse(l);
-            var ssid = f[1] || "";
+            var fields = page.splitTerse(line);
+            var ssid = fields[1] || "";
             if (ssid === "")
                 return;
-            var sec = f[3] || "";
-            var net = {
+            var securityText = fields[3] || "";
+            var networkEntry = {
                 ssid: ssid,
-                signal: parseInt(f[2]) || 0,
-                security: sec,
-                secured: sec !== "" && sec !== "--",
-                enterprise: sec.indexOf("802.1X") !== -1,
-                inUse: f[0] === "*"
+                signal: parseInt(fields[2]) || 0,
+                security: securityText,
+                secured: securityText !== "" && securityText !== "--",
+                enterprise: securityText.indexOf("802.1X") !== -1,
+                inUse: fields[0] === "*"
             };
-            if (net.inUse)
-                active = ssid;
-            var prev = best[ssid];
-            if (prev) {
-                var inUse = prev.inUse || net.inUse;
-                net = net.signal >= prev.signal ? net : prev;
-                net.inUse = inUse;
+            if (networkEntry.inUse)
+                connectedSsid = ssid;
+            var existingEntry = bestBySsid[ssid];
+            if (existingEntry) {
+                var inUse = existingEntry.inUse || networkEntry.inUse;
+                networkEntry = networkEntry.signal >= existingEntry.signal ? networkEntry : existingEntry;
+                networkEntry.inUse = inUse;
             }
-            best[ssid] = net;
+            bestBySsid[ssid] = networkEntry;
         });
-        var result = Object.keys(best).map(k => best[k]);
-        activeSsid = active;
-        activeSignal = best[active] ? best[active].signal : 0;
+        var result = Object.keys(bestBySsid).map(ssidKey => bestBySsid[ssidKey]);
+        activeSsid = connectedSsid;
+        activeSignal = bestBySsid[connectedSsid] ? bestBySsid[connectedSsid].signal : 0;
         // Don't rebuild rows under a half-typed password.
         if (askSsid !== "")
             held = result;
@@ -143,11 +154,11 @@ QsPage {
     function setRadio() {
         if (radioToggle.running)
             return;
-        var next = !radioOn;
-        radioToggle.command = ["nmcli", "radio", "wifi", next ? "on" : "off"];
-        radioOn = next;
+        var nextRadioState = !radioOn;
+        radioToggle.command = ["nmcli", "radio", "wifi", nextRadioState ? "on" : "off"];
+        radioOn = nextRadioState;
         radioKnown = true;
-        if (!next) {
+        if (!nextRadioState) {
             networks = [];
             activeSsid = "";
             askSsid = "";
@@ -157,236 +168,79 @@ QsPage {
         radioToggle.running = true;
     }
 
-    function connectTo(net, password) {
-        if (connectProc.running || connecting !== "")
+    function connectTo(networkEntry, password) {
+        if (connectProcess.running || connecting !== "")
             return;
-        if (net.ssid.charAt(0) === "-") {
+        if (networkEntry.ssid.charAt(0) === "-") {
             error = "Can't connect to a network whose name starts with \"-\".";
             return;
         }
-        var cmd = ["nmcli", "dev", "wifi", "connect", net.ssid];
+        var cmd = ["nmcli", "dev", "wifi", "connect", networkEntry.ssid];
         if (password !== "")
             cmd.push("password", password);
         error = "";
-        connectProc.errText = "";
-        connectProc.net = net;
-        connectProc.usedPassword = password !== "";
-        connectProc.wasSaved = isSaved(net.ssid);
-        connecting = net.ssid;
+        connectProcess.errText = "";
+        connectProcess.networkEntry = networkEntry;
+        connectProcess.usedPassword = password !== "";
+        connectProcess.wasSaved = isSaved(networkEntry.ssid);
+        connecting = networkEntry.ssid;
         askSsid = "";
-        connectProc.command = cmd;
-        connectProc.running = true;
+        connectProcess.command = cmd;
+        connectProcess.running = true;
         connectGuard.restart();
     }
 
-    function activate(net) {
-        if (connecting !== "" || net.inUse)
+    function activate(networkEntry) {
+        if (connecting !== "" || networkEntry.inUse)
             return;
-        if (askSsid === net.ssid) {
+        if (askSsid === networkEntry.ssid) {
             askSsid = "";
-        } else if (!net.secured || isSaved(net.ssid)) {
-            connectTo(net, "");
-        } else if (net.enterprise) {
+        } else if (!networkEntry.secured || isSaved(networkEntry.ssid)) {
+            connectTo(networkEntry, "");
+        } else if (networkEntry.enterprise) {
             error = "Enterprise (802.1X) networks need a saved profile (nm-connection-editor).";
         } else {
             error = "";
-            askSsid = net.ssid;
+            askSsid = networkEntry.ssid;
         }
     }
 
     function disconnect() {
-        if (device === "" || discProc.running)
+        if (device === "" || disconnectProcess.running)
             return;
-        discProc.command = ["nmcli", "dev", "disconnect", device];
-        discProc.running = true;
+        disconnectProcess.command = ["nmcli", "dev", "disconnect", device];
+        disconnectProcess.running = true;
     }
 
     function finishConnect() {
         connectGuard.stop();
-        var net = connectProc.net;
-        var text = connectProc.errText;
+        var networkEntry = connectProcess.networkEntry;
+        var stderrText = connectProcess.errText;
         connecting = "";
-        if (connectProc.code === 0) {
+        if (connectProcess.code === 0) {
             error = "";
             refresh(false);
             networkChanged();
             return;
         }
-        var line = text.split("\n").filter(l => l.trim() !== "")[0] || "Couldn't connect.";
-        line = line.replace(/^Error:\s*/, "").replace(/^Connection activation failed:\s*(\(\d+\)\s*)?/, "");
-        if (/secrets were required|no secrets|password/i.test(line) && net && net.secured && !net.enterprise) {
-            error = connectProc.usedPassword ? "Wrong password, try again." : "A password is required.";
-            askSsid = net.ssid;
+        var errorLine = stderrText.split("\n").filter(line => line.trim() !== "")[0] || "Couldn't connect.";
+        errorLine = errorLine.replace(/^Error:\s*/, "").replace(/^Connection activation failed:\s*(\(\d+\)\s*)?/, "");
+        if (/secrets were required|no secrets|password/i.test(errorLine) && networkEntry && networkEntry.secured && !networkEntry.enterprise) {
+            error = connectProcess.usedPassword ? "Wrong password, try again." : "A password is required.";
+            askSsid = networkEntry.ssid;
         } else {
-            error = line;
+            error = errorLine;
         }
         // A failed attempt with a new password leaves a broken profile behind; drop it.
-        if (connectProc.usedPassword && !connectProc.wasSaved && net) {
-            delProc.command = ["nmcli", "connection", "delete", "id", net.ssid];
-            delProc.running = true;
+        if (connectProcess.usedPassword && !connectProcess.wasSaved && networkEntry) {
+            deleteProfileProcess.command = ["nmcli", "connection", "delete", "id", networkEntry.ssid];
+            deleteProfileProcess.running = true;
         } else {
             refresh(false);
         }
     }
 
-    Timer {
-        // Re-scan while the page is open.
-        interval: 15000
-        running: page.shown && page.radioOn
-        repeat: true
-        onTriggered: page.scan("auto")
-    }
-
-    Timer {
-        id: afterEnable
-        interval: 1800
-        onTriggered: page.refresh(true)
-    }
-
-    Timer {
-        // Never leave the row spinning if nmcli hangs.
-        id: connectGuard
-        interval: 60000
-        onTriggered: page.connecting = ""
-    }
-
-    Timer {
-        // stderr is read on its own stream; give it a moment after exit.
-        id: finishTimer
-        interval: 250
-        onTriggered: page.finishConnect()
-    }
-
-    // "enabled" / "disabled"
-    Process {
-        id: radioQuery
-        command: ["nmcli", "-t", "-f", "WIFI", "g"]
-        environment: ({ LC_ALL: "C" })
-        stdout: StdioCollector {
-            onStreamFinished: {
-                page.radioOn = text.trim() === "enabled";
-                page.radioKnown = true;
-                if (!page.radioOn) {
-                    page.networks = [];
-                    page.activeSsid = "";
-                }
-                devQuery.running = true;
-                savedQuery.running = true;
-                if (page.radioOn) {
-                    page.scan("no");
-                }
-            }
-        }
-    }
-
-    // DEVICE:TYPE:STATE:CONNECTION per interface
-    Process {
-        id: devQuery
-        command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "dev"]
-        environment: ({ LC_ALL: "C" })
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var dev = "";
-                var wired = "";
-                text.split("\n").forEach(l => {
-                    var f = page.splitTerse(l);
-                    if (f[1] === "wifi" && dev === "")
-                        dev = f[0];
-                    else if (f[1] === "ethernet" && f[2] === "connected" && wired === "")
-                        wired = f[3] || f[0];
-                });
-                page.device = dev;
-                page.wired = wired;
-            }
-        }
-    }
-
-    // NAME:TYPE per saved profile
-    Process {
-        id: savedQuery
-        command: ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"]
-        environment: ({ LC_ALL: "C" })
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var names = [];
-                text.split("\n").forEach(l => {
-                    var f = page.splitTerse(l);
-                    if (f.length >= 2 && (f[f.length - 1] === "802-11-wireless" || f[f.length - 1] === "wifi"))
-                        names.push(f.slice(0, f.length - 1).join(":"));
-                });
-                page.saved = names;
-            }
-        }
-    }
-
-    // IN-USE:SSID:SIGNAL:SECURITY per access point
-    Process {
-        id: listQuery
-
-        property string mode: "no"
-
-        command: ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list", "--rescan", mode]
-        environment: ({ LC_ALL: "C" })
-        stdout: StdioCollector {
-            onStreamFinished: page.parseList(text)
-        }
-        onExited: (exitCode, exitStatus) => {
-            page.scanning = false;
-            if (exitCode !== 0 && mode !== "no")
-                Qt.callLater(page.scan, "no");   // forced rescan refused: show the cached list instead
-            else if (mode === "no" && page.wantRescan) {
-                page.wantRescan = false;
-                Qt.callLater(page.scan, "auto");
-            }
-        }
-    }
-
-    Process {
-        id: radioToggle
-        environment: ({ LC_ALL: "C" })
-        onExited: {
-            page.networkChanged();
-            if (page.radioOn)
-                afterEnable.restart();
-            else
-                page.refresh(false);
-        }
-    }
-
-    Process {
-        id: connectProc
-
-        property var net: null
-        property bool usedPassword: false
-        property bool wasSaved: false
-        property int code: 0
-        property string errText: ""
-
-        environment: ({ LC_ALL: "C" })
-        stderr: StdioCollector {
-            onStreamFinished: connectProc.errText = text
-        }
-        onExited: (exitCode, exitStatus) => {
-            connectProc.code = exitCode;
-            finishTimer.restart();
-        }
-    }
-
-    Process {
-        id: delProc
-        environment: ({ LC_ALL: "C" })
-        onExited: page.refresh(false)
-    }
-
-    Process {
-        id: discProc
-        environment: ({ LC_ALL: "C" })
-        onExited: {
-            page.refresh(false);
-            page.networkChanged();
-        }
-    }
-
+    // -- Header actions and visual tree -------------------------------------
     trailing: [
         Button {
             implicitWidth: Theme.px(28)
@@ -474,7 +328,7 @@ QsPage {
         visible: page.radioOn && page.hasDevice && page.sorted.length === 0
         busy: page.scanning || listQuery.running
         codepoint: 0xF0928
-        title: busy ? "Looking for networks…" : "No networks found"
+        title: busy ? "Looking for networks\u2026" : "No networks found"
         actionText: busy ? "" : "Scan again"
         onAction: page.scan("yes")
     }
@@ -505,8 +359,8 @@ QsPage {
         onVisibleChanged: if (visible && page.shown) forceActiveFocus()
         Keys.onUpPressed: step(-1)
         Keys.onDownPressed: step(1)
-        Keys.onReturnPressed: if (itemAtIndex(cursor)) page.activate(itemAtIndex(cursor).net)
-        Keys.onEnterPressed: if (itemAtIndex(cursor)) page.activate(itemAtIndex(cursor).net)
+        Keys.onReturnPressed: if (itemAtIndex(cursor)) page.activate(itemAtIndex(cursor).networkEntry)
+        Keys.onEnterPressed: if (itemAtIndex(cursor)) page.activate(itemAtIndex(cursor).networkEntry)
 
         add: Transition {
             NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.durMedium }
@@ -523,41 +377,48 @@ QsPage {
 
             required property var modelData
             required property int index
-            readonly property var net: modelData
-            readonly property bool known: page.isSaved(net.ssid)
-            readonly property bool busy: page.connecting === net.ssid
-            readonly property bool asking: page.askSsid === net.ssid
+            readonly property var networkEntry: modelData
+            readonly property bool known: page.isSaved(networkEntry.ssid)
+            readonly property bool busy: page.connecting === networkEntry.ssid
+            readonly property bool asking: page.askSsid === networkEntry.ssid
             property real reveal: asking ? 1 : 0
 
             width: ListView.view.width
             spacing: 0
             Behavior on reveal { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
             onAskingChanged: if (asking) {
-                pw.text = "";
-                pw.forceActiveFocus();
+                passwordInput.text = "";
+                passwordInput.forceActiveFocus();
             }
 
             QsRow {
                 Layout.fillWidth: true
-                codepoint: page.signalIcon(entry.net.signal)
-                iconColor: entry.net.inUse ? Theme.accent : Theme.textSurface
-                title: entry.net.ssid
+                codepoint: page.signalIcon(entry.networkEntry.signal)
+                iconColor: entry.networkEntry.inUse ? Theme.accent : Theme.textSurface
+                title: entry.networkEntry.ssid
                 busy: entry.busy
-                highlighted: entry.net.inUse
+                highlighted: entry.networkEntry.inUse
                 current: list.keyActive && list.activeFocus && list.cursor === entry.index
                 subtitle: {
                     if (entry.busy)
-                        return "Connecting…";
+                        return "Connecting\u2026";
                     var parts = [];
-                    parts.push(entry.net.inUse ? "Connected" : (entry.known ? "Saved" : (entry.net.secured ? "Secured" : "Open")));
-                    if (entry.net.secured && entry.net.security !== "")
-                        parts.push(entry.net.security);
-                    parts.push(entry.net.signal + "%");
-                    return parts.join(" · ");
+                    if (entry.networkEntry.inUse)
+                        parts.push("Connected");
+                    else if (entry.known)
+                        parts.push("Saved");
+                    else if (entry.networkEntry.secured)
+                        parts.push("Secured");
+                    else
+                        parts.push("Open");
+                    if (entry.networkEntry.secured && entry.networkEntry.security !== "")
+                        parts.push(entry.networkEntry.security);
+                    parts.push(entry.networkEntry.signal + "%");
+                    return parts.join(" \u00b7 ");
                 }
                 onClicked: {
                     list.cursor = entry.index;
-                    page.activate(entry.net);
+                    page.activate(entry.networkEntry);
                 }
                 onHoveredChanged: if (hovered) {
                     list.keyActive = false;
@@ -565,13 +426,13 @@ QsPage {
                 }
 
                 MdIcon {
-                    visible: entry.net.secured
+                    visible: entry.networkEntry.secured
                     codepoint: 0xF033E // md-lock
                     font.pixelSize: Theme.iconPx(14)
                     color: Theme.textSurfaceVariant
                 }
                 ActionButton {
-                    visible: entry.net.inUse
+                    visible: entry.networkEntry.inUse
                     implicitHeight: Theme.px(26)
                     text: "Disconnect"
                     onClicked: page.disconnect()
@@ -597,18 +458,18 @@ QsPage {
                     Field {
                         Layout.fillWidth: true
                         implicitHeight: Theme.px(32)
-                        input: pw
+                        input: passwordInput
 
                         StyledText {
                             anchors.left: parent.left
                             anchors.leftMargin: Theme.spacingS
                             anchors.verticalCenter: parent.verticalCenter
-                            visible: pw.text === ""
+                            visible: passwordInput.text === ""
                             text: "Password"
                             color: Theme.outline
                         }
                         TextInput {
-                            id: pw
+                            id: passwordInput
                             anchors.left: parent.left
                             anchors.right: eye.left
                             anchors.leftMargin: Theme.spacingS
@@ -621,9 +482,9 @@ QsPage {
                             font.family: Theme.font
                             font.pixelSize: Theme.fontBody
                             echoMode: eye.reveal ? TextInput.Normal : TextInput.Password
-                            passwordCharacter: "•"
+                            passwordCharacter: "\u2022"
                             selectByMouse: true
-                            onAccepted: if (text !== "") page.connectTo(entry.net, text)
+                            onAccepted: if (text !== "") page.connectTo(entry.networkEntry, text)
                             Keys.onEscapePressed: event => {
                                 page.askSsid = "";
                                 list.forceActiveFocus();
@@ -654,11 +515,170 @@ QsPage {
                         implicitHeight: Theme.px(30)
                         text: "Connect"
                         filled: true
-                        opacity: pw.text !== "" ? 1 : Theme.dim(0.5)
-                        onClicked: if (pw.text !== "") page.connectTo(entry.net, pw.text)
+                        opacity: passwordInput.text !== "" ? 1 : Theme.dim(0.5)
+                        onClicked: if (passwordInput.text !== "") page.connectTo(entry.networkEntry, passwordInput.text)
                     }
                 }
             }
+        }
+    }
+
+    // -- Background objects -------------------------------------------------
+    Timer {
+        // Re-scan while the page is open.
+        interval: 15000
+        running: page.shown && page.radioOn
+        repeat: true
+        onTriggered: page.scan("auto")
+    }
+
+    Timer {
+        id: afterEnable
+        interval: 1800
+        onTriggered: page.refresh(true)
+    }
+
+    Timer {
+        // Never leave the row spinning if nmcli hangs.
+        id: connectGuard
+        interval: 60000
+        onTriggered: page.connecting = ""
+    }
+
+    Timer {
+        // stderr is read on its own stream; give it a moment after exit.
+        id: finishTimer
+        interval: 250
+        onTriggered: page.finishConnect()
+    }
+
+    // "enabled" / "disabled"
+    Process {
+        id: radioQuery
+        command: ["nmcli", "-t", "-f", "WIFI", "g"]
+        environment: ({ LC_ALL: "C" })
+        stdout: StdioCollector {
+            onStreamFinished: {
+                page.radioOn = text.trim() === "enabled";
+                page.radioKnown = true;
+                if (!page.radioOn) {
+                    page.networks = [];
+                    page.activeSsid = "";
+                }
+                devQuery.running = true;
+                savedQuery.running = true;
+                if (page.radioOn) {
+                    page.scan("no");
+                }
+            }
+        }
+    }
+
+    // DEVICE:TYPE:STATE:CONNECTION per interface
+    Process {
+        id: devQuery
+        command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "dev"]
+        environment: ({ LC_ALL: "C" })
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var wifiDevice = "";
+                var wiredConnection = "";
+                text.split("\n").forEach(line => {
+                    var fields = page.splitTerse(line);
+                    if (fields[1] === "wifi" && wifiDevice === "")
+                        wifiDevice = fields[0];
+                    else if (fields[1] === "ethernet" && fields[2] === "connected" && wiredConnection === "")
+                        wiredConnection = fields[3] || fields[0];
+                });
+                page.device = wifiDevice;
+                page.wired = wiredConnection;
+            }
+        }
+    }
+
+    // NAME:TYPE per saved profile
+    Process {
+        id: savedQuery
+        command: ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"]
+        environment: ({ LC_ALL: "C" })
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var profileNames = [];
+                text.split("\n").forEach(line => {
+                    var fields = page.splitTerse(line);
+                    if (fields.length >= 2 && (fields[fields.length - 1] === "802-11-wireless" || fields[fields.length - 1] === "wifi"))
+                        profileNames.push(fields.slice(0, fields.length - 1).join(":"));
+                });
+                page.saved = profileNames;
+            }
+        }
+    }
+
+    // IN-USE:SSID:SIGNAL:SECURITY per access point
+    Process {
+        id: listQuery
+
+        property string mode: "no"
+
+        command: ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list", "--rescan", mode]
+        environment: ({ LC_ALL: "C" })
+        stdout: StdioCollector {
+            onStreamFinished: page.parseList(text)
+        }
+        onExited: (exitCode, exitStatus) => {
+            page.scanning = false;
+            if (exitCode !== 0 && mode !== "no")
+                Qt.callLater(page.scan, "no");   // forced rescan refused: show the cached list instead
+            else if (mode === "no" && page.wantRescan) {
+                page.wantRescan = false;
+                Qt.callLater(page.scan, "auto");
+            }
+        }
+    }
+
+    Process {
+        id: radioToggle
+        environment: ({ LC_ALL: "C" })
+        onExited: {
+            page.networkChanged();
+            if (page.radioOn)
+                afterEnable.restart();
+            else
+                page.refresh(false);
+        }
+    }
+
+    Process {
+        id: connectProcess
+
+        property var networkEntry: null
+        property bool usedPassword: false
+        property bool wasSaved: false
+        property int code: 0
+        property string errText: ""
+
+        environment: ({ LC_ALL: "C" })
+        stderr: StdioCollector {
+            onStreamFinished: connectProcess.errText = text
+        }
+        onExited: (exitCode, exitStatus) => {
+            connectProcess.code = exitCode;
+            finishTimer.restart();
+        }
+    }
+
+    Process {
+        id: deleteProfileProcess
+        environment: ({ LC_ALL: "C" })
+        onExited: page.refresh(false)
+    }
+
+    Process {
+        id: disconnectProcess
+        environment: ({ LC_ALL: "C" })
+        onExited: {
+            page.refresh(false);
+            page.networkChanged();
         }
     }
 }

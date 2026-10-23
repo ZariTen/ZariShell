@@ -13,46 +13,59 @@ import Quickshell.Widgets
 Scope {
     id: root
 
+    // -- Derived state ------------------------------------------------------
     property var sink: Pipewire.defaultAudioSink
-
     readonly property var player: ShellState.player
 
     // Connected network device (wifi preferred for the signal icon).
     readonly property var netDevice: {
-        var all = Networking.devices.values;
-        var found = null;
-        for (var i = 0; i < all.length; i++) {
-            if (!all[i].connected)
+        var devices = Networking.devices.values;
+        var fallbackWired = null;
+        for (var i = 0; i < devices.length; i++) {
+            var device = devices[i];
+            if (!device.connected)
                 continue;
-            if (all[i].type === DeviceType.Wired && found === null)
-                found = all[i];
-            else if (all[i].type === DeviceType.Wifi)
-                return all[i];
+            if (device.type === DeviceType.Wired && fallbackWired === null)
+                fallbackWired = device;
+            else if (device.type === DeviceType.Wifi)
+                return device;
         }
-        return found;
+        return fallbackWired;
     }
 
     readonly property var wifiNetwork: {
         if (!netDevice || netDevice.type !== DeviceType.Wifi)
             return null;
-        var nets = netDevice.networks.values;
-        for (var i = 0; i < nets.length; i++) {
-            if (nets[i].connected)
-                return nets[i];
+        var networks = netDevice.networks.values;
+        for (var i = 0; i < networks.length; i++) {
+            if (networks[i].connected)
+                return networks[i];
         }
         return null;
     }
 
     readonly property int volumeIcon: {
-        if (!sink || !sink.audio || sink.audio.muted || sink.audio.volume <= 0)
-            return 0xF0581;
-        return sink.audio.volume < 0.34 ? 0xF057F : (sink.audio.volume < 0.67 ? 0xF0580 : 0xF057E);
+        var isMuted = !sink || !sink.audio || sink.audio.muted;
+        var volumeLevel = sink && sink.audio ? sink.audio.volume : 0;
+        return ShellState.volumeGlyph(volumeLevel, isMuted);
     }
 
-    PwObjectTracker {
-        objects: root.sink ? [root.sink] : []
+    readonly property int networkIcon: {
+        if (!netDevice)
+            return 0xF05AA; // md-wifi_off
+        if (netDevice.type === DeviceType.Wired)
+            return 0xF0200; // md-ethernet
+        var signalStrength = wifiNetwork ? wifiNetwork.signalStrength : 1;
+        if (signalStrength < 0.25)
+            return 0xF091F;
+        if (signalStrength < 0.5)
+            return 0xF0922;
+        if (signalStrength < 0.75)
+            return 0xF0925;
+        return 0xF0928;
     }
 
+    // -- Visual tree --------------------------------------------------------
     Variants {
         model: Quickshell.screens
 
@@ -75,11 +88,6 @@ Scope {
 
             WlrLayershell.namespace: "shell-bar"
 
-            SystemClock {
-                id: clock
-                precision: SystemClock.Minutes
-            }
-
             // Taskbar strip
             Surface {
                 id: strip
@@ -99,7 +107,7 @@ Scope {
                 }
             }
 
-            // ── Left: orb, workspaces, window title ─────────────────────
+            // -- Left: workspaces and window icons --------------------------
             RowLayout {
                 anchors.left: parent.left
                 anchors.leftMargin: Theme.spacingS
@@ -113,7 +121,7 @@ Scope {
                         model: Hyprland.workspaces
 
                         delegate: Button {
-                            id: ws
+                            id: workspaceButton
                             required property var modelData
                             readonly property bool occupied: modelData.toplevels.values.length > 0
 
@@ -130,14 +138,14 @@ Scope {
 
                             StyledText {
                                 anchors.centerIn: parent
-                                text: ws.modelData.name
-                                font.weight: ws.active ? Font.Bold : Font.Normal
-                                opacity: ws.active || ws.occupied || ws.hovered ? 1 : Theme.dim(0.5)
+                                text: workspaceButton.modelData.name
+                                font.weight: workspaceButton.active ? Font.Bold : Font.Normal
+                                opacity: workspaceButton.active || workspaceButton.occupied || workspaceButton.hovered ? 1 : Theme.dim(0.5)
                             }
 
                             // Occupied marker
                             Rectangle {
-                                visible: ws.occupied && !ws.active
+                                visible: workspaceButton.occupied && !workspaceButton.active
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 anchors.bottom: parent.bottom
                                 anchors.bottomMargin: Theme.spacingXs
@@ -151,54 +159,55 @@ Scope {
                 }
 
                 // Windows on this monitor's active workspace, as icons.
-                Divider { implicitHeight: Theme.px(26); visible: winRow.count > 0 }
+                Divider { implicitHeight: Theme.px(26); visible: windowRepeater.count > 0 }
 
                 Island {
-                    visible: winRow.count > 0
+                    visible: windowRepeater.count > 0
                     spacing: Theme.spacingXs
 
                     Repeater {
-                        id: winRow
+                        id: windowRepeater
                         model: ScriptModel {
                             values: {
-                                var ws = bar.monitor ? bar.monitor.activeWorkspace : null;
-                                if (!ws)
+                                var activeWorkspace = bar.monitor ? bar.monitor.activeWorkspace : null;
+                                if (!activeWorkspace)
                                     return [];
-                                return Hyprland.toplevels.values.filter(t => t.workspace === ws);
+                                return Hyprland.toplevels.values.filter(toplevel => toplevel.workspace === activeWorkspace);
                             }
                         }
 
                         delegate: Button {
-                            id: win
+                            id: windowButton
                             required property var modelData
                             readonly property string appId: modelData.wayland ? modelData.wayland.appId : ""
-                            readonly property var entry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
-                            readonly property string iconName: entry ? entry.icon : appId
+                            readonly property var desktopEntry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
+                            readonly property string iconName: desktopEntry ? desktopEntry.icon : appId
 
                             implicitWidth: Theme.px(38)
                             implicitHeight: Theme.px(30)
                             active: modelData.activated || Hyprland.activeToplevel === modelData
                             onClicked: {
-                                if (win.modelData.wayland) {
-                                    win.modelData.wayland.activate();
+                                if (windowButton.modelData.wayland) {
+                                    windowButton.modelData.wayland.activate();
                                 } else {
-                                    var addr = win.modelData.address;
-                                    Hyprland.dispatch("focuswindow address:" + (addr.indexOf("0x") === 0 ? addr : "0x" + addr));
+                                    var windowAddress = windowButton.modelData.address;
+                                    var normalizedAddress = windowAddress.indexOf("0x") === 0 ? windowAddress : "0x" + windowAddress;
+                                    Hyprland.dispatch("focuswindow address:" + normalizedAddress);
                                 }
                             }
 
                             IconImage {
-                                id: winIcon
+                                id: windowIcon
                                 anchors.centerIn: parent
                                 implicitSize: 20
-                                visible: win.iconName !== "" && status === Image.Ready
-                                source: win.iconName !== "" ? Quickshell.iconPath(win.iconName, true) : ""
+                                visible: windowButton.iconName !== "" && status === Image.Ready
+                                source: windowButton.iconName !== "" ? Quickshell.iconPath(windowButton.iconName, true) : ""
                                 asynchronous: true
                             }
 
                             MdIcon {
                                 anchors.centerIn: parent
-                                visible: !winIcon.visible
+                                visible: !windowIcon.visible
                                 codepoint: 0xF05B6 // md-application
                                 color: Theme.textSurfaceVariant
                             }
@@ -207,9 +216,9 @@ Scope {
                 }
             }
 
-            // ── Center: media ────────────────────────────────────────────
+            // -- Center: media ----------------------------------------------
             Button {
-                id: media
+                id: mediaButton
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: strip.verticalCenter
                 visible: root.player !== null
@@ -242,7 +251,7 @@ Scope {
 
                         Fill {
                             anchors.fill: parent
-                            visible: !art.visible
+                            visible: !albumArtClip.visible
                             role: "orb"
                             bordered: true
 
@@ -254,16 +263,16 @@ Scope {
                         }
 
                         ClippingRectangle {
-                            id: art
+                            id: albumArtClip
                             anchors.fill: parent
-                            visible: artImage.status === Image.Ready
+                            visible: albumArtImage.status === Image.Ready
                             radius: Theme.radiusSmall
                             color: "transparent"
                             border.width: 1
                             border.color: Theme.borderLight
 
                             Image {
-                                id: artImage
+                                id: albumArtImage
                                 anchors.fill: parent
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
@@ -274,7 +283,7 @@ Scope {
                         }
 
                         Rectangle {
-                            visible: art.visible
+                            visible: albumArtClip.visible
                             anchors.right: parent.right
                             anchors.bottom: parent.bottom
                             anchors.margins: Theme.px(-3)
@@ -300,7 +309,7 @@ Scope {
                 }
             }
 
-            // ── Right: notification area ─────────────────────────────────
+            // -- Right: notification area -----------------------------------
             RowLayout {
                 anchors.right: parent.right
                 anchors.rightMargin: Theme.spacingS
@@ -347,9 +356,9 @@ Scope {
                             }
 
                             onClicked: mouse => {
-                                var at = trayIcon.mapToItem(bar.contentItem, mouse.x, mouse.y);
+                                var menuPos = trayIcon.mapToItem(bar.contentItem, mouse.x, mouse.y);
                                 if (trayIcon.modelData.hasMenu && (mouse.button === Qt.RightButton || trayIcon.modelData.onlyMenu))
-                                    trayIcon.modelData.display(bar, at.x, at.y);
+                                    trayIcon.modelData.display(bar, menuPos.x, menuPos.y);
                                 else if (mouse.button === Qt.MiddleButton)
                                     trayIcon.modelData.secondaryActivate();
                                 else
@@ -362,14 +371,16 @@ Scope {
                     // System: network, volume and battery in one button.
                     // Opens quick settings; scroll adjusts the volume.
                     Button {
-                        id: system
+                        id: systemButton
                         implicitWidth: systemRow.implicitWidth + Theme.spacingS * 2
                         implicitHeight: Theme.px(26)
                         active: ShellState.panel === "quicksettings"
                         onClicked: ShellState.toggle("quicksettings")
                         onWheel: wheel => {
-                            if (root.sink && root.sink.audio)
-                                root.sink.audio.volume = Math.max(0, Math.min(1.5, root.sink.audio.volume + (wheel.angleDelta.y > 0 ? 0.05 : -0.05)));
+                            if (root.sink && root.sink.audio) {
+                                var step = wheel.angleDelta.y > 0 ? 0.05 : -0.05;
+                                root.sink.audio.volume = Math.max(0, Math.min(1.5, root.sink.audio.volume + step));
+                            }
                         }
 
                         RowLayout {
@@ -378,14 +389,7 @@ Scope {
                             spacing: Theme.spacingXs
 
                             MdIcon {
-                                codepoint: {
-                                    if (!root.netDevice)
-                                        return 0xF05AA;
-                                    if (root.netDevice.type === DeviceType.Wired)
-                                        return 0xF0200;
-                                    var s = root.wifiNetwork ? root.wifiNetwork.signalStrength : 1;
-                                    return s < 0.25 ? 0xF091F : (s < 0.5 ? 0xF0922 : (s < 0.75 ? 0xF0925 : 0xF0928));
-                                }
+                                codepoint: root.networkIcon
                                 color: root.netDevice ? Theme.textSurface : Theme.outline
                             }
 
@@ -407,10 +411,20 @@ Scope {
                                     codepoint: {
                                         if (battery.charging)
                                             return 0xF0084;
-                                        var level = Math.floor(battery.device.percentage / 10);
-                                        return level >= 10 ? 0xF0079 : (level < 1 ? 0xF008E : 0xF007A + level - 1);
+                                        var decile = Math.floor(battery.device.percentage / 10);
+                                        if (decile >= 10)
+                                            return 0xF0079;
+                                        if (decile < 1)
+                                            return 0xF008E;
+                                        return 0xF007A + decile - 1;
                                     }
-                                    color: battery.low ? Theme.error : (battery.charging ? Theme.success : Theme.textSurface)
+                                    color: {
+                                        if (battery.low)
+                                            return Theme.error;
+                                        if (battery.charging)
+                                            return Theme.success;
+                                        return Theme.textSurface;
+                                    }
                                 }
                                 StyledText {
                                     visible: battery.low || battery.device.state === UPowerDeviceState.Charging
@@ -485,6 +499,16 @@ Scope {
                     }
                 }
             }
+
+            SystemClock {
+                id: clock
+                precision: SystemClock.Minutes
+            }
         }
+    }
+
+    // -- Background objects -------------------------------------------------
+    PwObjectTracker {
+        objects: root.sink ? [root.sink] : []
     }
 }

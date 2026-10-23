@@ -6,47 +6,35 @@ import Quickshell
 Scope {
     id: root
 
+    // -- State and derived properties ---------------------------------------
     readonly property var locale: Qt.locale()
     property int year: 0
     property int month: 0   // 0-11
 
-    function goToday() {
-        var d = new Date();
-        year = d.getFullYear();
-        month = d.getMonth();
-    }
-
-    function shift(delta) {
-        var d = new Date(year, month + delta, 1);
-        year = d.getFullYear();
-        month = d.getMonth();
-    }
-
     // 42 Date cells covering the visible month grid.
     readonly property var cells: {
-        var first = new Date(year, month, 1);
-        var offset = (first.getDay() - locale.firstDayOfWeek + 7) % 7;
-        var out = [];
+        var firstOfMonth = new Date(year, month, 1);
+        var startDayOffset = (firstOfMonth.getDay() - locale.firstDayOfWeek + 7) % 7;
+        var gridDates = [];
         for (var i = 0; i < 42; i++)
-            out.push(new Date(year, month, 1 - offset + i));
-        return out;
+            gridDates.push(new Date(year, month, 1 - startDayOffset + i));
+        return gridDates;
     }
 
-    SystemClock {
-        id: clock
-        precision: SystemClock.Minutes
+    // -- Helper functions ---------------------------------------------------
+    function goToday() {
+        var todayDate = new Date();
+        year = todayDate.getFullYear();
+        month = todayDate.getMonth();
     }
 
-    Connections {
-        target: ShellState
-        function onPanelChanged() {
-            if (ShellState.panel === "calendar")
-                root.goToday();
-        }
+    function shift(monthDelta) {
+        var targetDate = new Date(year, month + monthDelta, 1);
+        year = targetDate.getFullYear();
+        month = targetDate.getMonth();
     }
 
-    Component.onCompleted: goToday()
-
+    // -- Visual tree --------------------------------------------------------
     DropPanel {
         name: "calendar"
         align: "right"
@@ -91,8 +79,8 @@ Scope {
                 StyledText {
                     anchors.centerIn: parent
                     text: {
-                        var name = root.locale.standaloneMonthName(root.month, Locale.LongFormat);
-                        return name.charAt(0).toUpperCase() + name.slice(1) + " " + root.year;
+                        var monthName = root.locale.standaloneMonthName(root.month, Locale.LongFormat);
+                        return monthName.charAt(0).toUpperCase() + monthName.slice(1) + " " + root.year;
                     }
                     font.weight: Font.DemiBold
                 }
@@ -162,6 +150,22 @@ Scope {
                     }
                 }
             }
+        }
+    }
+
+    // -- Lifecycle and background objects -----------------------------------
+    Component.onCompleted: goToday()
+
+    SystemClock {
+        id: clock
+        precision: SystemClock.Minutes
+    }
+
+    Connections {
+        target: ShellState
+        function onPanelChanged() {
+            if (ShellState.panel === "calendar")
+                root.goToday();
         }
     }
 }

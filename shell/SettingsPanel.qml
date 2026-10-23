@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Wayland
 
 // Global settings dialog (ShellState.panel "settings"; quick settings cog,
@@ -11,10 +10,9 @@ import Quickshell.Wayland
 Scope {
     id: root
 
+    // -- Public / derived state ---------------------------------------------
     readonly property bool open: ShellState.panel === "settings"
     readonly property string section: ShellState.settingsSection
-
-    onOpenChanged: if (open) Theme.scan()
 
     // Rows: key, label, kind ("slider" | "switch" | "font" | "accent"),
     // slider range/step, unit ("pct" | "px" | "x") and the value used when
@@ -45,7 +43,8 @@ Scope {
         ] },
         { id: "theme", title: "Theme", glyph: 0xF00E3, rows: [] }
     ]
-    readonly property var current: {
+
+    readonly property var currentSection: {
         for (var i = 0; i < sections.length; i++) {
             if (sections[i].id === section)
                 return sections[i];
@@ -53,22 +52,25 @@ Scope {
         return sections[0];
     }
 
-    function keysOf(sec) {
-        return sec.rows.map(r => r.key);
+    // -- Helper functions ---------------------------------------------------
+    function sectionKeys(sectionSpec) {
+        return sectionSpec.rows.map(rowSpec => rowSpec.key);
     }
 
+    function themeSourceLabel(themeEntry) {
+        var sourceLabel = themeEntry.source === "packaged" ? "built-in" : themeEntry.source;
+        if (themeEntry.componentsCount > 0)
+            return sourceLabel + " / " + themeEntry.componentsCount + " components";
+        return sourceLabel;
+    }
+
+    onOpenChanged: if (open) Theme.scan()
+
+    // -- Visual tree --------------------------------------------------------
     PanelWindow {
         id: window
 
-        screen: {
-            var all = Quickshell.screens;
-            var focused = Hyprland.focusedMonitor;
-            for (var i = 0; focused && i < all.length; i++) {
-                if (all[i].name === focused.name)
-                    return all[i];
-            }
-            return all[0];
-        }
+        screen: ShellState.focusedScreen()
         visible: root.open || card.animating
         color: "transparent"
         aboveWindows: true
@@ -173,11 +175,11 @@ Scope {
                         Repeater {
                             model: root.sections
                             Button {
-                                id: nav
+                                id: navButton
                                 required property var modelData
                                 Layout.fillWidth: true
                                 implicitHeight: Theme.px(36)
-                                active: root.current.id === modelData.id
+                                active: root.currentSection.id === modelData.id
                                 onClicked: ShellState.settingsSection = modelData.id
 
                                 RowLayout {
@@ -186,13 +188,13 @@ Scope {
                                     anchors.rightMargin: Theme.spacingM
                                     spacing: Theme.spacingM
                                     MdIcon {
-                                        codepoint: nav.modelData.glyph
-                                        color: nav.active ? Theme.accent : Theme.textSurface
+                                        codepoint: navButton.modelData.glyph
+                                        color: navButton.active ? Theme.accent : Theme.textSurface
                                     }
                                     StyledText {
                                         Layout.fillWidth: true
-                                        text: nav.modelData.title
-                                        font.weight: nav.active ? Font.DemiBold : Font.Normal
+                                        text: navButton.modelData.title
+                                        font.weight: navButton.active ? Font.DemiBold : Font.Normal
                                     }
                                 }
                             }
@@ -214,19 +216,19 @@ Scope {
                             spacing: Theme.spacingS
                             StyledText {
                                 Layout.fillWidth: true
-                                text: root.current.title
+                                text: root.currentSection.title
                                 font.pixelSize: Theme.fontTitle
                                 font.weight: Font.DemiBold
                             }
                             ActionButton {
-                                visible: root.current.rows.length > 0
-                                enabled: root.keysOf(root.current).some(k => Settings.has(k))
+                                visible: root.currentSection.rows.length > 0
+                                enabled: root.sectionKeys(root.currentSection).some(key => Settings.has(key))
                                 opacity: enabled ? 1 : Theme.dim(0.5)
                                 text: "Reset section"
-                                onClicked: if (enabled) Settings.resetKeys(root.keysOf(root.current))
+                                onClicked: if (enabled) Settings.resetKeys(root.sectionKeys(root.currentSection))
                             }
                             ActionButton {
-                                visible: root.current.id === "theme"
+                                visible: root.currentSection.id === "theme"
                                 text: "Reload"
                                 onClicked: Theme.reload()
                             }
@@ -247,13 +249,13 @@ Scope {
                                 spacing: Theme.spacingS
 
                                 Repeater {
-                                    model: root.current.rows
+                                    model: root.currentSection.rows
                                     delegate: SettingsRow {}
                                 }
 
                                 // Theme picker
                                 ColumnLayout {
-                                    visible: root.current.id === "theme"
+                                    visible: root.currentSection.id === "theme"
                                     Layout.fillWidth: true
                                     spacing: Theme.spacingS
 
@@ -313,8 +315,7 @@ Scope {
                                                         }
 
                                                         StyledText {
-                                                            text: (themeCard.modelData.source === "packaged" ? "built-in" : themeCard.modelData.source)
-                                                                + (themeCard.modelData.componentsCount > 0 ? " / " + themeCard.modelData.componentsCount + " components" : "")
+                                                            text: root.themeSourceLabel(themeCard.modelData)
                                                             font.pixelSize: Theme.fontSmall
                                                             color: Theme.textSurfaceVariant
                                                         }

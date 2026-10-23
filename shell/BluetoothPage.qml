@@ -10,6 +10,7 @@ import Quickshell.Bluetooth
 QsPage {
     id: page
 
+    // -- Derived properties -------------------------------------------------
     readonly property var adapter: Bluetooth.defaultAdapter
     readonly property bool powered: adapter !== null && adapter.enabled
     readonly property bool powering: adapter !== null && (adapter.state === BluetoothAdapterState.Enabling || adapter.state === BluetoothAdapterState.Disabling)
@@ -18,9 +19,13 @@ QsPage {
         if (!adapter)
             return [];
         // Unnamed nearby devices only show their address; hide that noise.
-        var addr = /^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i;
-        var all = adapter.devices.values.filter(d => d.paired || d.connected || (d.name !== "" && !addr.test(d.name)));
-        return all.sort((a, b) => page.rank(b) - page.rank(a) || a.name.localeCompare(b.name));
+        var macAddressPattern = /^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i;
+        var visibleDevices = adapter.devices.values.filter(device =>
+            device.paired || device.connected || (device.name !== "" && !macAddressPattern.test(device.name))
+        );
+        return visibleDevices.sort((firstDevice, secondDevice) =>
+            page.deviceRank(secondDevice) - page.deviceRank(firstDevice) || firstDevice.name.localeCompare(secondDevice.name)
+        );
     }
 
     codepoint: 0xF00AF // md-bluetooth
@@ -36,59 +41,61 @@ QsPage {
         }
     }
 
-    Connections {
-        target: page.adapter
-        function onEnabledChanged() {
-            if (page.shown && page.adapter.enabled)
-                page.adapter.discovering = true;
-        }
+    // -- Helper functions ---------------------------------------------------
+    function deviceRank(device) {
+        if (device.connected)
+            return 2;
+        if (device.paired)
+            return 1;
+        return 0;
     }
 
-    function rank(d) {
-        return d.connected ? 2 : (d.paired ? 1 : 0);
-    }
-
-    function group(d) {
-        return d.paired || d.connected ? 0 : 1;
+    function deviceGroup(device) {
+        return device.paired || device.connected ? 0 : 1;
     }
 
     // BlueZ icon name -> Material glyph.
-    function glyph(icon) {
-        if (icon.indexOf("headset") !== -1)
+    function deviceGlyph(iconName) {
+        if (iconName.indexOf("headset") !== -1)
             return 0xF02CE;   // md-headset
-        if (icon.indexOf("headphones") !== -1)
+        if (iconName.indexOf("headphones") !== -1)
             return 0xF02CB;   // md-headphones
-        if (icon.indexOf("audio") !== -1)
+        if (iconName.indexOf("audio") !== -1)
             return 0xF04C3;   // md-speaker
-        if (icon.indexOf("keyboard") !== -1)
+        if (iconName.indexOf("keyboard") !== -1)
             return 0xF030C;   // md-keyboard
-        if (icon.indexOf("mouse") !== -1)
+        if (iconName.indexOf("mouse") !== -1)
             return 0xF037D;   // md-mouse
-        if (icon.indexOf("gaming") !== -1)
+        if (iconName.indexOf("gaming") !== -1)
             return 0xF0297;   // md-gamepad_variant
-        if (icon.indexOf("phone") !== -1)
+        if (iconName.indexOf("phone") !== -1)
             return 0xF011C;   // md-cellphone
-        if (icon.indexOf("computer") !== -1)
+        if (iconName.indexOf("computer") !== -1)
             return 0xF0322;   // md-laptop
-        if (icon.indexOf("camera") !== -1)
+        if (iconName.indexOf("camera") !== -1)
             return 0xF0100;   // md-camera
-        if (icon.indexOf("printer") !== -1)
+        if (iconName.indexOf("printer") !== -1)
             return 0xF042A;   // md-printer
-        if (icon.indexOf("display") !== -1 || icon.indexOf("video") !== -1)
+        if (iconName.indexOf("display") !== -1 || iconName.indexOf("video") !== -1)
             return 0xF0379;   // md-monitor
         return 0xF00AF;
     }
 
     // Battery as 0..1 (BlueZ reports a fraction; tolerate a percentage).
-    function level(d) {
-        return Math.max(0, Math.min(1, d.battery > 1 ? d.battery / 100 : d.battery));
+    function batteryLevel(device) {
+        return Math.max(0, Math.min(1, device.battery > 1 ? device.battery / 100 : device.battery));
     }
 
-    function batteryGlyph(d) {
-        var l = Math.floor(level(d) * 10);
-        return l >= 10 ? 0xF0079 : (l < 1 ? 0xF008E : 0xF007A + l - 1);
+    function batteryGlyph(device) {
+        var decile = Math.floor(batteryLevel(device) * 10);
+        if (decile >= 10)
+            return 0xF0079;
+        if (decile < 1)
+            return 0xF008E;
+        return 0xF007A + decile - 1;
     }
 
+    // -- Header actions and visual tree -------------------------------------
     trailing: [
         Button {
             implicitWidth: Theme.px(28)
@@ -131,7 +138,7 @@ QsPage {
         visible: page.adapter !== null && !page.powered
         busy: page.powering
         codepoint: 0xF00B2
-        title: page.powering ? "Switching Bluetooth…" : "Bluetooth is turned off"
+        title: page.powering ? "Switching Bluetooth\u2026" : "Bluetooth is turned off"
         actionText: page.powering ? "" : "Turn on"
         onAction: page.adapter.enabled = true
     }
@@ -140,7 +147,7 @@ QsPage {
         visible: page.powered && page.devices.length === 0
         busy: page.discovering
         codepoint: 0xF00AF
-        title: page.discovering ? "Searching for devices…" : "No devices found"
+        title: page.discovering ? "Searching for devices\u2026" : "No devices found"
         detail: page.discovering ? "Put the device in pairing mode." : ""
         actionText: page.discovering ? "" : "Scan"
         onAction: page.adapter.discovering = true
@@ -190,23 +197,23 @@ QsPage {
 
             required property var modelData
             required property int index
-            readonly property var dev: modelData
-            readonly property bool busy: dev.pairing || dev.state === BluetoothDeviceState.Connecting || dev.state === BluetoothDeviceState.Disconnecting
-            readonly property bool firstOfGroup: index === 0 || page.group(page.devices[index - 1]) !== page.group(dev)
+            readonly property var device: modelData
+            readonly property bool busy: device.pairing || device.state === BluetoothDeviceState.Connecting || device.state === BluetoothDeviceState.Disconnecting
+            readonly property bool firstOfGroup: index === 0 || page.deviceGroup(page.devices[index - 1]) !== page.deviceGroup(device)
             property bool connectAfterPair: false
 
             function primary() {
-                if (dev.pairing)
-                    dev.cancelPair();
+                if (device.pairing)
+                    device.cancelPair();
                 else if (busy)
                     return;
-                else if (dev.connected)
-                    dev.disconnect();
-                else if (dev.paired)
-                    dev.connect();
+                else if (device.connected)
+                    device.disconnect();
+                else if (device.paired)
+                    device.connect();
                 else {
                     connectAfterPair = true;
-                    dev.pair();
+                    device.pair();
                 }
             }
 
@@ -214,11 +221,11 @@ QsPage {
             spacing: 0
 
             Connections {
-                target: entry.dev
+                target: entry.device
                 function onPairedChanged() {
-                    if (entry.connectAfterPair && entry.dev.paired) {
+                    if (entry.connectAfterPair && entry.device.paired) {
                         entry.connectAfterPair = false;
-                        entry.dev.connect();
+                        entry.device.connect();
                     }
                 }
             }
@@ -229,7 +236,7 @@ QsPage {
                 Layout.bottomMargin: Theme.px(2)
                 Layout.leftMargin: Theme.spacingS
                 visible: entry.firstOfGroup
-                text: page.group(entry.dev) === 0 ? "My devices" : "Nearby devices"
+                text: page.deviceGroup(entry.device) === 0 ? "My devices" : "Nearby devices"
                 font.pixelSize: Theme.fontSmall
                 font.weight: Font.DemiBold
                 color: Theme.accent
@@ -237,20 +244,24 @@ QsPage {
 
             QsRow {
                 Layout.fillWidth: true
-                codepoint: page.glyph(entry.dev.icon)
-                iconColor: entry.dev.connected ? Theme.accent : Theme.textSurface
-                title: entry.dev.name !== "" ? entry.dev.name : entry.dev.address
+                codepoint: page.deviceGlyph(entry.device.icon)
+                iconColor: entry.device.connected ? Theme.accent : Theme.textSurface
+                title: entry.device.name !== "" ? entry.device.name : entry.device.address
                 busy: entry.busy
-                highlighted: entry.dev.connected
+                highlighted: entry.device.connected
                 current: list.keyActive && list.activeFocus && list.cursor === entry.index
                 subtitle: {
-                    if (entry.dev.pairing)
-                        return "Pairing…";
-                    if (entry.dev.state === BluetoothDeviceState.Connecting)
-                        return "Connecting…";
-                    if (entry.dev.state === BluetoothDeviceState.Disconnecting)
-                        return "Disconnecting…";
-                    return entry.dev.connected ? "Connected" : (entry.dev.paired ? "Paired" : "Click to pair");
+                    if (entry.device.pairing)
+                        return "Pairing\u2026";
+                    if (entry.device.state === BluetoothDeviceState.Connecting)
+                        return "Connecting\u2026";
+                    if (entry.device.state === BluetoothDeviceState.Disconnecting)
+                        return "Disconnecting\u2026";
+                    if (entry.device.connected)
+                        return "Connected";
+                    if (entry.device.paired)
+                        return "Paired";
+                    return "Click to pair";
                 }
                 onClicked: {
                     list.cursor = entry.index;
@@ -262,25 +273,25 @@ QsPage {
                 }
 
                 RowLayout {
-                    visible: entry.dev.batteryAvailable
+                    visible: entry.device.batteryAvailable
                     spacing: Theme.px(2)
 
                     MdIcon {
-                        codepoint: page.batteryGlyph(entry.dev)
+                        codepoint: page.batteryGlyph(entry.device)
                         font.pixelSize: Theme.iconPx(14)
-                        color: page.level(entry.dev) <= 0.15 ? Theme.error : Theme.textSurfaceVariant
+                        color: page.batteryLevel(entry.device) <= 0.15 ? Theme.error : Theme.textSurfaceVariant
                     }
                     StyledText {
-                        text: Math.round(page.level(entry.dev) * 100) + "%"
+                        text: Math.round(page.batteryLevel(entry.device) * 100) + "%"
                         font.pixelSize: Theme.fontSmall
                         color: Theme.textSurfaceVariant
                     }
                 }
                 Button {
-                    visible: entry.dev.paired && !entry.dev.connected && !entry.busy
+                    visible: entry.device.paired && !entry.device.connected && !entry.busy
                     implicitWidth: Theme.px(26)
                     implicitHeight: Theme.px(26)
-                    onClicked: entry.dev.forget()
+                    onClicked: entry.device.forget()
                     MdIcon {
                         anchors.centerIn: parent
                         codepoint: 0xF09E7 // md-delete_outline
@@ -289,13 +300,30 @@ QsPage {
                     }
                 }
                 ActionButton {
-                    visible: !entry.busy || entry.dev.pairing
+                    visible: !entry.busy || entry.device.pairing
                     implicitHeight: Theme.px(26)
-                    text: entry.dev.pairing ? "Cancel" : (entry.dev.connected ? "Disconnect" : (entry.dev.paired ? "Connect" : "Pair"))
-                    filled: !entry.dev.connected && !entry.dev.pairing
+                    text: {
+                        if (entry.device.pairing)
+                            return "Cancel";
+                        if (entry.device.connected)
+                            return "Disconnect";
+                        if (entry.device.paired)
+                            return "Connect";
+                        return "Pair";
+                    }
+                    filled: !entry.device.connected && !entry.device.pairing
                     onClicked: entry.primary()
                 }
             }
+        }
+    }
+
+    // -- Background objects -------------------------------------------------
+    Connections {
+        target: page.adapter
+        function onEnabledChanged() {
+            if (page.shown && page.adapter.enabled)
+                page.adapter.discovering = true;
         }
     }
 }

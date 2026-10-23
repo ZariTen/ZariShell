@@ -10,13 +10,17 @@ import Quickshell.Wayland
 Scope {
     id: root
 
+    // -- State --------------------------------------------------------------
     property bool locked: false
     property bool busy: false
     property string errorText: ""
     property string pending: ""
     readonly property bool preview: Quickshell.env("QS_LOCK_PREVIEW") === "1"
+
+    // -- Signals ------------------------------------------------------------
     signal failed
 
+    // -- Helper functions ---------------------------------------------------
     function lock() {
         errorText = "";
         ShellState.close();
@@ -42,6 +46,47 @@ Scope {
         }
     }
 
+    // -- Visual tree --------------------------------------------------------
+    WlSessionLock {
+        locked: root.locked
+
+        WlSessionLockSurface {
+            color: Theme.backdrop
+
+            LockSurface {
+                anchors.fill: parent
+                lock: root
+            }
+        }
+    }
+
+    // Preview (testing only): same UI in an ordinary overlay, no real lock.
+    LazyLoader {
+        active: root.preview
+
+        PanelWindow {
+            screen: Quickshell.screens[0]
+            color: Theme.backdrop
+            aboveWindows: true
+            exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.layer: WlrLayer.Overlay
+            WlrLayershell.namespace: "shell-lock-preview"
+
+            anchors {
+                top: true
+                bottom: true
+                left: true
+                right: true
+            }
+
+            LockSurface {
+                anchors.fill: parent
+                lock: root
+            }
+        }
+    }
+
+    // -- Background objects -------------------------------------------------
     PamContext {
         id: pam
         config: "hyprlock"
@@ -75,19 +120,6 @@ Scope {
         }
     }
 
-    WlSessionLock {
-        locked: root.locked
-
-        WlSessionLockSurface {
-            color: Theme.backdrop
-
-            LockSurface {
-                anchors.fill: parent
-                lock: root
-            }
-        }
-    }
-
     Connections {
         target: ShellState
         function onLockRequested() {
@@ -100,32 +132,6 @@ Scope {
 
         function lock(): void {
             root.lock();
-        }
-    }
-
-    // Preview (testing only): same UI in an ordinary overlay, no real lock.
-    LazyLoader {
-        active: root.preview
-
-        PanelWindow {
-            screen: Quickshell.screens[0]
-            color: Theme.backdrop
-            aboveWindows: true
-            exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.namespace: "shell-lock-preview"
-
-            anchors {
-                top: true
-                bottom: true
-                left: true
-                right: true
-            }
-
-            LockSurface {
-                anchors.fill: parent
-                lock: root
-            }
         }
     }
 }

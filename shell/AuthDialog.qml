@@ -7,10 +7,7 @@ import Quickshell.Wayland
 Scope {
     id: root
 
-    PolkitAgent {
-        id: agent
-    }
-
+    // -- Visual tree --------------------------------------------------------
     PanelWindow {
         id: window
 
@@ -133,7 +130,7 @@ Scope {
                         anchors.rightMargin: Theme.spacingL
                         verticalAlignment: TextInput.AlignVCenter
                         echoMode: agent.flow !== null && agent.flow.responseVisible ? TextInput.Normal : TextInput.Password
-                        passwordCharacter: "•"
+                        passwordCharacter: "\u2022"
                         color: Theme.textSurface
                         font.family: Theme.font
                         font.pixelSize: Theme.fontTitle
@@ -168,5 +165,10 @@ Scope {
                 }
             }
         }
+    }
+
+    // -- Background objects -------------------------------------------------
+    PolkitAgent {
+        id: agent
     }
 }

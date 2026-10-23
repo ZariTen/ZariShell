@@ -7,6 +7,7 @@ import Quickshell
 Scope {
     id: root
 
+    // -- State and action definitions ---------------------------------------
     property string pending: ""   // action awaiting confirmation
     readonly property var actions: [
         { id: "lock", label: "Lock", glyph: 0xF033E, confirm: false },
@@ -16,33 +17,28 @@ Scope {
         { id: "poweroff", label: "Shut down", glyph: 0xF0425, confirm: true }
     ]
 
-    function label(id) {
-        var a = actions.find(x => x.id === id);
-        return a ? a.label : "";
+    // -- Helper functions ---------------------------------------------------
+    function actionLabel(actionId) {
+        var actionEntry = actions.find(candidate => candidate.id === actionId);
+        return actionEntry ? actionEntry.label : "";
     }
 
-    function run(id) {
+    function runAction(actionId) {
         pending = "";
         ShellState.close();
-        if (id === "lock")
+        if (actionId === "lock")
             ShellState.lockRequested();
-        else if (id === "logout")
+        else if (actionId === "logout")
             Quickshell.execDetached(["hyprctl", "dispatch", "exit"]);
-        else if (id === "suspend")
+        else if (actionId === "suspend")
             Quickshell.execDetached(["systemctl", "suspend"]);
-        else if (id === "reboot")
+        else if (actionId === "reboot")
             Quickshell.execDetached(["systemctl", "reboot"]);
-        else if (id === "poweroff")
+        else if (actionId === "poweroff")
             Quickshell.execDetached(["systemctl", "poweroff"]);
     }
 
-    Connections {
-        target: ShellState
-        function onPanelChanged() {
-            root.pending = "";
-        }
-    }
-
+    // -- Visual tree --------------------------------------------------------
     DropPanel {
         name: "power"
         centered: true
@@ -69,7 +65,7 @@ Scope {
                     implicitHeight: Theme.px(92)
                     framed: true
                     tint: modelData.id === "poweroff" || modelData.id === "reboot" ? Theme.dangerHighlight : Theme.highlight
-                    onClicked: modelData.confirm ? root.pending = modelData.id : root.run(modelData.id)
+                    onClicked: modelData.confirm ? root.pending = modelData.id : root.runAction(modelData.id)
 
                     ColumnLayout {
                         anchors.centerIn: parent
@@ -98,7 +94,7 @@ Scope {
             StyledText {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
-                text: "Are you sure you want to " + root.label(root.pending).toLowerCase() + "? Unsaved work in open applications may be lost."
+                text: "Are you sure you want to " + root.actionLabel(root.pending).toLowerCase() + "? Unsaved work in open applications may be lost."
             }
             RowLayout {
                 Layout.alignment: Qt.AlignRight
@@ -108,11 +104,19 @@ Scope {
                     onClicked: root.pending = ""
                 }
                 ActionButton {
-                    text: root.label(root.pending)
+                    text: root.actionLabel(root.pending)
                     filled: true
-                    onClicked: root.run(root.pending)
+                    onClicked: root.runAction(root.pending)
                 }
             }
+        }
+    }
+
+    // -- Background objects -------------------------------------------------
+    Connections {
+        target: ShellState
+        function onPanelChanged() {
+            root.pending = "";
         }
     }
 }

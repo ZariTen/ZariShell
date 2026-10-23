@@ -1,10 +1,10 @@
 import QtQuick
 
-// Generic slider / meter. `value` 0..1 is shown; `moved(v)` fires on click,
-// drag and scroll, `released(v)` when a drag ends. `interactive: false` makes
-// it a plain meter. `tone` picks the fill: "normal", "accent", "warning",
-// "critical" or "muted". The look comes from Theme.component("Slider") and
-// reads this item as `control`.
+// Generic slider / meter. `value` 0..1 is shown; `moved(value)` fires on click,
+// drag and scroll, `released(value)` when a drag ends. `interactive: false`
+// makes it a plain meter. `tone` picks the fill: "normal", "accent",
+// "warning", "critical" or "muted". The look comes from
+// Theme.component("Slider") and reads this item as `control`.
 Item {
     id: control
 
@@ -14,8 +14,9 @@ Item {
     readonly property real shown: drag.pressed ? drag.ratio : Math.max(0, Math.min(1, value))
     readonly property bool hovered: drag.containsMouse
     readonly property bool pressed: drag.pressed
-    signal moved(real v)
-    signal released(real v)
+
+    signal moved(real value)
+    signal released(real value)
 
     implicitHeight: interactive ? 10 : 8
 
@@ -33,8 +34,11 @@ Item {
         enabled: control.interactive
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
-        function ratioAt(x) { return Math.max(0, Math.min(1, x / width)); }
-        onPressed: mouse => { ratio = ratioAt(mouse.x); control.moved(ratio); }
+        function ratioAt(mouseX) { return Math.max(0, Math.min(1, mouseX / width)); }
+        onPressed: mouse => {
+            ratio = ratioAt(mouse.x);
+            control.moved(ratio);
+        }
         onPositionChanged: mouse => {
             if (pressed) {
                 ratio = ratioAt(mouse.x);
@@ -42,6 +46,9 @@ Item {
             }
         }
         onReleased: mouse => control.released(ratioAt(mouse.x))
-        onWheel: wheel => control.moved(Math.max(0, Math.min(1, control.value + (wheel.angleDelta.y > 0 ? 0.05 : -0.05))))
+        onWheel: wheel => {
+            var step = wheel.angleDelta.y > 0 ? 0.05 : -0.05;
+            control.moved(Math.max(0, Math.min(1, control.value + step)));
+        }
     }
 }

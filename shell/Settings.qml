@@ -18,20 +18,24 @@ import Quickshell.Io
 Singleton {
     id: root
 
+    // -- Public properties --------------------------------------------------
     readonly property string path: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/zarishell/settings.json"
     property var values: ({})
     property bool invalid: false
-    property string lastWritten: ""
-    property string lastWarned: ""
 
-    // Stored value for key, or fallback when unset or of the wrong type.
-    function get(key, fallback) {
-        var v = values[key];
-        if (v === undefined || v === null)
-            return fallback;
-        if (fallback !== undefined && typeof v !== typeof fallback)
-            return fallback;
-        return v;
+    // -- Internal state -----------------------------------------------------
+    property string lastWrittenText: ""
+    property string lastWarnedText: ""
+
+    // -- Helper functions ---------------------------------------------------
+    // Stored value for key, or fallbackValue when unset or of the wrong type.
+    function get(key, fallbackValue) {
+        var rawValue = values[key];
+        if (rawValue === undefined || rawValue === null)
+            return fallbackValue;
+        if (fallbackValue !== undefined && typeof rawValue !== typeof fallbackValue)
+            return fallbackValue;
+        return rawValue;
     }
 
     function has(key) {
@@ -41,10 +45,10 @@ Singleton {
     function set(key, value) {
         if (values[key] === value)
             return;
-        var next = Object.assign({}, values);
-        next[key] = value;
-        values = next;
-        save.restart();
+        var nextValues = Object.assign({}, values);
+        nextValues[key] = value;
+        values = nextValues;
+        saveTimer.restart();
     }
 
     function reset(key) {
@@ -52,60 +56,61 @@ Singleton {
     }
 
     function resetKeys(keys) {
-        var next = Object.assign({}, values);
-        var changed = false;
+        var nextValues = Object.assign({}, values);
+        var hasChanged = false;
         for (var i = 0; i < keys.length; i++) {
-            if (next[keys[i]] !== undefined) {
-                delete next[keys[i]];
-                changed = true;
+            if (nextValues[keys[i]] !== undefined) {
+                delete nextValues[keys[i]];
+                hasChanged = true;
             }
         }
-        if (!changed)
+        if (!hasChanged)
             return;
-        values = next;
-        save.restart();
+        values = nextValues;
+        saveTimer.restart();
     }
 
-    function ingest(text) {
-        if (text === lastWritten)
+    function ingest(jsonText) {
+        if (jsonText === lastWrittenText)
             return;
-        if (text.trim() === "") {
+        if (jsonText.trim() === "") {
             invalid = false;
             values = {};
             return;
         }
         try {
-            var o = JSON.parse(text);
-            if (o === null || typeof o !== "object" || Array.isArray(o))
+            var parsedObject = JSON.parse(jsonText);
+            if (parsedObject === null || typeof parsedObject !== "object" || Array.isArray(parsedObject))
                 throw "not a JSON object";
             invalid = false;
-            values = o;
-        } catch (e) {
-            if (text !== lastWarned) {
-                console.warn("Settings: invalid " + path + " (" + e + "); using defaults, the file is left untouched");
-                lastWarned = text;
+            values = parsedObject;
+        } catch (parseError) {
+            if (jsonText !== lastWarnedText) {
+                console.warn("Settings: invalid " + path + " (" + parseError + "); using defaults, the file is left untouched");
+                lastWarnedText = jsonText;
             }
             invalid = true;
             values = {};
         }
     }
 
-    Component.onCompleted: ingest(file.text())
+    // -- Lifecycle and background objects -----------------------------------
+    Component.onCompleted: ingest(settingsFile.text())
 
     Timer {
-        id: save
+        id: saveTimer
         interval: 400
         onTriggered: {
             if (root.invalid)
                 return;
-            var text = JSON.stringify(root.values, null, 2) + "\n";
-            root.lastWritten = text;
-            file.setText(text);
+            var formattedJson = JSON.stringify(root.values, null, 2) + "\n";
+            root.lastWrittenText = formattedJson;
+            settingsFile.setText(formattedJson);
         }
     }
 
     FileView {
-        id: file
+        id: settingsFile
         path: root.path
         watchChanges: true
         blockLoading: true
@@ -128,9 +133,13 @@ Singleton {
         function toggle(): void { ShellState.toggle("settings"); }
         // value is JSON ("1.25", "true", "\"#ff8800\""); a bare word is a string.
         function set(key: string, value: string): void {
-            var v;
-            try { v = JSON.parse(value); } catch (e) { v = value; }
-            root.set(key, v);
+            var parsedValue;
+            try {
+                parsedValue = JSON.parse(value);
+            } catch (parseError) {
+                parsedValue = value;
+            }
+            root.set(key, parsedValue);
         }
         function reset(key: string): void { root.reset(key); }
         function get(key: string): string { return JSON.stringify(root.values[key] === undefined ? null : root.values[key]); }

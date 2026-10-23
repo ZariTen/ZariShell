@@ -10,88 +10,91 @@ import Quickshell.Services.Greetd
 Item {
     id: root
 
-    // ── Screens ─────────────────────────────────────────────────────────
-    readonly property real originX: Math.min.apply(null, Quickshell.screens.map(s => s.x).concat([1e9])) % 1e9
-    readonly property real originY: Math.min.apply(null, Quickshell.screens.map(s => s.y).concat([1e9])) % 1e9
+    // -- State and derived properties ---------------------------------------
+    readonly property real originX: Math.min.apply(null, Quickshell.screens.map(screen => screen.x).concat([1e9])) % 1e9
+    readonly property real originY: Math.min.apply(null, Quickshell.screens.map(screen => screen.y).concat([1e9])) % 1e9
     readonly property var mainScreen: pickMain(Quickshell.screens)
 
-    function isInternal(s) { return /^(eDP|LVDS|DSI)/i.test(s.name || ""); }
-    function pickMain(screens) {
-        if (screens.length === 0) return null;
-        if (GreeterConfig.mainMonitor !== "") {
-            for (var i = 0; i < screens.length; i++)
-                if (screens[i].name === GreeterConfig.mainMonitor) return screens[i];
-        }
-        var list = screens.slice();
-        list.sort(function (a, b) {
-            var ea = isInternal(a) ? 1 : 0, eb = isInternal(b) ? 1 : 0;
-            if (ea !== eb) return ea - eb;                      // external first
-            var pa = a.width * a.height * a.devicePixelRatio * a.devicePixelRatio;
-            var pb = b.width * b.height * b.devicePixelRatio * b.devicePixelRatio;
-            if (pa !== pb) return pb - pa;                      // most physical pixels
-            var za = (a.x === 0 && a.y === 0) ? 0 : 1, zb = (b.x === 0 && b.y === 0) ? 0 : 1;
-            if (za !== zb) return za - zb;                      // at 0,0
-            return (a.x - b.x) || (a.y - b.y);                  // leftmost
-        });
-        return list[0];
-    }
-
-    // ── Users (from /etc/passwd) ────────────────────────────────────────
     property var users: []               // [{ name, real, home }]
     property string userName: ""
-    property var currentUser: users.find(u => u.name === userName) || ({ name: userName, real: userName, home: "" })
+    property var currentUser: users.find(userEntry => userEntry.name === userName) || ({ name: userName, real: userName, home: "" })
     property bool pickingUser: false
     property bool typingUser: false
     property string savedUser: ""
     property string savedSession: ""
 
-    FileView {
-        path: "/etc/passwd"
-        onLoaded: {
-            var out = [];
-            var lines = text().split("\n");
-            for (var i = 0; i < lines.length; i++) {
-                var f = lines[i].split(":");
-                if (f.length < 7) continue;
-                var uid = parseInt(f[2]);
-                if (uid < GreeterConfig.minUid || uid > GreeterConfig.maxUid) continue;
-                if (f[6] === "" || /(nologin|false)$/.test(f[6])) continue;
-                out.push({ name: f[0], real: (f[4] || "").split(",")[0] || f[0], home: f[5] });
+    property var sessions: []            // [{ name, exec: [argv] }]
+    property int sessionIndex: -1
+    readonly property var currentSession: sessionIndex >= 0 && sessionIndex < sessions.length
+        ? sessions[sessionIndex]
+        : ({ name: GreeterConfig.sessionName, exec: GreeterConfig.sessionCommand })
+
+    property string pendingPassword: ""
+    property string errorText: ""
+    property string infoText: ""
+    property bool submitted: false       // login pressed, session in progress
+    property bool responded: false       // first password prompt answered
+    property bool awaitingPrompt: false  // PAM asked a further question
+    readonly property bool busy: submitted && !awaitingPrompt
+
+    // -- Helper functions ---------------------------------------------------
+    function isInternal(screen) {
+        return /^(eDP|LVDS|DSI)/i.test(screen.name || "");
+    }
+
+    function pickMain(screenList) {
+        if (screenList.length === 0)
+            return null;
+        if (GreeterConfig.mainMonitor !== "") {
+            for (var i = 0; i < screenList.length; i++) {
+                if (screenList[i].name === GreeterConfig.mainMonitor)
+                    return screenList[i];
             }
-            root.users = out;
-            root.pickDefaultUser();
         }
+        var sortedScreens = screenList.slice();
+        sortedScreens.sort(function (firstScreen, secondScreen) {
+            var firstIsInternal = isInternal(firstScreen) ? 1 : 0;
+            var secondIsInternal = isInternal(secondScreen) ? 1 : 0;
+            if (firstIsInternal !== secondIsInternal)
+                return firstIsInternal - secondIsInternal; // external first
+            var firstPixels = firstScreen.width * firstScreen.height * firstScreen.devicePixelRatio * firstScreen.devicePixelRatio;
+            var secondPixels = secondScreen.width * secondScreen.height * secondScreen.devicePixelRatio * secondScreen.devicePixelRatio;
+            if (firstPixels !== secondPixels)
+                return secondPixels - firstPixels;         // most physical pixels
+            var firstAtOrigin = (firstScreen.x === 0 && firstScreen.y === 0) ? 0 : 1;
+            var secondAtOrigin = (secondScreen.x === 0 && secondScreen.y === 0) ? 0 : 1;
+            if (firstAtOrigin !== secondAtOrigin)
+                return firstAtOrigin - secondAtOrigin;     // at 0,0
+            return (firstScreen.x - secondScreen.x) || (firstScreen.y - secondScreen.y); // leftmost
+        });
+        return sortedScreens[0];
     }
-    // Last successful login, written just before launching the session.
-    FileView {
-        id: lastFile
-        path: GreeterConfig.stateDir + "/last"
-        blockWrites: true
-        printErrors: false
-        onLoaded: {
-            try {
-                var d = JSON.parse(text());
-                root.savedUser = d.user || "";
-                root.savedSession = d.session || "";
-            } catch (e) {}
-            root.pickDefaultUser();
-            root.pickDefaultSession();
-        }
-        onLoadFailed: { root.pickDefaultUser(); root.pickDefaultSession(); }
-    }
+
     function pickDefaultUser() {
-        if (userName !== "") return;
-        if (savedUser !== "" && (users.length === 0 || users.some(u => u.name === savedUser))) userName = savedUser;
-        else if (users.length > 0) userName = users[0].name;
+        if (userName !== "")
+            return;
+        if (savedUser !== "" && (users.length === 0 || users.some(userEntry => userEntry.name === savedUser)))
+            userName = savedUser;
+        else if (users.length > 0)
+            userName = users[0].name;
     }
+
     function cycleUser(step) {
-        if (users.length === 0) return;
-        var i = users.findIndex(u => u.name === userName);
-        selectUser(users[((i < 0 ? 0 : i + step) % users.length + users.length) % users.length].name);
+        if (users.length === 0)
+            return;
+        var currentIndex = users.findIndex(userEntry => userEntry.name === userName);
+        var nextIndex = ((currentIndex < 0 ? 0 : currentIndex + step) % users.length + users.length) % users.length;
+        selectUser(users[nextIndex].name);
     }
+
     function selectUser(name) {
-        if (name === userName) { pickingUser = false; typingUser = false; return; }
-        if (Greetd.state !== GreetdState.Inactive) Greetd.cancelSession();
+        if (name === userName) {
+            pickingUser = false;
+            typingUser = false;
+            return;
+        }
+        if (Greetd.state !== GreetdState.Inactive)
+            Greetd.cancelSession();
         resetAuth();
         errorText = "";
         userName = name;
@@ -100,67 +103,26 @@ Item {
         password.forceActiveFocus();
     }
 
-    // ── Sessions (wayland-sessions/*.desktop) ───────────────────────────
-    property var sessions: []            // [{ name, exec: [argv] }]
-    property int sessionIndex: -1
-    readonly property var currentSession: sessionIndex >= 0 && sessionIndex < sessions.length
-        ? sessions[sessionIndex]
-        : ({ name: GreeterConfig.sessionName, exec: GreeterConfig.sessionCommand })
-
-    Process {
-        running: true
-        command: ["sh", "-c", 'for f in "$1"/*.desktop; do [ -f "$f" ] || continue; '
-            + 'while IFS= read -r l; do case "$l" in Name=*|Exec=*|NoDisplay=*|Hidden=*) printf "%s\\t%s\\n" "$f" "$l";; esac; done < "$f"; done',
-            "sh", GreeterConfig.sessionsDir]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var byFile = {};
-                var order = [];
-                text.split("\n").forEach(function (line) {
-                    var t = line.indexOf("\t");
-                    if (t < 0) return;
-                    var file = line.slice(0, t), kv = line.slice(t + 1), eq = kv.indexOf("=");
-                    var k = kv.slice(0, eq), v = kv.slice(eq + 1);
-                    if (!byFile[file]) { byFile[file] = {}; order.push(file); }
-                    if (byFile[file][k] === undefined) byFile[file][k] = v; // first (unlocalized) key wins
-                });
-                var out = [];
-                order.forEach(function (file) {
-                    var e = byFile[file];
-                    if (!e.Exec || e.NoDisplay === "true" || e.Hidden === "true") return;
-                    var argv = e.Exec.replace(/%[a-zA-Z]/g, "").trim().split(/\s+/);
-                    out.push({ name: e.Name || file.split("/").pop(), exec: argv });
-                });
-                root.sessions = out;
-                root.pickDefaultSession();
-            }
-        }
-    }
     function pickDefaultSession() {
-        if (sessions.length === 0) return;
-        var want = savedSession;
-        var idx = want !== "" ? sessions.findIndex(s => s.name === want) : -1;
-        if (idx < 0) {
-            var cmd = GreeterConfig.sessionCommand[0];
-            idx = sessions.findIndex(s => s.exec[0] === cmd || s.exec[0].endsWith("/" + cmd));
+        if (sessions.length === 0)
+            return;
+        var preferredName = savedSession;
+        var matchedIndex = preferredName !== "" ? sessions.findIndex(sessionEntry => sessionEntry.name === preferredName) : -1;
+        if (matchedIndex < 0) {
+            var defaultCommand = GreeterConfig.sessionCommand[0];
+            matchedIndex = sessions.findIndex(sessionEntry => sessionEntry.exec[0] === defaultCommand || sessionEntry.exec[0].endsWith("/" + defaultCommand));
         }
-        if (idx < 0) idx = sessions.findIndex(s => s.name === GreeterConfig.sessionName);
-        sessionIndex = idx;   // -1 keeps the GreeterConfig fallback
+        if (matchedIndex < 0)
+            matchedIndex = sessions.findIndex(sessionEntry => sessionEntry.name === GreeterConfig.sessionName);
+        sessionIndex = matchedIndex; // -1 keeps the GreeterConfig fallback
     }
+
     function cycleSession() {
         // -1 (the configured fallback) is part of the cycle only when nothing matched it.
-        if (sessions.length === 0) return;
+        if (sessions.length === 0)
+            return;
         sessionIndex = (sessionIndex + 1) % sessions.length;
     }
-
-    // ── greetd flow ─────────────────────────────────────────────────────
-    property string pendingPassword: ""
-    property string errorText: ""
-    property string infoText: ""
-    property bool submitted: false      // login pressed, session in progress
-    property bool responded: false      // first password prompt answered
-    property bool awaitingPrompt: false // PAM asked a further question
-    readonly property bool busy: submitted && !awaitingPrompt
 
     function resetAuth() {
         pendingPassword = "";
@@ -169,9 +131,16 @@ Item {
         awaitingPrompt = false;
         infoText = "";
     }
+
     function login() {
-        if (!Greetd.available) { fail("greetd is not running (preview mode)"); return; }
-        if (userName === "") { fail("Choose a user"); return; }
+        if (!Greetd.available) {
+            fail("greetd is not running (preview mode)");
+            return;
+        }
+        if (userName === "") {
+            fail("Choose a user");
+            return;
+        }
         errorText = "";
         if (awaitingPrompt && Greetd.state === GreetdState.Authenticating) {
             awaitingPrompt = false;
@@ -181,50 +150,21 @@ Item {
         resetAuth();
         pendingPassword = password.text;
         submitted = true;
-        if (Greetd.state !== GreetdState.Inactive) Greetd.cancelSession();
+        if (Greetd.state !== GreetdState.Inactive)
+            Greetd.cancelSession();
         Greetd.createSession(userName);
     }
-    function fail(msg) {
+
+    function fail(message) {
         resetAuth();
-        errorText = msg || "Login failed";
+        errorText = message || "Login failed";
         password.text = "";
         shakeAnim.restart();
         password.forceActiveFocus();
     }
 
-    Connections {
-        target: Greetd
-        function onAuthMessage(message, error, responseRequired, echoResponse) {
-            if (error) { root.errorText = message; return; }
-            if (responseRequired) {
-                if (!root.responded) {
-                    root.responded = true;
-                    var p = root.pendingPassword;
-                    root.pendingPassword = "";
-                    Greetd.respond(p);
-                } else {
-                    // Extra PAM prompt (e.g. OTP): reuse the password field.
-                    root.awaitingPrompt = true;
-                    root.infoText = message;
-                    password.text = "";
-                    password.forceActiveFocus();
-                }
-            } else if (message !== "") {
-                root.infoText = message;
-            }
-        }
-        function onAuthFailure(message) { root.fail(message || "Incorrect password"); }
-        function onError(error) { root.fail(error); }
-        function onReadyToLaunch() {
-            root.infoText = "Welcome";
-            lastFile.setText(JSON.stringify({ user: root.userName, session: root.currentSession.name }));
-            Greetd.launch(root.currentSession.exec, GreeterConfig.sessionEnv);
-        }
-    }
-
-    SystemClock { id: clock; precision: SystemClock.Seconds }
-
-    // ── Background: one copy per screen ─────────────────────────────────
+    // -- Visual tree --------------------------------------------------------
+    // -- Background: one copy per screen ------------------------------------
     Repeater {
         model: Quickshell.screens.length > 0 ? Quickshell.screens : [null]
         Item {
@@ -243,7 +183,7 @@ Item {
         }
     }
 
-    // ── Main screen content ─────────────────────────────────────────────
+    // -- Main screen content ------------------------------------------------
     Item {
         id: main
         x: root.mainScreen ? root.mainScreen.x - root.originX : 0
@@ -287,7 +227,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             y: parent.height * 0.40
             width: 380
-            height: col.implicitHeight + Theme.spacingXl * 2
+            height: cardColumn.implicitHeight + Theme.spacingXl * 2
             transform: Translate { id: shake }
 
             SequentialAnimation {
@@ -306,7 +246,7 @@ Item {
             }
 
             ColumnLayout {
-                id: col
+                id: cardColumn
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
@@ -356,7 +296,7 @@ Item {
                     }
                 }
 
-                // Typed user name ("Other user…")
+                // Typed user name ("Other user...")
                 Field {
                     Layout.fillWidth: true
                     visible: root.typingUser
@@ -408,7 +348,7 @@ Item {
                             anchors.rightMargin: Theme.spacingM
                             verticalAlignment: TextInput.AlignVCenter
                             echoMode: TextInput.Password
-                            passwordCharacter: "●"
+                            passwordCharacter: "\u25cf"
                             color: Theme.textSurface
                             font.family: Theme.font
                             font.pixelSize: Theme.fontBody
@@ -420,7 +360,13 @@ Item {
                             StyledText {
                                 anchors.fill: parent
                                 visible: password.text === ""
-                                text: root.busy ? "Logging on…" : (root.awaitingPrompt ? root.infoText : "Password")
+                                text: {
+                                    if (root.busy)
+                                        return "Logging on\u2026";
+                                    if (root.awaitingPrompt)
+                                        return root.infoText;
+                                    return "Password";
+                                }
                                 color: Theme.textSurfaceVariant
                                 font.italic: true
                             }
@@ -476,13 +422,13 @@ Item {
             anchors.horizontalCenter: card.horizontalCenter
             y: card.y + 170
             width: 300
-            height: pickCol.implicitHeight + Theme.spacingS * 2
+            height: pickerColumn.implicitHeight + Theme.spacingS * 2
             z: 10
 
             Surface { anchors.fill: parent; color: Theme.panel }
             MouseArea { anchors.fill: parent } // swallow clicks
             ColumnLayout {
-                id: pickCol
+                id: pickerColumn
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
@@ -526,14 +472,13 @@ Item {
                         anchors.leftMargin: Theme.spacingM
                         spacing: Theme.spacingM
                         MdIcon { codepoint: 0xF0014 } // md-account_plus
-                        StyledText { text: "Other user…" }
+                        StyledText { text: "Other user\u2026" }
                     }
                 }
             }
         }
 
         // Bottom bar: branding, session selector, power
-        Process { id: power }
         Surface {
             anchors.left: parent.left
             anchors.right: parent.right
@@ -558,11 +503,11 @@ Item {
 
                 // Session: click to cycle through detected sessions.
                 Button {
-                    implicitWidth: sRow.implicitWidth + Theme.spacingM * 2
+                    implicitWidth: sessionRow.implicitWidth + Theme.spacingM * 2
                     implicitHeight: 32
                     onClicked: root.cycleSession()
                     RowLayout {
-                        id: sRow
+                        id: sessionRow
                         anchors.centerIn: parent
                         spacing: Theme.spacingXs
                         MdIcon { codepoint: 0xF0379; color: Theme.accent } // md-monitor
@@ -583,11 +528,11 @@ Item {
                     ]
                     Button {
                         required property var modelData
-                        implicitWidth: pRow.implicitWidth + Theme.spacingM * 2
+                        implicitWidth: powerRow.implicitWidth + Theme.spacingM * 2
                         implicitHeight: 32
-                        onClicked: { power.command = ["systemctl", modelData.action]; power.running = true; }
+                        onClicked: { powerProcess.command = ["systemctl", modelData.action]; powerProcess.running = true; }
                         RowLayout {
-                            id: pRow
+                            id: powerRow
                             anchors.centerIn: parent
                             spacing: Theme.spacingXs
                             MdIcon {
@@ -600,5 +545,139 @@ Item {
                 }
             }
         }
+    }
+
+    // -- Background objects -------------------------------------------------
+    FileView {
+        path: "/etc/passwd"
+        onLoaded: {
+            var parsedUsers = [];
+            var lines = text().split("\n");
+            for (var i = 0; i < lines.length; i++) {
+                var fields = lines[i].split(":");
+                if (fields.length < 7)
+                    continue;
+                var uid = parseInt(fields[2]);
+                if (uid < GreeterConfig.minUid || uid > GreeterConfig.maxUid)
+                    continue;
+                if (fields[6] === "" || /(nologin|false)$/.test(fields[6]))
+                    continue;
+                parsedUsers.push({
+                    name: fields[0],
+                    real: (fields[4] || "").split(",")[0] || fields[0],
+                    home: fields[5]
+                });
+            }
+            root.users = parsedUsers;
+            root.pickDefaultUser();
+        }
+    }
+
+    // Last successful login, written just before launching the session.
+    FileView {
+        id: lastFile
+        path: GreeterConfig.stateDir + "/last"
+        blockWrites: true
+        printErrors: false
+        onLoaded: {
+            try {
+                var savedData = JSON.parse(text());
+                root.savedUser = savedData.user || "";
+                root.savedSession = savedData.session || "";
+            } catch (e) {}
+            root.pickDefaultUser();
+            root.pickDefaultSession();
+        }
+        onLoadFailed: {
+            root.pickDefaultUser();
+            root.pickDefaultSession();
+        }
+    }
+
+    // Wayland sessions (wayland-sessions/*.desktop)
+    Process {
+        running: true
+        command: [Quickshell.shellDir + "/scripts/greeter-sessions.sh", GreeterConfig.sessionsDir]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var entriesByFile = {};
+                var fileOrder = [];
+                text.split("\n").forEach(function (line) {
+                    var tabIndex = line.indexOf("\t");
+                    if (tabIndex < 0)
+                        return;
+                    var filePath = line.slice(0, tabIndex);
+                    var keyValue = line.slice(tabIndex + 1);
+                    var equalIndex = keyValue.indexOf("=");
+                    var key = keyValue.slice(0, equalIndex);
+                    var value = keyValue.slice(equalIndex + 1);
+                    if (!entriesByFile[filePath]) {
+                        entriesByFile[filePath] = {};
+                        fileOrder.push(filePath);
+                    }
+                    if (entriesByFile[filePath][key] === undefined)
+                        entriesByFile[filePath][key] = value; // first (unlocalized) key wins
+                });
+                var parsedSessions = [];
+                fileOrder.forEach(function (filePath) {
+                    var desktopEntry = entriesByFile[filePath];
+                    if (!desktopEntry.Exec || desktopEntry.NoDisplay === "true" || desktopEntry.Hidden === "true")
+                        return;
+                    var commandArgs = desktopEntry.Exec.replace(/%[a-zA-Z]/g, "").trim().split(/\s+/);
+                    parsedSessions.push({
+                        name: desktopEntry.Name || filePath.split("/").pop(),
+                        exec: commandArgs
+                    });
+                });
+                root.sessions = parsedSessions;
+                root.pickDefaultSession();
+            }
+        }
+    }
+
+    Process {
+        id: powerProcess
+    }
+
+    Connections {
+        target: Greetd
+        function onAuthMessage(message, error, responseRequired, echoResponse) {
+            if (error) {
+                root.errorText = message;
+                return;
+            }
+            if (responseRequired) {
+                if (!root.responded) {
+                    root.responded = true;
+                    var passwordToSend = root.pendingPassword;
+                    root.pendingPassword = "";
+                    Greetd.respond(passwordToSend);
+                } else {
+                    // Extra PAM prompt (e.g. OTP): reuse the password field.
+                    root.awaitingPrompt = true;
+                    root.infoText = message;
+                    password.text = "";
+                    password.forceActiveFocus();
+                }
+            } else if (message !== "") {
+                root.infoText = message;
+            }
+        }
+        function onAuthFailure(message) {
+            root.fail(message || "Incorrect password");
+        }
+        function onError(error) {
+            root.fail(error);
+        }
+        function onReadyToLaunch() {
+            root.infoText = "Welcome";
+            lastFile.setText(JSON.stringify({ user: root.userName, session: root.currentSession.name }));
+            Greetd.launch(root.currentSession.exec, GreeterConfig.sessionEnv);
+        }
+    }
+
+    SystemClock {
+        id: clock
+        precision: SystemClock.Seconds
     }
 }

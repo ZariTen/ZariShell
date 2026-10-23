@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Widgets
@@ -9,54 +8,21 @@ import Quickshell.Widgets
 Scope {
     id: root
 
+    // -- State --------------------------------------------------------------
     property var files: []
 
+    // -- Helper functions ---------------------------------------------------
     function refresh() {
         listing.running = true;
     }
 
-    function select(path) {
-        Wallpaper.path = path;
-        store.setText(path + "\n");
+    function select(wallpaperPath) {
+        Wallpaper.path = wallpaperPath;
+        store.setText(wallpaperPath + "\n");
         ShellState.close();
     }
 
-    FileView {
-        id: store
-        path: Quickshell.statePath("wallpaper")
-        printErrors: false
-        onLoaded: {
-            var saved = text().trim();
-            if (saved !== "")
-                Wallpaper.path = saved;
-        }
-    }
-
-    Process {
-        id: listing
-        command: ["ls", "-1", Wallpaper.dir]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var names = text.trim() === "" ? [] : text.trim().split("\n");
-                var images = [];
-                for (var i = 0; i < names.length; i++) {
-                    if (/\.(png|jpe?g|webp)$/i.test(names[i]))
-                        images.push(Wallpaper.dir + "/" + names[i]);
-                }
-                images.sort();
-                root.files = images;
-            }
-        }
-    }
-
-    Connections {
-        target: ShellState
-        function onPanelChanged() {
-            if (ShellState.panel === "wallpaper")
-                root.refresh();
-        }
-    }
-
+    // -- Visual tree --------------------------------------------------------
     Variants {
         model: Quickshell.screens
 
@@ -64,14 +30,7 @@ Scope {
             id: window
 
             required property var modelData
-            readonly property var monitor: Hyprland.monitorFor(modelData)
-            readonly property bool focusedHere: {
-                if (ShellState.panel !== "wallpaper")
-                    return false;
-                if (Hyprland.focusedMonitor === null)
-                    return modelData === Quickshell.screens[0];
-                return monitor !== null && monitor.name === Hyprland.focusedMonitor.name;
-            }
+            readonly property bool focusedHere: ShellState.panel === "wallpaper" && ShellState.isFocusedScreen(modelData)
 
             screen: modelData
             visible: focusedHere || card.animating
@@ -142,7 +101,7 @@ Scope {
                                 font.weight: Font.Bold
                             }
                             StyledText {
-                                text: root.files.length + " images · colors follow the wallpaper"
+                                text: root.files.length + " images \u00b7 colors follow the wallpaper"
                                 font.pixelSize: Theme.fontSmall
                                 color: Theme.textSurfaceVariant
                             }
@@ -178,7 +137,13 @@ Scope {
                                 anchors.margins: Theme.px(6)
                                 radius: tile.selected ? Theme.radiusLarge : Theme.radius
                                 color: Theme.surfaceContainerHigh
-                                border.width: tile.selected ? 3 : (tile.hot ? 2 : 0)
+                                border.width: {
+                                    if (tile.selected)
+                                        return 3;
+                                    if (tile.hot)
+                                        return 2;
+                                    return 0;
+                                }
                                 border.color: tile.selected ? Theme.primary : Theme.outline
                                 scale: tile.hot ? 1.03 : 1
 
@@ -226,6 +191,44 @@ Scope {
                     }
                 }
             }
+        }
+    }
+
+    // -- Background objects -------------------------------------------------
+    FileView {
+        id: store
+        path: Quickshell.statePath("wallpaper")
+        printErrors: false
+        onLoaded: {
+            var savedPath = text().trim();
+            if (savedPath !== "")
+                Wallpaper.path = savedPath;
+        }
+    }
+
+    Process {
+        id: listing
+        command: ["ls", "-1", Wallpaper.dir]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var trimmed = text.trim();
+                var fileNames = trimmed === "" ? [] : trimmed.split("\n");
+                var imagePaths = [];
+                for (var i = 0; i < fileNames.length; i++) {
+                    if (/\.(png|jpe?g|webp)$/i.test(fileNames[i]))
+                        imagePaths.push(Wallpaper.dir + "/" + fileNames[i]);
+                }
+                imagePaths.sort();
+                root.files = imagePaths;
+            }
+        }
+    }
+
+    Connections {
+        target: ShellState
+        function onPanelChanged() {
+            if (ShellState.panel === "wallpaper")
+                root.refresh();
         }
     }
 }

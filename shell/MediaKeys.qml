@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
@@ -12,6 +11,7 @@ import Quickshell.Wayland
 Scope {
     id: root
 
+    // -- State and derived properties ---------------------------------------
     property var sink: Pipewire.defaultAudioSink
     property real shown: 0
     property string label: ""
@@ -27,20 +27,22 @@ Scope {
     readonly property bool over: kind === "volume" && shown > 1.001
 
     // Meter tone: muted, warning above 100%, else normal.
-    readonly property string tone: kind === "muted" ? "muted" : (over ? "warning" : "normal")
-
-    PwObjectTracker {
-        objects: root.sink ? [root.sink] : []
-    }
-
-    function disarm(ms) {
-        armed = false;
-        arm.interval = ms;
-        arm.restart();
+    readonly property string tone: {
+        if (kind === "muted")
+            return "muted";
+        if (over)
+            return "warning";
+        return "normal";
     }
 
     onSinkChanged: disarm(500)
-    Component.onCompleted: disarm(1500)
+
+    // -- Helper functions ---------------------------------------------------
+    function disarm(milliseconds) {
+        armed = false;
+        arm.interval = milliseconds;
+        arm.restart();
+    }
 
     function show(value, text, what) {
         shown = value;
@@ -53,24 +55,24 @@ Scope {
     // Show the sink's current state. Unless forced, skips a repeat of what is
     // already on screen.
     function showAudio(force) {
-        var a = sink ? sink.audio : null;
-        if (!a)
+        var audio = sink ? sink.audio : null;
+        if (!audio)
             return;
-        var text = a.muted ? "Muted" : Math.round(a.volume * 100) + "%";
-        var what = a.muted ? "muted" : "volume";
+        var text = audio.muted ? "Muted" : Math.round(audio.volume * 100) + "%";
+        var what = audio.muted ? "muted" : "volume";
         if (!force && open && kind === what && label === text)
             return;
-        show(a.muted ? 0 : a.volume, text, what);
+        show(audio.muted ? 0 : audio.volume, text, what);
     }
 
     // Any volume/mute change of the default sink, whoever made it.
     function audioEvent() {
-        var a = sink ? sink.audio : null;
-        if (!a)
+        var audio = sink ? sink.audio : null;
+        if (!audio)
             return;
-        var changed = Math.abs(a.volume - seenVolume) > 0.0005 || a.muted !== seenMuted;
-        seenVolume = a.volume;
-        seenMuted = a.muted;
+        var changed = Math.abs(audio.volume - seenVolume) > 0.0005 || audio.muted !== seenMuted;
+        seenVolume = audio.volume;
+        seenMuted = audio.muted;
         if (armed && changed)
             showAudio(false);
     }
@@ -95,63 +97,7 @@ Scope {
         brightness.running = true;
     }
 
-    Connections {
-        target: root.sink
-        function onReadyChanged() {
-            root.disarm(500);
-        }
-    }
-
-    // `audio` has no change signal; depending on `ready` re-evaluates it.
-    Connections {
-        target: root.sink && root.sink.ready ? root.sink.audio : null
-        function onVolumesChanged() {
-            root.audioEvent();
-        }
-        function onMutedChanged() {
-            root.audioEvent();
-        }
-    }
-
-    Timer {
-        id: arm
-        onTriggered: {
-            var a = root.sink ? root.sink.audio : null;
-            if (a) {
-                root.seenVolume = a.volume;
-                root.seenMuted = a.muted;
-            }
-            root.armed = true;
-        }
-    }
-
-    IpcHandler {
-        target: "media"
-
-        function volumeUp(): void { root.bumpVolume(0.05); }
-        function volumeDown(): void { root.bumpVolume(-0.05); }
-        function volumeMute(): void { root.toggleMute(); }
-        function brightnessUp(): void { root.bumpBrightness(true); }
-        function brightnessDown(): void { root.bumpBrightness(false); }
-    }
-
-    Process {
-        id: brightness
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var match = /(\d+)%/.exec(text);
-                if (match)
-                    root.show(Number(match[1]) / 100, match[1] + "%", "brightness");
-            }
-        }
-    }
-
-    Timer {
-        id: hide
-        interval: 1400
-        onTriggered: root.open = false
-    }
-
+    // -- Visual tree --------------------------------------------------------
     Variants {
         model: Quickshell.screens
 
@@ -159,14 +105,7 @@ Scope {
             id: window
 
             required property var modelData
-            readonly property var monitor: Hyprland.monitorFor(modelData)
-            readonly property bool showHere: {
-                if (!root.open)
-                    return false;
-                if (Hyprland.focusedMonitor === null)
-                    return modelData === Quickshell.screens[0];
-                return monitor !== null && monitor.name === Hyprland.focusedMonitor.name;
-            }
+            readonly property bool showHere: root.open && ShellState.isFocusedScreen(modelData)
 
             screen: modelData
             visible: showHere || pill.opacity > 0
@@ -209,14 +148,17 @@ Scope {
                     MdIcon {
                         Layout.alignment: Qt.AlignVCenter
                         font.pixelSize: Theme.iconPx(24)
-                        color: root.kind === "muted" ? Theme.outline : (root.over ? Theme.warning : Theme.accent)
+                        color: {
+                            if (root.kind === "muted")
+                                return Theme.outline;
+                            if (root.over)
+                                return Theme.warning;
+                            return Theme.accent;
+                        }
                         codepoint: {
                             if (root.kind === "brightness")
                                 return 0xF00DF;
-                            if (root.kind === "muted" || root.shown <= 0)
-                                return 0xF0581;
-                            var v = Math.min(1, root.shown);
-                            return v < 0.34 ? 0xF057F : (v < 0.67 ? 0xF0580 : 0xF057E);
+                            return ShellState.volumeGlyph(Math.min(1, root.shown), root.kind === "muted");
                         }
                     }
 
@@ -238,6 +180,70 @@ Scope {
                         color: root.over ? Theme.warning : Theme.textSurface
                     }
                 }
+            }
+        }
+    }
+
+    // -- Lifecycle and background objects -----------------------------------
+    Component.onCompleted: disarm(1500)
+
+    PwObjectTracker {
+        objects: root.sink ? [root.sink] : []
+    }
+
+    Connections {
+        target: root.sink
+        function onReadyChanged() {
+            root.disarm(500);
+        }
+    }
+
+    // `audio` has no change signal; depending on `ready` re-evaluates it.
+    Connections {
+        target: root.sink && root.sink.ready ? root.sink.audio : null
+        function onVolumesChanged() {
+            root.audioEvent();
+        }
+        function onMutedChanged() {
+            root.audioEvent();
+        }
+    }
+
+    Timer {
+        id: arm
+        onTriggered: {
+            var audio = root.sink ? root.sink.audio : null;
+            if (audio) {
+                root.seenVolume = audio.volume;
+                root.seenMuted = audio.muted;
+            }
+            root.armed = true;
+        }
+    }
+
+    Timer {
+        id: hide
+        interval: 1400
+        onTriggered: root.open = false
+    }
+
+    IpcHandler {
+        target: "media"
+
+        function volumeUp(): void { root.bumpVolume(0.05); }
+        function volumeDown(): void { root.bumpVolume(-0.05); }
+        function volumeMute(): void { root.toggleMute(); }
+        function brightnessUp(): void { root.bumpBrightness(true); }
+        function brightnessDown(): void { root.bumpBrightness(false); }
+    }
+
+    Process {
+        id: brightness
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var match = /(\d+)%/.exec(text);
+                if (match)
+                    root.show(Number(match[1]) / 100, match[1] + "%", "brightness");
             }
         }
     }

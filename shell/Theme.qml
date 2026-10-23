@@ -26,473 +26,21 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    // ---- Theme resolution and live switching ------------------------------
-    readonly property string configDir: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/zarishell"
-    readonly property string userPath: configDir + "/current"
-    readonly property string userThemesDir: configDir + "/themes"
-    readonly property string packagedThemesDir: Quickshell.shellDir + "/themes"
-    readonly property string packagedName: Quickshell.env("ZARISHELL_THEME") || "aero"
-    readonly property string packagedPath: packagedThemesDir + "/" + packagedName
-    readonly property var userSpec: parse(userFile.text(), userFile.path)
-    readonly property var packagedSpec: parse(packagedFile.text(), packagedFile.path)
-
-    // Atomic active-theme snapshot { id, source, dir, spec, rev } so
-    // component() never observes a mismatched (dir, spec.components) pair.
-    property var state: null
-    property bool inLoad: false
-    property string pendingLinkTarget: ""
+    // -- Active theme identity and discovered themes ------------------------
     property var themes: []
 
-    readonly property var active: state !== null ? state : ({
-        id: userSpec !== null ? "current" : packagedName,
-        source: userSpec !== null ? "user" : "packaged",
-        dir: userSpec !== null ? userPath : packagedPath,
-        spec: (userSpec !== null ? userSpec : packagedSpec) || ({}),
-        rev: 0
-    })
-
-    readonly property bool userActive: active.source !== "packaged"
-    // Folder of the active theme and its parsed theme.json.
-    readonly property string dir: active.dir
-    readonly property var spec: active.spec
-    readonly property string currentId: active.id
+    readonly property bool userActive: activeTheme.source !== "packaged"
+    readonly property string dir: activeTheme.dir
+    readonly property var spec: activeTheme.spec
+    readonly property string currentId: activeTheme.id
     readonly property string name: typeof spec.name === "string" && spec.name !== "" ? spec.name : currentId
     readonly property var overrides: Array.isArray(spec.components) ? spec.components : []
 
-    function parse(text, path) {
-        if (!text || text.trim() === "")
-            return null;
-        try {
-            var o = JSON.parse(text);
-            return o !== null && typeof o === "object" && !Array.isArray(o) ? o : null;
-        } catch (e) {
-            console.warn("Theme: invalid JSON in " + path + ": " + e);
-            return null;
-        }
-    }
-
-    function baseName(p) {
-        var clean = p.replace(/\/+$/, "");
-        var idx = clean.lastIndexOf("/");
-        return idx >= 0 ? clean.slice(idx + 1) : clean;
-    }
-
-    function classifyPath(p) {
-        if (p.indexOf(userThemesDir + "/") === 0)
-            return "user";
-        if (p.indexOf(packagedThemesDir + "/") === 0)
-            return "packaged";
-        return "custom";
-    }
-
-    function sortThemes(list) {
-        var rank = { "aero": 0, "base": 1 };
-        list.sort(function(a, b) {
-            var ra = rank[a.id] !== undefined ? rank[a.id] : 2;
-            var rb = rank[b.id] !== undefined ? rank[b.id] : 2;
-            if (ra !== rb)
-                return ra - rb;
-            return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
-        });
-        return list;
-    }
-
-    function makeEntry(id, tPath, tReal, src, parsed) {
-        return {
-            id: id,
-            name: typeof parsed.name === "string" && parsed.name !== "" ? parsed.name : id,
-            description: typeof parsed.description === "string" ? parsed.description : "",
-            source: src,
-            path: tPath,
-            realPath: tReal,
-            spec: parsed,
-            componentsCount: Array.isArray(parsed.components) ? parsed.components.length : 0
-        };
-    }
-
-    function loadDir(targetDir, id, source, bumpRev) {
-        var jsonPath = targetDir + "/theme.json";
-        inLoad = true;
-        if (activeFile.path !== jsonPath)
-            activeFile.path = jsonPath;
-        else
-            activeFile.reload();
-        activeFile.waitForJob();
-        inLoad = false;
-
-        var parsed = parse(activeFile.text(), jsonPath);
-        if (parsed === null)
-            return false;
-
-        var nextRev = active.rev + (bumpRev ? 1 : 0);
-        state = {
-            id: id,
-            source: source,
-            dir: targetDir,
-            spec: parsed,
-            rev: nextRev
-        };
-
-        var list = themes.slice();
-        var found = false;
-        for (var i = 0; i < list.length; i++) {
-            if (list[i].id === id) {
-                list[i] = makeEntry(id, targetDir, list[i].realPath || targetDir, source, parsed);
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-            list.push(makeEntry(id, targetDir, targetDir, source, parsed));
-        themes = sortThemes(list);
-        return true;
-    }
-
-    function writeSymlink(targetDir) {
-        pendingLinkTarget = targetDir;
-        if (linkProc.running)
-            linkProc.running = false;
-        linkProc.running = true;
-    }
-
-    function setTheme(nameOrPath) {
-        var q = (nameOrPath || "").trim();
-        if (q === "")
-            return currentId;
-
-        var candidates = [];
-        for (var i = 0; i < themes.length; i++) {
-            var t = themes[i];
-            if (t.id === q || t.path === q || t.realPath === q || t.id.toLowerCase() === q.toLowerCase() || t.name.toLowerCase() === q.toLowerCase()) {
-                candidates.push({ id: t.id, path: t.path, source: t.source });
-                break;
-            }
-        }
-
-        if (q.indexOf("/") === 0 || q.indexOf("~/") === 0) {
-            var expanded = q.indexOf("~/") === 0 ? (Quickshell.env("HOME") + q.slice(1)) : q;
-            var clean = expanded.replace(/\/+$/, "");
-            candidates.push({ id: baseName(clean), path: clean, source: classifyPath(clean) });
-        } else {
-            candidates.push({ id: q, path: userThemesDir + "/" + q, source: "user" });
-            candidates.push({ id: q, path: packagedThemesDir + "/" + q, source: "packaged" });
-        }
-
-        for (var j = 0; j < candidates.length; j++) {
-            var c = candidates[j];
-            if (loadDir(c.path, c.id, c.source, true)) {
-                writeSymlink(c.path);
-                return currentId;
-            }
-        }
-
-        console.warn("Theme: unknown or invalid theme '" + q + "'");
-        return currentId;
-    }
-
-    function stepTheme(delta) {
-        if (themes.length === 0)
-            return currentId;
-        var idx = -1;
-        for (var i = 0; i < themes.length; i++) {
-            if (themes[i].id === currentId) {
-                idx = i;
-                break;
-            }
-        }
-        var nextIdx = idx >= 0 ? (idx + delta + themes.length) % themes.length : 0;
-        return setTheme(themes[nextIdx].id);
-    }
-
-    function reload() {
-        loadDir(active.dir, active.id, active.source, true);
-        scan();
-        return currentId;
-    }
-
-    function scan() {
-        if (!scanProc.running)
-            scanProc.running = true;
-    }
-
-    function ingestScan(text) {
-        var lines = text.split("\n");
-        var link = "";
-        var real = "";
-        var list = [];
-        var byId = {};
-        var byReal = {};
-        var i = 0;
-
-        if (i < lines.length && lines[i].indexOf("CURRENT\t") === 0) {
-            var cur = lines[i].split("\t");
-            link = cur[1] || "";
-            real = cur[2] || "";
-            i += 1;
-        }
-
-        while (i < lines.length) {
-            var header = lines[i];
-            if (header.indexOf("THEME\t") !== 0) {
-                i += 1;
-                continue;
-            }
-            var parts = header.split("\t");
-            var tPath = parts[1] || "";
-            var tReal = parts[2] || tPath;
-            i += 1;
-            var bodyLines = [];
-            while (i < lines.length && lines[i] !== "END_THEME") {
-                bodyLines.push(lines[i]);
-                i += 1;
-            }
-            if (i < lines.length && lines[i] === "END_THEME")
-                i += 1;
-
-            var parsed = parse(bodyLines.join("\n"), tPath + "/theme.json");
-            if (parsed === null)
-                continue;
-
-            var id = baseName(tPath);
-            if (byId[id] || byReal[tReal])
-                continue;
-
-            var entry = makeEntry(id, tPath, tReal, classifyPath(tPath), parsed);
-            byId[id] = entry;
-            byReal[tReal] = entry;
-            list.push(entry);
-        }
-
-        themes = sortThemes(list);
-
-        if (linkProc.running)
-            return;
-
-        var matched = null;
-        if (real !== "") {
-            for (var j = 0; j < themes.length; j++) {
-                if (themes[j].realPath === real || themes[j].path === real || themes[j].path === link) {
-                    matched = themes[j];
-                    break;
-                }
-            }
-        }
-        if (matched === null && link !== "") {
-            var linkId = baseName(link);
-            if (byId[linkId])
-                matched = byId[linkId];
-        }
-        if (matched === null && byId[packagedName])
-            matched = byId[packagedName];
-        if (matched === null && themes.length > 0)
-            matched = themes[0];
-
-        if (matched !== null) {
-            var firstInit = state === null;
-            var sameTarget = firstInit
-                ? ((userSpec !== null && (real === matched.realPath || link === matched.path)) || (userSpec === null && matched.path === packagedPath))
-                : (active.dir === matched.path && JSON.stringify(active.spec) === JSON.stringify(matched.spec));
-            var targetJson = matched.path + "/theme.json";
-            if (activeFile.path !== targetJson) {
-                inLoad = true;
-                activeFile.path = targetJson;
-                activeFile.waitForJob();
-                inLoad = false;
-            }
-            state = {
-                id: matched.id,
-                source: matched.source,
-                dir: matched.path,
-                spec: matched.spec,
-                rev: active.rev + (sameTarget ? 0 : 1)
-            };
-            if (link !== "" && matched.path !== "" && (real === "" || (matched.source === "packaged" && real !== matched.realPath)))
-                writeSymlink(matched.path);
-        }
-    }
-
-    Component.onCompleted: scan()
-
-    // URL of the look for a generic component: the theme's override when the
-    // theme lists it, else the neutral one in base/.
-    function component(name) {
-        var a = active;
-        var comps = Array.isArray(a.spec.components) ? a.spec.components : [];
-        return comps.indexOf(name) >= 0 ? fileUrl(a.dir + "/components/" + name + ".qml") + "?r=" + a.rev : Qt.resolvedUrl("base/" + name + ".qml");
-    }
-
-    // Optional layer effect a theme may provide (e.g. "Glow"); null when the
-    // theme has none, so `layer.enabled: Theme.effect(..) !== null` is a no-op.
-    function effect(name) {
-        var a = active;
-        var comps = Array.isArray(a.spec.components) ? a.spec.components : [];
-        return comps.indexOf(name) >= 0 ? Qt.createComponent(component(name)) : null;
-    }
-
-    FileView {
-        id: userFile
-        path: root.userPath + "/theme.json"
-        blockLoading: true
-        printErrors: false
-    }
-
-    FileView {
-        id: packagedFile
-        path: root.packagedPath + "/theme.json"
-        blockLoading: true
-        printErrors: false
-    }
-
-    FileView {
-        id: activeFile
-        blockLoading: true
-        watchChanges: true
-        printErrors: false
-        onFileChanged: if (!root.inLoad) root.reload()
-    }
-
-    Process {
-        id: linkProc
-        command: ["sh", "-c", "mkdir -p \"$1\" && ln -sfn \"$2\" \"$3\"", "sh", root.configDir, root.pendingLinkTarget, root.userPath]
-        onExited: root.scan()
-    }
-
-    Process {
-        id: scanProc
-        command: [
-            "sh", "-c",
-            "link=$(readlink \"$1\" 2>/dev/null || true)\n" +
-            "real=$(readlink -f \"$1\" 2>/dev/null || true)\n" +
-            "printf 'CURRENT\\t%s\\t%s\\n' \"$link\" \"$real\"\n" +
-            "for d in \"$2\"/* \"$3\"/*; do\n" +
-            "  [ -f \"$d/theme.json\" ] || continue\n" +
-            "  rd=$(readlink -f \"$d\" 2>/dev/null || printf '%s' \"$d\")\n" +
-            "  printf 'THEME\\t%s\\t%s\\n' \"$d\" \"$rd\"\n" +
-            "  cat \"$d/theme.json\"\n" +
-            "  printf '\\nEND_THEME\\n'\n" +
-            "done\n" +
-            "if [ -n \"$real\" ] && [ -f \"$real/theme.json\" ]; then\n" +
-            "  printf 'THEME\\t%s\\t%s\\n' \"$real\" \"$real\"\n" +
-            "  cat \"$real/theme.json\"\n" +
-            "  printf '\\nEND_THEME\\n'\n" +
-            "fi\n",
-            "sh", root.userPath, root.userThemesDir, root.packagedThemesDir
-        ]
-        stdout: StdioCollector {
-            onStreamFinished: root.ingestScan(text)
-        }
-    }
-
-    IpcHandler {
-        target: "theme"
-
-        function list(): string { return root.themes.map(t => t.id).join("\n"); }
-        function current(): string { return root.currentId; }
-        function set(name: string): string { return root.setTheme(name); }
-        function next(): string { return root.stepTheme(1); }
-        function prev(): string { return root.stepTheme(-1); }
-        function reload(): string { return root.reload(); }
-    }
-
-    // ---- Accent -----------------------------------------------------------
-    readonly property string themeAccent: typeof spec.accent === "string" && spec.accent !== "" ? spec.accent : "#7a9cc6"
-    readonly property string accentMode: Settings.get("accent", "") !== "" ? Settings.get("accent", "") : themeAccent
-    readonly property bool wallpaperAccent: accentMode === "wallpaper"
-    readonly property color accentSeed: wallpaperAccent ? tone(hue, 0.6, 0.6) : accentMode
-
-    readonly property real wallpaperHue: {
-        var best = -1;
-        var picked = 0.62;
-        var colors = quantizer.colors;
-        for (var i = 0; i < colors.length; i++) {
-            var c = colors[i];
-            var score = c.hslSaturation * (1 - Math.abs(c.hslLightness - 0.5) * 1.6);
-            if (c.hslHue >= 0 && score > best) {
-                best = score;
-                picked = c.hslHue;
-            }
-        }
-        return picked;
-    }
-    readonly property color fixedSeed: wallpaperAccent ? "#000000" : accentMode
-    readonly property real hue: wallpaperAccent ? wallpaperHue : Math.max(0, fixedSeed.hslHue)
-
-    function tone(h, s, l, a) {
-        return Qt.hsla(((h % 1) + 1) % 1, s, l, a === undefined ? 1 : a);
-    }
-
-    ColorQuantizer {
-        id: quantizer
-        source: root.wallpaperAccent ? root.fileUrl(Wallpaper.path) : ""
-        depth: 3
-        rescaleSize: 96
-    }
-
-    // ---- Token lookup -----------------------------------------------------
-    function lookup(section, key) {
-        var s = spec[section];
-        return s !== null && typeof s === "object" && s[key] !== undefined ? s[key] : undefined;
-    }
-
-    function toColor(v) {
-        if (v === "accent")
-            return accentSeed;
-        if (Array.isArray(v))
-            return Qt.rgba(v[0], v[1], v[2], v.length > 3 ? v[3] : 1);
-        if (v !== null && typeof v === "object" && v.hslHue === undefined)
-            return tone(hue + (v.h || 0), v.s === undefined ? 0.5 : v.s, v.l === undefined ? 0.5 : v.l, v.a);
-        return v;
-    }
-
-    // Resolve a color token from an arbitrary theme.json object (used by the
-    // theme picker to render preview swatches for inactive themes).
-    function specColor(s, key, fallback) {
-        var mode = s && typeof s.accent === "string" && s.accent !== "" ? s.accent : "#7a9cc6";
-        var wAcc = mode === "wallpaper";
-        var seed = wAcc ? Qt.hsla(wallpaperHue, 0.6, 0.6, 1) : Qt.lighter(mode, 1);
-        var h = wAcc ? wallpaperHue : Math.max(0, seed.hslHue);
-        var sec = s && s.colors;
-        var v = sec !== null && typeof sec === "object" && sec[key] !== undefined ? sec[key] : fallback;
-        if (v === "accent")
-            return seed;
-        if (Array.isArray(v))
-            return Qt.rgba(v[0], v[1], v[2], v.length > 3 ? v[3] : 1);
-        if (v !== null && typeof v === "object" && v.hslHue === undefined)
-            return tone(h + (v.h || 0), v.s === undefined ? 0.5 : v.s, v.l === undefined ? 0.5 : v.l, v.a);
-        return Qt.lighter(v, 1);
-    }
-
-    // Theme color by name (also for theme-specific extras used by a theme's
-    // own components), with a fallback.
-    function color(key, fallback) {
-        var v = lookup("colors", key);
-        return v === undefined ? toColor(fallback) : toColor(v);
-    }
-
-    function withAlpha(c, a) {
-        return a === c.a ? c : Qt.rgba(c.r, c.g, c.b, Math.max(0, Math.min(1, a)));
-    }
-
-    function metric(key, fallback) {
-        var v = lookup("metrics", key);
-        return typeof v === "number" ? v : fallback;
-    }
-
-    function fontValue(key, fallback) {
-        var v = lookup("fonts", key);
-        return v === undefined ? fallback : v;
-    }
-
-    function motion(key, fallback) {
-        var v = lookup("motion", key);
-        return v === undefined ? fallback : v;
-    }
-
-    // ---- Colors (neutral defaults: flat translucent slate, white text) ----
+    // -- Colors (neutral defaults: flat translucent slate, white text) ------
     readonly property color surface: color("surface", "#24282e")              // desktop behind the wallpaper
     readonly property color themeBar: color("bar", [0.21, 0.23, 0.26, 0.92])
     readonly property color themePanel: color("panel", [0.24, 0.26, 0.30, 0.96])
-    readonly property color bar: withAlpha(themeBar, Settings.get("barOpacity", themeBar.a))       // taskbar
+    readonly property color bar: withAlpha(themeBar, Settings.get("barOpacity", themeBar.a))         // taskbar
     readonly property color panel: withAlpha(themePanel, Settings.get("panelOpacity", themePanel.a)) // panels, dialogs, toasts
     readonly property color panelError: color("panelError", [0.55, 0.16, 0.13, 0.94])
     readonly property color accent: color("accent", "accent")                 // accent icons and text
@@ -532,7 +80,7 @@ Singleton {
     readonly property color danger: color("danger", error)                     // destructive action icon
     readonly property color dangerHighlight: color("dangerHighlight", error)   // destructive action hover
 
-    // ---- User scale factors (settings.json; 1 = as the theme says) -------
+    // -- User scale factors (settings.json; 1 = as the theme says) ----------
     readonly property real uiScale: clamp(Settings.get("scale", 1), 0.5, 2)
     readonly property real radiusScale: clamp(Settings.get("radius", 1), 0, 3)
     readonly property real spacingScale: clamp(Settings.get("spacing", 1), 0.25, 3)
@@ -543,42 +91,7 @@ Singleton {
     readonly property real speed: clamp(Settings.get("animationSpeed", 1), 0.1, 5)
     readonly property bool reduceMotion: Settings.get("reduceMotion", false)
 
-    function clamp(v, lo, hi) {
-        return Math.max(lo, Math.min(hi, v));
-    }
-    // Layout size (px at scale 1) at the current UI scale.
-    function px(n) {
-        return Math.round(n * uiScale);
-    }
-    // Icon glyph size: UI scale and the icon size setting.
-    function iconPx(n) {
-        return Math.round(n * uiScale * iconScale);
-    }
-    // Literal text size: UI scale and the font size setting.
-    function fontPx(n) {
-        return Math.round(n * uiScale * fontScale);
-    }
-    // Panel / card width: UI scale and the panel width setting.
-    function widthPx(n) {
-        return Math.round(n * uiScale * widthScale);
-    }
-    // Opacity of a disabled / hint element (v = its value at the default
-    // dim level 0.5).
-    function dim(v) {
-        return clamp(v * dimLevel / 0.5, 0, 1);
-    }
-    // Transition duration (ms): animation speed, 0 with reduce motion.
-    function dur(ms) {
-        return reduceMotion ? 0 : Math.round(ms / speed);
-    }
-
-    // ---- Shape and spacing ------------------------------------------------
-    function radiusMetric(key, d) {
-        return Math.round(metric(key, d) * uiScale * radiusScale);
-    }
-    function spacingMetric(key, d) {
-        return Math.round(metric(key, d) * uiScale * spacingScale);
-    }
+    // -- Shape and spacing --------------------------------------------------
     readonly property int radiusSmall: radiusMetric("radiusSmall", 3)
     readonly property int radius: radiusMetric("radius", 5)
     readonly property int radiusLarge: radiusMetric("radiusLarge", 8)
@@ -592,15 +105,12 @@ Singleton {
     readonly property int spacingXl: spacingMetric("spacingXl", 24)
     readonly property int themeBarHeight: metric("barHeight", 42)
     readonly property int barHeight: px(clamp(Settings.get("barHeight", themeBarHeight), 24, 96))
-    readonly property int shadowRoom: px(metric("shadowRoom", 0))      // extra bar window height for a theme's shadow
+    readonly property int shadowRoom: px(metric("shadowRoom", 0))        // extra bar window height for a theme's shadow
     readonly property int gap: spacingMetric("gap", 8)
     readonly property int avatarSize: px(clamp(Settings.get("avatarSize", 112), 48, 256)) // lock screen avatar
 
-    // ---- Type -------------------------------------------------------------
+    // -- Typography ---------------------------------------------------------
     readonly property int themeFontBody: fontValue("fontBody", 13)
-    function fontSize(key, d) {
-        return Math.round(fontValue(key, d) * uiScale * fontScale);
-    }
     readonly property string themeFont: fontValue("font", "sans-serif")
     readonly property string font: Settings.get("font", "") !== "" ? Settings.get("font", "") : themeFont
     readonly property string iconFont: fontValue("iconFont", "JetBrainsMono Nerd Font Propo")
@@ -608,23 +118,544 @@ Singleton {
     readonly property int fontBody: fontSize("fontBody", 13)
     readonly property int fontTitle: fontSize("fontTitle", 15)
     readonly property int fontHeadline: fontSize("fontHeadline", 22)
-    readonly property int fontLarge: fontSize("fontLarge", 34)       // calendar clock
-    readonly property int fontDisplay: fontSize("fontDisplay", 112)  // lock / login clock
+    readonly property int fontLarge: fontSize("fontLarge", 34)          // calendar clock
+    readonly property int fontDisplay: fontSize("fontDisplay", 112)     // lock / login clock
     readonly property int fontDisplayWeight: fontValue("fontDisplayWeight", Font.Light)
 
-    // ---- Motion (M3 emphasized / standard) ---------------------------------
+    // -- Motion (M3 emphasized / standard) ----------------------------------
     readonly property int durShort: dur(motion("durShort", 150))
     readonly property int durMedium: dur(motion("durMedium", 280))
     readonly property int durLong: dur(motion("durLong", 420))
     readonly property var emphasized: motion("emphasized", [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1])
     readonly property var standard: motion("standard", [0.2, 0, 0, 1, 1, 1])
 
+    // -- Internal paths and active-theme state ------------------------------
+    readonly property string configDir: (Quickshell.env("XDG_CONFIG_HOME") || (Quickshell.env("HOME") + "/.config")) + "/zarishell"
+    readonly property string userThemeLink: configDir + "/current"
+    readonly property string userThemesDir: configDir + "/themes"
+    readonly property string packagedThemesDir: Quickshell.shellDir + "/themes"
+    readonly property string packagedThemeName: Quickshell.env("ZARISHELL_THEME") || "aero"
+    readonly property string packagedThemePath: packagedThemesDir + "/" + packagedThemeName
+    readonly property string themesScriptPath: Quickshell.shellDir + "/scripts/themes.sh"
+
+    // Atomic active-theme snapshot { id, source, dir, spec, revision } so
+    // component() never observes a mismatched (dir, spec.components) pair.
+    property var loadedThemeState: null
+    property bool isReloadingFile: false
+    property string pendingSymlinkTarget: ""
+
+    readonly property var initialUserSpec: parseThemeJson(activeThemeFile.text(), activeThemeFile.path)
+    readonly property var initialPackagedSpec: parseThemeJson(packagedThemeFile.text(), packagedThemeFile.path)
+    readonly property var fallbackThemeState: ({
+        id: initialUserSpec !== null ? "current" : packagedThemeName,
+        source: initialUserSpec !== null ? "user" : "packaged",
+        dir: initialUserSpec !== null ? userThemeLink : packagedThemePath,
+        spec: (initialUserSpec !== null ? initialUserSpec : initialPackagedSpec) || ({}),
+        revision: 0
+    })
+    readonly property var activeTheme: loadedThemeState !== null ? loadedThemeState : fallbackThemeState
+
+    // -- Internal accent derivation -----------------------------------------
+    readonly property string themeAccent: typeof spec.accent === "string" && spec.accent !== "" ? spec.accent : "#7a9cc6"
+    readonly property string userAccentOverride: Settings.get("accent", "")
+    readonly property string accentMode: userAccentOverride !== "" ? userAccentOverride : themeAccent
+    readonly property bool wallpaperAccent: accentMode === "wallpaper"
+    readonly property color accentSeed: wallpaperAccent ? tone(hue, 0.6, 0.6) : accentMode
+
+    readonly property real wallpaperHue: {
+        var bestScore = -1;
+        var selectedHue = 0.62;
+        var palette = quantizer.colors;
+        for (var i = 0; i < palette.length; i++) {
+            var sampleColor = palette[i];
+            var vividnessScore = sampleColor.hslSaturation * (1 - Math.abs(sampleColor.hslLightness - 0.5) * 1.6);
+            if (sampleColor.hslHue >= 0 && vividnessScore > bestScore) {
+                bestScore = vividnessScore;
+                selectedHue = sampleColor.hslHue;
+            }
+        }
+        return selectedHue;
+    }
+    readonly property color fixedSeed: wallpaperAccent ? "#000000" : accentMode
+    readonly property real hue: wallpaperAccent ? wallpaperHue : Math.max(0, fixedSeed.hslHue)
+
+    // -- Public API helpers -------------------------------------------------
+    // URL of the look for a generic component: the theme's override when the
+    // theme lists it, else the neutral one in base/.
+    function component(componentName) {
+        var snapshot = activeTheme;
+        var componentNames = Array.isArray(snapshot.spec.components) ? snapshot.spec.components : [];
+        if (componentNames.indexOf(componentName) >= 0)
+            return fileUrl(snapshot.dir + "/components/" + componentName + ".qml") + "?r=" + snapshot.revision;
+        return Qt.resolvedUrl("base/" + componentName + ".qml");
+    }
+
+    // Optional layer effect a theme may provide (e.g. "Glow"); null when the
+    // theme has none, so `layer.enabled: Theme.effect(..) !== null` is a no-op.
+    function effect(effectName) {
+        var snapshot = activeTheme;
+        var componentNames = Array.isArray(snapshot.spec.components) ? snapshot.spec.components : [];
+        if (componentNames.indexOf(effectName) >= 0)
+            return Qt.createComponent(component(effectName));
+        return null;
+    }
+
+    // Theme color by name (also for theme-specific extras used by a theme's
+    // own components), with a fallback.
+    function color(key, fallbackValue) {
+        var rawValue = lookup("colors", key);
+        return rawValue === undefined ? toColor(fallbackValue) : toColor(rawValue);
+    }
+
+    // Resolve a color token from an arbitrary theme.json object (used by the
+    // theme picker to render preview swatches for inactive themes).
+    function specColor(themeSpec, key, fallbackValue) {
+        var specAccentMode = "#7a9cc6";
+        if (themeSpec && typeof themeSpec.accent === "string" && themeSpec.accent !== "")
+            specAccentMode = themeSpec.accent;
+
+        var usesWallpaper = specAccentMode === "wallpaper";
+        var previewSeed = usesWallpaper ? tone(wallpaperHue, 0.6, 0.6, 1) : Qt.lighter(specAccentMode, 1);
+        var previewHue = usesWallpaper ? wallpaperHue : Math.max(0, previewSeed.hslHue);
+        var colorSection = themeSpec && themeSpec.colors;
+        var rawValue = fallbackValue;
+        if (colorSection !== null && typeof colorSection === "object" && colorSection[key] !== undefined)
+            rawValue = colorSection[key];
+
+        var resolved = resolveColorValue(rawValue, previewHue, previewSeed);
+        return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
+    }
+
+    // Layout size (px at scale 1) at the current UI scale.
+    function px(pixels) {
+        return Math.round(pixels * uiScale);
+    }
+
+    // Icon glyph size: UI scale and the icon size setting.
+    function iconPx(pixels) {
+        return Math.round(pixels * uiScale * iconScale);
+    }
+
+    // Literal text size: UI scale and the font size setting.
+    function fontPx(pixels) {
+        return Math.round(pixels * uiScale * fontScale);
+    }
+
+    // Panel / card width: UI scale and the panel width setting.
+    function widthPx(pixels) {
+        return Math.round(pixels * uiScale * widthScale);
+    }
+
+    // Opacity of a disabled / hint element (baseOpacity = its value at the
+    // default dim level 0.5).
+    function dim(baseOpacity) {
+        return clamp(baseOpacity * dimLevel / 0.5, 0, 1);
+    }
+
+    // Transition duration (ms): animation speed, 0 with reduce motion.
+    function dur(milliseconds) {
+        return reduceMotion ? 0 : Math.round(milliseconds / speed);
+    }
+
     // Nerd Font Material Design glyphs.
     function icon(codepoint) {
         return String.fromCodePoint(codepoint);
     }
 
-    function fileUrl(path) {
-        return path === "" ? "" : "file://" + encodeURIComponent(path).replace(/%2F/g, "/");
+    function fileUrl(filePath) {
+        return filePath === "" ? "" : "file://" + encodeURIComponent(filePath).replace(/%2F/g, "/");
+    }
+
+    function setTheme(nameOrPath) {
+        var query = (nameOrPath || "").trim();
+        if (query === "")
+            return currentId;
+
+        var candidates = [];
+        for (var i = 0; i < themes.length; i++) {
+            var knownTheme = themes[i];
+            var queryLower = query.toLowerCase();
+            if (knownTheme.id === query
+                || knownTheme.path === query
+                || knownTheme.realPath === query
+                || knownTheme.id.toLowerCase() === queryLower
+                || knownTheme.name.toLowerCase() === queryLower) {
+                candidates.push({ id: knownTheme.id, path: knownTheme.path, source: knownTheme.source });
+                break;
+            }
+        }
+
+        if (query.indexOf("/") === 0 || query.indexOf("~/") === 0) {
+            var expandedPath = query.indexOf("~/") === 0 ? (Quickshell.env("HOME") + query.slice(1)) : query;
+            var cleanPath = expandedPath.replace(/\/+$/, "");
+            candidates.push({ id: directoryName(cleanPath), path: cleanPath, source: classifyThemePath(cleanPath) });
+        } else {
+            candidates.push({ id: query, path: userThemesDir + "/" + query, source: "user" });
+            candidates.push({ id: query, path: packagedThemesDir + "/" + query, source: "packaged" });
+        }
+
+        for (var j = 0; j < candidates.length; j++) {
+            var candidate = candidates[j];
+            if (loadThemeDirectory(candidate.path, candidate.id, candidate.source, true)) {
+                writeThemeSymlink(candidate.path);
+                return currentId;
+            }
+        }
+
+        console.warn("Theme: unknown or invalid theme '" + query + "'");
+        return currentId;
+    }
+
+    function stepTheme(stepDelta) {
+        if (themes.length === 0)
+            return currentId;
+        var currentIndex = -1;
+        for (var i = 0; i < themes.length; i++) {
+            if (themes[i].id === currentId) {
+                currentIndex = i;
+                break;
+            }
+        }
+        var nextIndex = currentIndex >= 0 ? (currentIndex + stepDelta + themes.length) % themes.length : 0;
+        return setTheme(themes[nextIndex].id);
+    }
+
+    function reload() {
+        loadThemeDirectory(activeTheme.dir, activeTheme.id, activeTheme.source, true);
+        scan();
+        return currentId;
+    }
+
+    function scan() {
+        if (!scanProcess.running)
+            scanProcess.running = true;
+    }
+
+    // -- Internal token helpers ---------------------------------------------
+    function clamp(value, minValue, maxValue) {
+        return Math.max(minValue, Math.min(maxValue, value));
+    }
+
+    function tone(hueValue, saturation, lightness, alpha) {
+        return Qt.hsla(((hueValue % 1) + 1) % 1, saturation, lightness, alpha === undefined ? 1 : alpha);
+    }
+
+    function lookup(sectionName, key) {
+        var section = spec[sectionName];
+        if (section !== null && typeof section === "object" && section[key] !== undefined)
+            return section[key];
+        return undefined;
+    }
+
+    function resolveColorValue(rawValue, baseHue, seedColor) {
+        if (rawValue === "accent")
+            return seedColor;
+        if (Array.isArray(rawValue)) {
+            var alpha = rawValue.length > 3 ? rawValue[3] : 1;
+            return Qt.rgba(rawValue[0], rawValue[1], rawValue[2], alpha);
+        }
+        if (rawValue !== null && typeof rawValue === "object" && rawValue.hslHue === undefined) {
+            var hueOffset = rawValue.h || 0;
+            var saturation = rawValue.s === undefined ? 0.5 : rawValue.s;
+            var lightness = rawValue.l === undefined ? 0.5 : rawValue.l;
+            return tone(baseHue + hueOffset, saturation, lightness, rawValue.a);
+        }
+        return rawValue;
+    }
+
+    function toColor(rawValue) {
+        return resolveColorValue(rawValue, hue, accentSeed);
+    }
+
+    function withAlpha(colorValue, alphaValue) {
+        if (alphaValue === colorValue.a)
+            return colorValue;
+        return Qt.rgba(colorValue.r, colorValue.g, colorValue.b, clamp(alphaValue, 0, 1));
+    }
+
+    function metric(key, fallbackValue) {
+        var rawValue = lookup("metrics", key);
+        return typeof rawValue === "number" ? rawValue : fallbackValue;
+    }
+
+    function fontValue(key, fallbackValue) {
+        var rawValue = lookup("fonts", key);
+        return rawValue === undefined ? fallbackValue : rawValue;
+    }
+
+    function motion(key, fallbackValue) {
+        var rawValue = lookup("motion", key);
+        return rawValue === undefined ? fallbackValue : rawValue;
+    }
+
+    function radiusMetric(key, fallbackValue) {
+        return Math.round(metric(key, fallbackValue) * uiScale * radiusScale);
+    }
+
+    function spacingMetric(key, fallbackValue) {
+        return Math.round(metric(key, fallbackValue) * uiScale * spacingScale);
+    }
+
+    function fontSize(key, fallbackValue) {
+        return Math.round(fontValue(key, fallbackValue) * uiScale * fontScale);
+    }
+
+    // -- Internal theme discovery and loading helpers -----------------------
+    function parseThemeJson(jsonText, filePath) {
+        if (!jsonText || jsonText.trim() === "")
+            return null;
+        try {
+            var parsed = JSON.parse(jsonText);
+            if (parsed !== null && typeof parsed === "object" && !Array.isArray(parsed))
+                return parsed;
+            return null;
+        } catch (parseError) {
+            console.warn("Theme: invalid JSON in " + filePath + ": " + parseError);
+            return null;
+        }
+    }
+
+    function directoryName(dirPath) {
+        var cleanPath = dirPath.replace(/\/+$/, "");
+        var slashIndex = cleanPath.lastIndexOf("/");
+        return slashIndex >= 0 ? cleanPath.slice(slashIndex + 1) : cleanPath;
+    }
+
+    function classifyThemePath(dirPath) {
+        if (dirPath.indexOf(userThemesDir + "/") === 0)
+            return "user";
+        if (dirPath.indexOf(packagedThemesDir + "/") === 0)
+            return "packaged";
+        return "custom";
+    }
+
+    function sortThemes(themeList) {
+        var builtinRank = { "aero": 0, "base": 1 };
+        themeList.sort(function(first, second) {
+            var firstRank = builtinRank[first.id] !== undefined ? builtinRank[first.id] : 2;
+            var secondRank = builtinRank[second.id] !== undefined ? builtinRank[second.id] : 2;
+            if (firstRank !== secondRank)
+                return firstRank - secondRank;
+            if (first.id < second.id)
+                return -1;
+            return first.id > second.id ? 1 : 0;
+        });
+        return themeList;
+    }
+
+    function createThemeEntry(themeId, themePath, realPath, sourceType, parsedSpec) {
+        var displayName = typeof parsedSpec.name === "string" && parsedSpec.name !== "" ? parsedSpec.name : themeId;
+        var description = typeof parsedSpec.description === "string" ? parsedSpec.description : "";
+        var componentList = Array.isArray(parsedSpec.components) ? parsedSpec.components : [];
+        return {
+            id: themeId,
+            name: displayName,
+            description: description,
+            source: sourceType,
+            path: themePath,
+            realPath: realPath,
+            spec: parsedSpec,
+            componentsCount: componentList.length
+        };
+    }
+
+    function watchThemeFile(jsonPath) {
+        isReloadingFile = true;
+        if (activeThemeFile.path !== jsonPath)
+            activeThemeFile.path = jsonPath;
+        else
+            activeThemeFile.reload();
+        activeThemeFile.waitForJob();
+        isReloadingFile = false;
+    }
+
+    function loadThemeDirectory(targetDir, themeId, sourceType, incrementRevision) {
+        var jsonPath = targetDir + "/theme.json";
+        var previousSnapshot = activeTheme;
+        watchThemeFile(jsonPath);
+
+        var parsedSpec = parseThemeJson(activeThemeFile.text(), jsonPath);
+        if (parsedSpec === null)
+            return false;
+
+        var nextRevision = previousSnapshot.revision + (incrementRevision ? 1 : 0);
+        loadedThemeState = {
+            id: themeId,
+            source: sourceType,
+            dir: targetDir,
+            spec: parsedSpec,
+            revision: nextRevision
+        };
+
+        var updatedThemes = themes.slice();
+        var updatedExisting = false;
+        for (var i = 0; i < updatedThemes.length; i++) {
+            if (updatedThemes[i].id === themeId) {
+                var resolvedPath = updatedThemes[i].realPath || targetDir;
+                updatedThemes[i] = createThemeEntry(themeId, targetDir, resolvedPath, sourceType, parsedSpec);
+                updatedExisting = true;
+                break;
+            }
+        }
+        if (!updatedExisting)
+            updatedThemes.push(createThemeEntry(themeId, targetDir, targetDir, sourceType, parsedSpec));
+        themes = sortThemes(updatedThemes);
+        return true;
+    }
+
+    function writeThemeSymlink(targetDir) {
+        pendingSymlinkTarget = targetDir;
+        if (symlinkProcess.running)
+            symlinkProcess.running = false;
+        symlinkProcess.running = true;
+    }
+
+    function resolveActiveThemeEntry(currentLinkPath, currentRealPath, themesById) {
+        if (currentRealPath !== "") {
+            for (var i = 0; i < themes.length; i++) {
+                var candidate = themes[i];
+                if (candidate.realPath === currentRealPath || candidate.path === currentRealPath || candidate.path === currentLinkPath)
+                    return candidate;
+            }
+        }
+        if (currentLinkPath !== "") {
+            var linkId = directoryName(currentLinkPath);
+            if (themesById[linkId])
+                return themesById[linkId];
+        }
+        if (themesById[packagedThemeName])
+            return themesById[packagedThemeName];
+        return themes.length > 0 ? themes[0] : null;
+    }
+
+    function applyScannedTheme(matchedTheme, currentLinkPath, currentRealPath) {
+        var isFirstLoad = loadedThemeState === null;
+        var previousSnapshot = activeTheme;
+        var hasUserTheme = initialUserSpec !== null;
+        var isSameTarget = false;
+
+        if (isFirstLoad) {
+            var matchesUserLink = hasUserTheme && (currentRealPath === matchedTheme.realPath || currentLinkPath === matchedTheme.path);
+            var matchesPackagedDefault = !hasUserTheme && matchedTheme.path === packagedThemePath;
+            isSameTarget = matchesUserLink || matchesPackagedDefault;
+        } else {
+            isSameTarget = previousSnapshot.dir === matchedTheme.path
+                && JSON.stringify(previousSnapshot.spec) === JSON.stringify(matchedTheme.spec);
+        }
+
+        loadedThemeState = {
+            id: matchedTheme.id,
+            source: matchedTheme.source,
+            dir: matchedTheme.path,
+            spec: matchedTheme.spec,
+            revision: previousSnapshot.revision + (isSameTarget ? 0 : 1)
+        };
+
+        var targetJsonPath = matchedTheme.path + "/theme.json";
+        if (activeThemeFile.path !== targetJsonPath)
+            watchThemeFile(targetJsonPath);
+
+        var needsSymlinkRepair = currentLinkPath !== ""
+            && matchedTheme.path !== ""
+            && (currentRealPath === "" || (matchedTheme.source === "packaged" && currentRealPath !== matchedTheme.realPath));
+        if (needsSymlinkRepair)
+            writeThemeSymlink(matchedTheme.path);
+    }
+
+    function ingestScanOutput(outputText) {
+        var lines = outputText.split("\n");
+        var currentLinkPath = "";
+        var currentRealPath = "";
+        var discoveredThemes = [];
+        var themesById = {};
+        var themesByRealPath = {};
+
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
+            if (line.indexOf("CURRENT\t") === 0) {
+                var currentParts = line.split("\t");
+                currentLinkPath = currentParts[1] || "";
+                currentRealPath = currentParts[2] || "";
+                continue;
+            }
+            if (line.indexOf("THEME\t") !== 0)
+                continue;
+
+            var parts = line.split("\t");
+            var themePath = parts[1] || "";
+            var realPath = parts[2] || themePath;
+            var jsonText = parts.slice(3).join("\t");
+            var parsedSpec = parseThemeJson(jsonText, themePath + "/theme.json");
+            if (parsedSpec === null)
+                continue;
+
+            var themeId = directoryName(themePath);
+            if (themesById[themeId] || themesByRealPath[realPath])
+                continue;
+
+            var entry = createThemeEntry(themeId, themePath, realPath, classifyThemePath(themePath), parsedSpec);
+            themesById[themeId] = entry;
+            themesByRealPath[realPath] = entry;
+            discoveredThemes.push(entry);
+        }
+
+        themes = sortThemes(discoveredThemes);
+        if (symlinkProcess.running)
+            return;
+
+        var matchedTheme = resolveActiveThemeEntry(currentLinkPath, currentRealPath, themesById);
+        if (matchedTheme !== null)
+            applyScannedTheme(matchedTheme, currentLinkPath, currentRealPath);
+    }
+
+    // -- Lifecycle and background objects -----------------------------------
+    Component.onCompleted: scan()
+
+    ColorQuantizer {
+        id: quantizer
+        source: root.wallpaperAccent ? root.fileUrl(Wallpaper.path) : ""
+        depth: 3
+        rescaleSize: 96
+    }
+
+    FileView {
+        id: activeThemeFile
+        path: root.userThemeLink + "/theme.json"
+        blockLoading: true
+        watchChanges: true
+        printErrors: false
+        onFileChanged: if (!root.isReloadingFile) root.reload()
+    }
+
+    FileView {
+        id: packagedThemeFile
+        path: root.packagedThemePath + "/theme.json"
+        blockLoading: true
+        printErrors: false
+    }
+
+    Process {
+        id: symlinkProcess
+        command: ["sh", root.themesScriptPath, "link", root.configDir, root.pendingSymlinkTarget, root.userThemeLink]
+        onExited: root.scan()
+    }
+
+    Process {
+        id: scanProcess
+        command: ["sh", root.themesScriptPath, "scan", root.userThemeLink, root.userThemesDir, root.packagedThemesDir]
+        stdout: StdioCollector {
+            onStreamFinished: root.ingestScanOutput(text)
+        }
+    }
+
+    IpcHandler {
+        target: "theme"
+
+        function list(): string { return root.themes.map(themeEntry => themeEntry.id).join("\n"); }
+        function current(): string { return root.currentId; }
+        function set(name: string): string { return root.setTheme(name); }
+        function next(): string { return root.stepTheme(1); }
+        function prev(): string { return root.stepTheme(-1); }
+        function reload(): string { return root.reload(); }
     }
 }

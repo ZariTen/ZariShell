@@ -10,14 +10,16 @@ import Quickshell.Services.Pipewire
 Scope {
     id: root
 
+    // -- State and derived properties ---------------------------------------
     readonly property bool open: ShellState.panel === "quicksettings"
     property string page: "main"   // "main" | "wifi" | "bluetooth"
     property bool hasBacklight: false
     property real brightness: 0
     readonly property var sink: Pipewire.defaultAudioSink
     readonly property var adapter: Bluetooth.defaultAdapter
-    readonly property var btConnected: adapter ? adapter.devices.values.filter(d => d.connected) : []
+    readonly property var btConnected: adapter ? adapter.devices.values.filter(device => device.connected) : []
 
+    // -- Helper functions ---------------------------------------------------
     function refresh() {
         wifi.refresh(false);
         backlightQuery.running = true;
@@ -28,28 +30,7 @@ Scope {
         refresh();
     }
 
-    PwObjectTracker {
-        objects: root.sink ? [root.sink] : []
-    }
-
-    // brightnessctl -m: device,class,current,percent%,max
-    Process {
-        id: backlightQuery
-        command: ["brightnessctl", "-m", "-c", "backlight"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var m = /,(\d+)%,/.exec(text);
-                root.hasBacklight = m !== null;
-                if (m)
-                    root.brightness = Number(m[1]) / 100;
-            }
-        }
-    }
-
-    Process {
-        id: backlightSet
-    }
-
+    // -- Visual tree --------------------------------------------------------
     DropPanel {
         name: "quicksettings"
         align: "right"
@@ -109,14 +90,20 @@ Scope {
 
                 // Tile body toggles the radio; the chevron opens the picker.
                 ExpandTile {
-                    codepoint: wifi.radioOn ? (wifi.activeSsid !== "" ? wifi.signalIcon(wifi.activeSignal) : 0xF05A9) : 0xF05AA
+                    codepoint: {
+                        if (!wifi.radioOn)
+                            return 0xF05AA;
+                        if (wifi.activeSsid !== "")
+                            return wifi.signalIcon(wifi.activeSignal);
+                        return 0xF05A9;
+                    }
                     label: "Wi-Fi"
                     sublabel: {
                         if (wifi.connecting !== "")
-                            return "Connecting to " + wifi.connecting + "…";
+                            return "Connecting to " + wifi.connecting + "\u2026";
                         if (wifi.radioOn)
                             return wifi.activeSsid || "Not connected";
-                        return wifi.wired !== "" ? "Off · wired: " + wifi.wired : "Off";
+                        return wifi.wired !== "" ? "Off \u00b7 wired: " + wifi.wired : "Off";
                     }
                     active: wifi.radioOn
                     onClicked: wifi.setRadio()
@@ -126,7 +113,15 @@ Scope {
                 ExpandTile {
                     codepoint: root.adapter && root.adapter.enabled ? 0xF00AF : 0xF00B2 // md-bluetooth / md-bluetooth_off
                     label: "Bluetooth"
-                    sublabel: !root.adapter ? "No adapter" : (!root.adapter.enabled ? "Off" : (root.btConnected.length > 0 ? root.btConnected.map(d => d.name).join(", ") : "On"))
+                    sublabel: {
+                        if (!root.adapter)
+                            return "No adapter";
+                        if (!root.adapter.enabled)
+                            return "Off";
+                        if (root.btConnected.length > 0)
+                            return root.btConnected.map(device => device.name).join(", ");
+                        return "On";
+                    }
                     active: root.adapter !== null && root.adapter.enabled
                     enabled: root.adapter !== null
                     onClicked: root.adapter.enabled = !root.adapter.enabled
@@ -144,7 +139,7 @@ Scope {
                 Tile {
                     codepoint: 0xF0425
                     label: "Power"
-                    sublabel: "Lock, sleep, restart…"
+                    sublabel: "Lock, sleep, restart\u2026"
                     onClicked: ShellState.toggle("power")
                 }
             }
@@ -161,16 +156,19 @@ Scope {
                     onClicked: root.sink.audio.muted = !root.sink.audio.muted
                     MdIcon {
                         anchors.centerIn: parent
-                        readonly property real v: root.sink && root.sink.audio ? root.sink.audio.volume : 0
-                        codepoint: !root.sink || !root.sink.audio || root.sink.audio.muted || v <= 0 ? 0xF0581 : (v < 0.34 ? 0xF057F : (v < 0.67 ? 0xF0580 : 0xF057E))
+                        codepoint: {
+                            var isMuted = !root.sink || !root.sink.audio || root.sink.audio.muted;
+                            var volumeLevel = root.sink && root.sink.audio ? root.sink.audio.volume : 0;
+                            return ShellState.volumeGlyph(volumeLevel, isMuted);
+                        }
                     }
                 }
                 Slider {
                     Layout.fillWidth: true
                     value: root.sink && root.sink.audio && !root.sink.audio.muted ? Math.min(1, root.sink.audio.volume) : 0
-                    onMoved: v => {
+                    onMoved: ratio => {
                         root.sink.audio.muted = false;
-                        root.sink.audio.volume = v;
+                        root.sink.audio.volume = ratio;
                     }
                 }
                 StyledText {
@@ -195,9 +193,9 @@ Scope {
                 Slider {
                     Layout.fillWidth: true
                     value: root.brightness
-                    onMoved: v => {
-                        root.brightness = v;
-                        backlightSet.command = ["brightnessctl", "-c", "backlight", "set", Math.max(1, Math.round(v * 100)) + "%"];
+                    onMoved: ratio => {
+                        root.brightness = ratio;
+                        backlightSet.command = ["brightnessctl", "-c", "backlight", "set", Math.max(1, Math.round(ratio * 100)) + "%"];
                         backlightSet.running = true;
                     }
                 }
@@ -221,5 +219,28 @@ Scope {
             shown: root.open && root.page === "bluetooth"
             onBack: root.page = "main"
         }
+    }
+
+    // -- Background objects -------------------------------------------------
+    PwObjectTracker {
+        objects: root.sink ? [root.sink] : []
+    }
+
+    // brightnessctl -m: device,class,current,percent%,max
+    Process {
+        id: backlightQuery
+        command: ["brightnessctl", "-m", "-c", "backlight"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var match = /,(\d+)%,/.exec(text);
+                root.hasBacklight = match !== null;
+                if (match)
+                    root.brightness = Number(match[1]) / 100;
+            }
+        }
+    }
+
+    Process {
+        id: backlightSet
     }
 }

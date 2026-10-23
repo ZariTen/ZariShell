@@ -1,20 +1,19 @@
 import QtQuick
-import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
-import Quickshell.Hyprland
 import Quickshell.Services.Notifications
 import Quickshell.Wayland
-import Quickshell.Widgets
 
 // Dropdown under the bar's bell: notification history, newest first.
 Scope {
     id: root
 
+    // -- State and derived properties ---------------------------------------
     readonly property bool open: ShellState.panel === "notifications"
 
     onOpenChanged: if (open) Notifs.markRead()
 
+    // -- Visual tree --------------------------------------------------------
     Variants {
         model: Quickshell.screens
 
@@ -22,14 +21,7 @@ Scope {
             id: window
 
             required property var modelData
-            readonly property var monitor: Hyprland.monitorFor(modelData)
-            readonly property bool focusedHere: {
-                if (!root.open)
-                    return false;
-                if (Hyprland.focusedMonitor === null)
-                    return modelData === Quickshell.screens[0];
-                return monitor !== null && monitor.name === Hyprland.focusedMonitor.name;
-            }
+            readonly property bool focusedHere: root.open && ShellState.isFocusedScreen(modelData)
 
             screen: modelData
             visible: focusedHere || card.opacity > 0
@@ -48,11 +40,6 @@ Scope {
             WlrLayershell.keyboardFocus: focusedHere ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
             onFocusedHereChanged: if (focusedHere) card.forceActiveFocus()
-
-            SystemClock {
-                id: clock
-                precision: SystemClock.Minutes
-            }
 
             MouseArea {
                 anchors.fill: parent
@@ -142,7 +129,7 @@ Scope {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: "You're all caught up"
                                 color: Theme.textSurfaceVariant
-                        }
+                            }
                         }
                     }
 
@@ -260,6 +247,11 @@ Scope {
                         }
                     }
                 }
+            }
+
+            SystemClock {
+                id: clock
+                precision: SystemClock.Minutes
             }
         }
     }
