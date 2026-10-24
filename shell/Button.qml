@@ -3,13 +3,15 @@ import QtQuick
 // Generic button. Put content inside; handle `clicked` / `wheel`. Transparent
 // at rest unless `active` or `framed`; hover and `active` light it up with
 // `tint`. The face comes from Theme.component("Button") and reads this item
-// as `control`.
+// as `control`. Set `passWheel` for buttons inside a scrolling list so the
+// wheel scrolls the list instead of stopping at the button.
 Item {
     id: control
 
     default property alias content: contentItem.data
     property bool active: false
     property bool framed: false        // show the face at rest too
+    property bool passWheel: false     // let wheel events reach the parent
     property real radius: Theme.radius
     property color tint: Theme.highlight
     property alias hovered: mouse.containsMouse
@@ -45,6 +47,9 @@ Item {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: mouseEvent => control.clicked(mouseEvent)
-        onWheel: wheelEvent => control.wheel(wheelEvent)
+        onWheel: wheelEvent => {
+            wheelEvent.accepted = !control.passWheel;
+            control.wheel(wheelEvent);
+        }
     }
 }

@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -239,7 +241,9 @@ Scope {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
                             clip: true
+                            pixelAligned: true
                             boundsBehavior: Flickable.StopAtBounds
+                            flickableDirection: Flickable.VerticalFlick
                             contentWidth: width
                             contentHeight: rows.implicitHeight
 
@@ -253,106 +257,114 @@ Scope {
                                     delegate: SettingsRow {}
                                 }
 
-                                // Theme picker
-                                ColumnLayout {
-                                    visible: root.currentSection.id === "theme"
-                                    Layout.fillWidth: true
-                                    spacing: Theme.spacingS
+                                // Theme picker. The model is a count, not the
+                                // Theme.themes array: that array is replaced on
+                                // every switch and scan, which would rebuild
+                                // the cards (resetting their size and hover
+                                // while the list keeps scrolling under them).
+                                Repeater {
+                                    model: root.currentSection.id === "theme" ? Theme.themes.length : 0
 
-                                    Repeater {
-                                        model: Theme.themes
-                                        Button {
-                                            id: themeCard
-                                            required property var modelData
-                                            readonly property bool isCurrent: modelData.id === Theme.currentId
-                                            Layout.fillWidth: true
-                                            implicitHeight: cardRow.implicitHeight + Theme.spacingM * 2
-                                            framed: true
-                                            active: isCurrent
-                                            onClicked: Theme.setTheme(modelData.id)
+                                    Button {
+                                        id: themeCard
+                                        required property int index
+                                        readonly property var themeEntry: Theme.themes[index] || ({})
+                                        readonly property bool isCurrent: themeEntry.id === Theme.currentId
+                                        Layout.fillWidth: true
+                                        implicitHeight: cardRow.implicitHeight + Theme.spacingM * 2
+                                        framed: true
+                                        active: isCurrent
+                                        passWheel: true
+                                        onClicked: Theme.setTheme(themeEntry.id)
+
+                                        RowLayout {
+                                            id: cardRow
+                                            anchors.left: parent.left
+                                            anchors.right: parent.right
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.leftMargin: Theme.spacingM
+                                            anchors.rightMargin: Theme.spacingM
+                                            spacing: Theme.spacingM
 
                                             RowLayout {
-                                                id: cardRow
-                                                anchors.left: parent.left
-                                                anchors.right: parent.right
-                                                anchors.verticalCenter: parent.verticalCenter
-                                                anchors.leftMargin: Theme.spacingM
-                                                anchors.rightMargin: Theme.spacingM
-                                                spacing: Theme.spacingM
-
-                                                RowLayout {
-                                                    spacing: Theme.spacingXs
-                                                    Repeater {
-                                                        model: [
-                                                            Theme.specColor(themeCard.modelData.spec, "surface", "#24282e"),
-                                                            Theme.specColor(themeCard.modelData.spec, "panel", [0.24, 0.26, 0.30, 0.96]),
-                                                            Theme.specColor(themeCard.modelData.spec, "primaryContainer", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.9 }),
-                                                            Theme.specColor(themeCard.modelData.spec, "accent", "accent")
-                                                        ]
-                                                        Rectangle {
-                                                            required property color modelData
-                                                            implicitWidth: Theme.px(16)
-                                                            implicitHeight: Theme.px(16)
-                                                            radius: Theme.radiusFull
-                                                            color: Qt.rgba(modelData.r, modelData.g, modelData.b, 1)
-                                                            border.width: 1
-                                                            border.color: Theme.border
-                                                        }
+                                                spacing: Theme.spacingXs
+                                                Repeater {
+                                                    model: [
+                                                        Theme.specColor(themeCard.themeEntry.spec, "surface", "#24282e"),
+                                                        Theme.specColor(themeCard.themeEntry.spec, "panel", [0.24, 0.26, 0.30, 0.96]),
+                                                        Theme.specColor(themeCard.themeEntry.spec, "primaryContainer", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.9 }),
+                                                        Theme.specColor(themeCard.themeEntry.spec, "accent", "accent")
+                                                    ]
+                                                    Rectangle {
+                                                        required property color modelData
+                                                        implicitWidth: Theme.px(16)
+                                                        implicitHeight: Theme.px(16)
+                                                        radius: Theme.radiusFull
+                                                        color: Qt.rgba(modelData.r, modelData.g, modelData.b, 1)
+                                                        border.width: 1
+                                                        border.color: Theme.border
                                                     }
                                                 }
+                                            }
 
-                                                ColumnLayout {
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: Theme.px(2)
+
+                                                RowLayout {
                                                     Layout.fillWidth: true
-                                                    spacing: Theme.px(2)
+                                                    spacing: Theme.spacingS
 
-                                                    RowLayout {
-                                                        Layout.fillWidth: true
-                                                        spacing: Theme.spacingS
-
-                                                        StyledText {
-                                                            text: themeCard.modelData.name
-                                                            font.weight: Font.DemiBold
-                                                        }
-
-                                                        StyledText {
-                                                            text: root.themeSourceLabel(themeCard.modelData)
-                                                            font.pixelSize: Theme.fontSmall
-                                                            color: Theme.textSurfaceVariant
-                                                        }
-
-                                                        Item { Layout.fillWidth: true }
+                                                    StyledText {
+                                                        text: themeCard.themeEntry.name || ""
+                                                        font.weight: Font.DemiBold
                                                     }
 
                                                     StyledText {
-                                                        visible: themeCard.modelData.description !== ""
                                                         Layout.fillWidth: true
-                                                        wrapMode: Text.Wrap
-                                                        text: themeCard.modelData.description
-                                                        color: Theme.textSurfaceVariant
+                                                        text: root.themeSourceLabel(themeCard.themeEntry)
                                                         font.pixelSize: Theme.fontSmall
+                                                        color: Theme.textSurfaceVariant
                                                     }
                                                 }
 
-                                                MdIcon {
-                                                    visible: themeCard.isCurrent
-                                                    codepoint: 0xF012C // md-check
-                                                    color: Theme.accent
-                                                    font.pixelSize: Theme.iconPx(18)
+                                                // At most two lines, so long descriptions
+                                                // keep the cards compact.
+                                                StyledText {
+                                                    visible: text !== ""
+                                                    Layout.fillWidth: true
+                                                    wrapMode: Text.Wrap
+                                                    maximumLineCount: 2
+                                                    text: themeCard.themeEntry.description || ""
+                                                    color: Theme.textSurfaceVariant
+                                                    font.pixelSize: Theme.fontSmall
                                                 }
+                                            }
+
+                                            // Always laid out (only faded) so the
+                                            // checkmark never changes the card's
+                                            // height or the description's wrap width.
+                                            MdIcon {
+                                                opacity: themeCard.isCurrent ? 1 : 0
+                                                codepoint: 0xF012C // md-check
+                                                color: Theme.accent
+                                                font.pixelSize: Theme.iconPx(18)
                                             }
                                         }
                                     }
-
-                                    StyledText {
-                                        Layout.fillWidth: true
-                                        Layout.topMargin: Theme.spacingXs
-                                        wrapMode: Text.Wrap
-                                        color: Theme.textSurfaceVariant
-                                        font.pixelSize: Theme.fontSmall
-                                        text: "Place user themes in ~/.config/zarishell/themes/<name>/theme.json (with optional components/*.qml) and click Reload, or switch via IPC with `quickshell -c shell ipc call theme set <name>`."
-                                    }
                                 }
                             }
+                        }
+
+                        // Theme picker hint: outside the list so it stays
+                        // visible however many themes there are.
+                        StyledText {
+                            visible: root.currentSection.id === "theme"
+                            Layout.fillWidth: true
+                            wrapMode: Text.Wrap
+                            color: Theme.textSurfaceVariant
+                            font.pixelSize: Theme.fontSmall
+                            text: "Place user themes in ~/.config/zarishell/themes/<name>/theme.json (with optional components/*.qml) and click Reload, or switch via IPC with `quickshell -c shell ipc call theme set <name>`."
                         }
                     }
                 }
