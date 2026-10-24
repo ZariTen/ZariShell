@@ -53,7 +53,7 @@ Scope {
 
                 anchors.right: parent.right
                 anchors.rightMargin: Theme.gap
-                y: Theme.barHeight + Theme.gap * 2 + (shown ? 0 : -16)
+                y: Theme.barSpace + Theme.gap * 2 + (shown ? 0 : -16)
                 width: Theme.widthPx(400)
                 height: Math.min(window.height - y - Theme.gap * 4, column.implicitHeight + Theme.spacingL * 2)
                 color: "transparent"

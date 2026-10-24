@@ -39,6 +39,7 @@ Scope {
             { key: "reduceMotion", label: "Reduce motion", kind: "switch", def: false }
         ] },
         { id: "layout", title: "Layout", glyph: 0xF056E, rows: [
+            { key: "barStyle", label: "Bar style", kind: "choice", choices: [{ value: "full", label: "Full width" }, { value: "pills", label: "Pills" }], def: Theme.themeBarStyle },
             { key: "avatarSize", label: "Lock screen avatar", kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112 },
             { key: "panelWidth", label: "Panel width", kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
             { key: "dim", label: "Dimmed items", kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }

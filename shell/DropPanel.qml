@@ -54,7 +54,7 @@ PanelWindow {
     Item {
         id: card
 
-        readonly property real restY: panel.centered ? (panel.height - height) / 2 : Theme.barHeight + Theme.gap
+        readonly property real restY: panel.centered ? (panel.height - height) / 2 : Theme.barSpace + Theme.gap
 
         x: {
             if (panel.align === "left")

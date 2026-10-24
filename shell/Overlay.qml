@@ -235,7 +235,7 @@ Scope {
                 id: card
                 shown: window.focusedHere
                 width: Math.min(window.width - 80, 620)
-                height: Math.min(window.height - Theme.barHeight - 80, 540)
+                height: Math.min(window.height - Theme.barSpace - 80, 540)
 
                 ColumnLayout {
                     anchors.fill: parent

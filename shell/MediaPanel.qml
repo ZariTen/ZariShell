@@ -104,7 +104,7 @@ Scope {
                 readonly property var activePlayer: root.player
 
                 anchors.horizontalCenter: parent.horizontalCenter
-                y: Theme.barHeight + Theme.gap + (shown ? 0 : -16)
+                y: Theme.barSpace + Theme.gap + (shown ? 0 : -16)
                 width: Theme.widthPx(440)
                 height: column.implicitHeight + Theme.spacingL * 2
                 opacity: shown ? 1 : 0

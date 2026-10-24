@@ -106,6 +106,14 @@ Singleton {
     readonly property int themeBarHeight: metric("barHeight", 42)
     readonly property int barHeight: px(clamp(Settings.get("barHeight", themeBarHeight), 24, 96))
     readonly property int shadowRoom: px(metric("shadowRoom", 0))        // extra bar window height for a theme's shadow
+    // Bar layout: "full" (edge-to-edge strip) or "pills" (one floating pill per
+    // group of bar content). settings.json wins over theme.json "barStyle".
+    readonly property string themeBarStyle: spec.barStyle === "pills" ? "pills" : "full"
+    readonly property string userBarStyle: Settings.get("barStyle", "")
+    readonly property string barStyle: userBarStyle === "pills" || userBarStyle === "full" ? userBarStyle : themeBarStyle
+    readonly property bool barPills: barStyle === "pills"
+    readonly property int barMargin: barPills ? spacingS : 0             // pill gap from the screen edges
+    readonly property int barSpace: barHeight + barMargin                // screen height the bar reserves
     readonly property int gap: spacingMetric("gap", 8)
     readonly property int avatarSize: px(clamp(Settings.get("avatarSize", 112), 48, 256)) // lock screen avatar
 

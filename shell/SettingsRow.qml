@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Layouts
 
@@ -191,6 +193,33 @@ Item {
                 color: Theme.accent
                 border.width: 1
                 border.color: Theme.border
+            }
+        }
+
+        // Choice: one segmented button per value in `choices`
+        RowLayout {
+            visible: row.modelData.kind === "choice"
+            Layout.fillWidth: true
+            spacing: Theme.spacingXs
+            Repeater {
+                model: row.modelData.kind === "choice" ? row.modelData.choices : []
+                Button {
+                    id: optionButton
+                    required property var modelData
+                    implicitWidth: optionLabel.implicitWidth + Theme.spacingM * 2
+                    implicitHeight: Theme.px(30)
+                    framed: true
+                    active: row.currentValue === modelData.value
+                    onClicked: Settings.set(row.modelData.key, modelData.value)
+                    StyledText {
+                        id: optionLabel
+                        anchors.centerIn: parent
+                        text: optionButton.modelData.label
+                    }
+                }
+            }
+            Item {
+                Layout.fillWidth: true
             }
         }
 

@@ -33,7 +33,7 @@ Scope {
                 right: true
             }
 
-            margins.top: Theme.barHeight + Theme.gap * 2
+            margins.top: Theme.barSpace + Theme.gap * 2
             margins.right: Theme.gap
             implicitWidth: Theme.widthPx(380)
             implicitHeight: Math.max(1, column.implicitHeight)

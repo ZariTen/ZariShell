@@ -103,6 +103,7 @@ install it and set the `font` setting to use it.
 | `description` | `""` | Short summary shown in the theme picker. |
 | `accent` | `"#7a9cc6"` | Accent seed: a color, or `"wallpaper"` to take the hue from the current wallpaper. |
 | `components` | `[]` | Component looks / effects provided in `components/`. |
+| `barStyle` | `"full"` | Taskbar layout: `"full"` (an edge-to-edge strip) or `"pills"` (one floating pill per group: workspaces, media, notification area). The `barStyle` setting overrides it. |
 
 ### Colors
 
@@ -160,7 +161,7 @@ install it and set the `font` setting to use it.
 | `radiusFrame` | 10 | Matted picture frames (avatars). |
 | `barRadius` | 0 | Full-width edge bars (taskbar, lock / login bottom bar). |
 | `spacingXs` / `spacingS` / `spacingM` / `spacingL` / `spacingXl` | 4 / 8 / 12 / 16 / 24 | Spacing scale (`spacingS` is also the avatar mat). |
-| `barHeight` | 42 | Taskbar height and exclusive zone. |
+| `barHeight` | 42 | Taskbar height and exclusive zone (plus `spacingS` with the `pills` bar style). |
 | `shadowRoom` | 0 | Extra taskbar window height so a theme's shadow is not clipped. |
 | `gap` | 8 | Gap between screen edge / bar and panels. |
 
@@ -235,6 +236,7 @@ Nix does not manage this file.
 | `radius` | 1 | Corner radius factor (0 = square). |
 | `spacing` | 1 | Spacing factor. |
 | `barHeight` | theme (42) | Bar height in px (before UI scale). |
+| `barStyle` | theme (`"full"`) | `"full"`: the bar is one strip across the top edge. `"pills"`: each group (workspaces and windows, media, notification area and clock) is its own floating pill, `spacingS` from the screen edges, drawn with the theme's `Surface` and `radiusLarge` (or `barRadius` if larger). Also in Settings > Layout > Bar style. |
 | `barOpacity` | theme | Bar background opacity, 0..1. |
 | `panelOpacity` | theme | Panel / dialog background opacity, 0..1. |
 | `accent` | theme | `"wallpaper"` or `"#rrggbb"`. |

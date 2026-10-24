@@ -77,8 +77,8 @@ Scope {
 
             screen: modelData
             color: "transparent"
-            implicitHeight: Theme.barHeight + Theme.shadowRoom
-            exclusiveZone: Theme.barHeight
+            implicitHeight: Theme.barSpace + Theme.shadowRoom
+            exclusiveZone: Theme.barSpace
 
             anchors {
                 top: true
@@ -88,12 +88,15 @@ Scope {
 
             WlrLayershell.namespace: "shell-bar"
 
-            // Taskbar strip
+            // Taskbar strip (full style). Hidden in pills style, where it still
+            // marks the band the bar content is centered in.
             Surface {
                 id: strip
+                visible: !Theme.barPills
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
+                anchors.topMargin: Theme.barMargin
                 height: Theme.barHeight
                 radius: Theme.barRadius
                 color: Theme.bar
@@ -107,10 +110,27 @@ Scope {
                 }
             }
 
+            // Pills style: one floating surface behind each group of bar content.
+            Repeater {
+                model: Theme.barPills ? [leftGroup, mediaButton, rightGroup] : []
+
+                Surface {
+                    required property Item modelData
+                    visible: modelData.visible && modelData.width > 0
+                    x: modelData.x - Theme.spacingS
+                    y: Theme.barMargin
+                    width: modelData.width + Theme.spacingS * 2
+                    height: Theme.barHeight
+                    radius: Math.max(Theme.barRadius, Theme.radiusLarge)
+                    color: Theme.bar
+                }
+            }
+
             // -- Left: workspaces and window icons --------------------------
             RowLayout {
+                id: leftGroup
                 anchors.left: parent.left
-                anchors.leftMargin: Theme.spacingS
+                anchors.leftMargin: Theme.barMargin + Theme.spacingS
                 anchors.verticalCenter: strip.verticalCenter
                 spacing: Theme.spacingS
 
@@ -311,8 +331,9 @@ Scope {
 
             // -- Right: notification area -----------------------------------
             RowLayout {
+                id: rightGroup
                 anchors.right: parent.right
-                anchors.rightMargin: Theme.spacingS
+                anchors.rightMargin: Theme.barMargin + Theme.spacingS
                 anchors.verticalCenter: strip.verticalCenter
                 spacing: Theme.spacingXs
 
