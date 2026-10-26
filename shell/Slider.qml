@@ -22,6 +22,9 @@ Item {
 
     Loader {
         anchors.fill: parent
+        // Load the look once the control has its size, so a new row shows its
+        // fill at the value instead of animating it in from zero width.
+        active: control.width > 0
         source: Theme.component("Slider")
     }
 
