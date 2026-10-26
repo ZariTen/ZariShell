@@ -17,6 +17,10 @@ Item {
     property alias hovered: mouse.containsMouse
     property alias pressed: mouse.pressed
     property alias acceptedButtons: mouse.acceptedButtons
+    // Let the theme's "ActiveContent" effect restyle the content while
+    // active (e.g. dark glyphs on a solid face). Turn off for full-color
+    // content such as app icons.
+    property bool restyleContent: true
     readonly property bool lit: active || mouse.containsMouse
 
     // 0..1 highlight strength: hover brightens, active stays calm, press dims.
@@ -38,7 +42,12 @@ Item {
 
     Item {
         id: contentItem
+
+        readonly property Component activeEffect: Theme.effect("ActiveContent")
+
         anchors.fill: parent
+        layer.enabled: control.active && control.restyleContent && activeEffect !== null
+        layer.effect: activeEffect
     }
 
     MouseArea {

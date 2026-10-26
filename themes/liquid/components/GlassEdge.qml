@@ -15,8 +15,8 @@ Shape {
     property bool recessed: false
 
     readonly property real cornerRadius: Math.max(0, Math.min(radius, width / 2, height / 2))
-    readonly property real rimWidth: 1.2
-    readonly property real glowWidth: Math.max(1, Math.min(8, Math.min(width, height) / 4))
+    readonly property real rimWidth: 1.8
+    readonly property real glowWidth: Math.max(1.5, Math.min(10, Math.min(width, height) / 4))
     readonly property color rimLight: Theme.color("rimLight", [1, 1, 1, 0.9])
     readonly property color rimShade: Theme.color("rimShade", [1, 1, 1, 0.14])
     readonly property color innerGlow: Theme.color("innerGlow", [1, 1, 1, 0.09])
@@ -76,7 +76,7 @@ Shape {
             GradientStop { position: 0.0; color: edge.recessed ? edge.light(edge.rimShade, 1) : edge.light(edge.rimLight, 1) }
             GradientStop { position: 0.35; color: edge.light(edge.rimShade, 1) }
             GradientStop { position: 0.65; color: edge.light(edge.rimShade, 1) }
-            GradientStop { position: 1.0; color: edge.light(edge.rimLight, edge.recessed ? 0.8 : 0.5) }
+            GradientStop { position: 1.0; color: edge.light(edge.rimLight, edge.recessed ? 0.8 : 0.85) }
         }
         PathRectangle {
             width: edge.width

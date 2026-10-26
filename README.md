@@ -3,7 +3,7 @@
 A themeable desktop shell for Hyprland built with [Quickshell](https://quickshell.org), plus a matching
 login screen. The shell code only draws neutral, flat parts; every look comes
 from a theme. Six themes are bundled: Aero (tinted glass, the default), Base
-(flat neutral slate), Ink (black ink on paper), Liquid Glass (Apple-style clear
+(flat neutral slate), Ink (black ink on paper), Liquid Glass (Apple-style frosted
 glass), Metro (Windows 8 tiles) and Modern (a Noctalia-style rice); see [Packaged themes](#packaged-themes).
 
 ## Install
@@ -75,7 +75,7 @@ Colors are `"#rrggbb"`, `"#aarrggbb"`, `"transparent"`, `[r, g, b, a]` (0..1),
 the accent hue). A theme may add its own extra color names and read them in its
 components with `Theme.color("name", fallback)` (Aero uses `sheenTop`,
 `sheenMid` and `badgeTop`; Ink `paper`; Liquid `glassFill`, `rimLight`, `rimShade`,
-`innerGlow`, `sheenTop`, `sheenBottom` and `glassShadow`; Metro `tileHover` and `startScreen`;
+`innerGlow`, `sheenTop`, `sheenBottom`, `glassShadow`, `activeFill`, `activeGlyph` and `activeKnob`; Metro `tileHover` and `startScreen`;
 Modern `glow` and `sheen`). Extra metrics work the same way with
 `Theme.metric("name", fallback)` (Modern uses `floatInset`). A theme folder may
 also carry its own assets next to `theme.json`; a look loads them with
@@ -88,7 +88,7 @@ also carry its own assets next to `theme.json`; a look loads them with
 | `aero` | Windows 7 glass: translucent tinted panels, glossy sheen, soft glow. | Wallpaper accent, translucency, gloss. | Backdrop, Button, Field, Fill, Frame, Glow, Highlight, Slider, Surface, Switch |
 | `base` | Flat neutral slate (no `components`). | The fallback looks in `shell/base/`. | none |
 | `ink` | Black ink on warm paper: paper grain, hairline rules, raised sheets printed slightly out of register, ink underlines on buttons, brush-stroke dividers, ruler sliders with a diamond thumb, square ink switches, the wallpaper as a faded monochrome print on the lock / login screen. Serif type (Noto Serif). | A light theme (every text-on-color token checked for dark text), custom typography, a theme asset. | Backdrop, Button, Divider, Field, Fill, Frame, Glow, Highlight, Slider, Surface, Switch |
-| `liquid` | Apple Liquid Glass: clear, lightly tinted capsules and circles with a bright specular rim (strongest top-left, again bottom-right), light gathered inside the edges, a soft drop shadow, white glyphs with a text shadow, capsule sliders and switches whose thumb stretches when pressed, springy motion, a pill bar. Noto Sans. | Wallpaper accent, alpha kept just above the compositor's blur threshold, a theme-private helper (`GlassEdge.qml`, not listed in `components`, used by its sibling looks). | Backdrop, Button, Field, Fill, Frame, Glow, Highlight, Slider, Surface, Switch |
+| `liquid` | Apple Liquid Glass: milky frosted capsules and circles with a thick bright rim (strongest top-left and bottom-right, visible all round) and a soft inner bevel, white glyphs with a text shadow, solid white active states with dark gray glyphs (buttons, tiles, switches, slider fills), capsule sliders and switches whose thumb stretches when pressed, springy motion, a pill bar. Noto Sans. | A faint wallpaper accent, the ActiveContent effect, a theme-private helper (`GlassEdge.qml`, not listed in `components`, used by its sibling looks). Wants `ignore_alpha = 0.2` (see Compositor blur). | ActiveContent, Backdrop, Button, Field, Fill, Frame, Glow, Highlight, Slider, Surface, Switch |
 | `metro` | Windows 8: opaque flat tiles, square corners, flyouts attached to the bar, a cobalt accent band on panels, light-weight Noto Sans for large text, rectangular switches, thin sliders, buttons that shrink when pressed. | Metrics (all radii and the gap 0), motion (fast decelerating slide / scale), one accent on a solid palette. | Backdrop, Button, Field, Highlight, Slider, Surface, Switch |
 | `modern` | A Noctalia-style Hyprland rice: dark rounded islands with soft shadows, a floating pill bar, a pastel accent taken from the wallpaper, glowing orbs, thick gradient sliders, springy switches, a glowing lock clock. JetBrainsMono Nerd Font. | Wallpaper accent, large radii, the Glow effect, `shadowRoom`, overshooting motion curves. | Backdrop, Button, Divider, Field, Fill, Glow, Highlight, Slider, Surface, Switch |
 
@@ -105,7 +105,9 @@ The glass looks (Aero, Liquid Glass, Modern) only draw tint, rims and shadows;
 the frosting behind panels comes from Hyprland's layer blur. The shell's layers
 use the namespaces `shell-bar`, `shell-panel`, `shell-notification`,
 `shell-osd` and `shell-polkit`. Pixels at or below `ignore_alpha` are not
-blurred, so themes keep panel alpha above it and shadows below it. A rule like
+blurred, so themes keep panel alpha above it and shadows below it. Liquid Glass keeps
+its clear glass at alpha 0.42-0.44, so use `ignore_alpha = 0.2` with it
+(its shadows stay below that). A rule like
 this (Lua config) enables it; a larger blur `size` and more `passes` in
 `decoration.blur` give the softer, Liquid-Glass-like frosting (that setting is
 global, so it also affects windows):
@@ -214,7 +216,7 @@ Each generic component lives in `shell/<Name>.qml`; its look is loaded from
 | Component | Properties a look reads | Base look | Aero look |
 | --- | --- | --- | --- |
 | `Surface` | `radius`, `color`, `shadow`, `headerHeight` | Flat body with a `borderLight` edge. | Tinted glass with a sheen band, light inner edge and drop shadow. |
-| `Button` | `active`, `framed`, `radius`, `tint`, `hovered`, `pressed`, `lit`, `level` | Faint fill when framed, tint wash on hover / active. | Glossy glass face with a hover glow. |
+| `Button` | `active`, `framed`, `radius`, `tint`, `hovered`, `pressed`, `lit`, `level`, `restyleContent` | Faint fill when framed, tint wash on hover / active. | Glossy glass face with a hover glow. |
 | `Highlight` | `tint`, `level`, `bordered`, `radius` | Even tint wash, optional tinted edge. | Tint rising from the bottom edge. |
 | `Switch` | `checked`, `hovered`, `pressed` | Pill track filled with `highlight` when on, round thumb. | Glossy track and thumb. |
 | `Slider` | `value`, `tone`, `interactive`, `hovered`, `pressed` | Inset track, solid fill colored by `tone`. | Glossy progress bar (green / amber / red / accent) with a round thumb. |
@@ -224,10 +226,12 @@ Each generic component lives in `shell/<Name>.qml`; its look is loaded from
 | `Backdrop` | `source`, `role` (`lock`, `login`) | Wallpaper (or `surface`) under `scrim`. | Blurred, darkened wallpaper under a vertical dim; gradient fallback on the login screen. |
 | `Divider` | `strong` | `divider` / `dividerStrong` line. | (base) |
 | `Glow` (effect) | none; a `layer.effect` for the lock / login clock | None (no effect). | Soft accent halo. |
+| `ActiveContent` (effect) | none; a `layer.effect` over an active Button's content (skipped when `restyleContent` is false, e.g. app icons) | None (content unchanged). | (base); Liquid Glass turns it dark gray on the solid white face. |
 
 `Frame` (mat Surface plus clipped picture), `Fill` and `Backdrop` are used by
 the lock screen, login screen, bar and media panel; `Glow` is applied with
-`Theme.effect("Glow")` and is skipped when the theme does not provide it.
+`Theme.effect("Glow")` and `ActiveContent` with `Theme.effect("ActiveContent")`;
+each is skipped when the theme does not provide it.
 
 ## Settings
 

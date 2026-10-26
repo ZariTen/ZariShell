@@ -206,6 +206,7 @@ Scope {
                             implicitWidth: Theme.px(38)
                             implicitHeight: Theme.px(30)
                             active: modelData.activated || Hyprland.activeToplevel === modelData
+                            restyleContent: false
                             onClicked: {
                                 if (windowButton.modelData.wayland) {
                                     windowButton.modelData.wayland.activate();
