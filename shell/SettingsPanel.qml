@@ -61,10 +61,12 @@ Scope {
     }
 
     function themeSourceLabel(themeEntry) {
-        var sourceLabel = themeEntry.source === "packaged" ? "built-in" : themeEntry.source;
+        var labelParts = [themeEntry.source === "packaged" ? "built-in" : themeEntry.source];
         if (themeEntry.componentsCount > 0)
-            return sourceLabel + " / " + themeEntry.componentsCount + " components";
-        return sourceLabel;
+            labelParts.push(themeEntry.componentsCount + " components");
+        if (Theme.followsAccent(themeEntry.spec))
+            labelParts.push("accent color");
+        return labelParts.join(" / ");
     }
 
     onOpenChanged: if (open) Theme.scan()

@@ -234,6 +234,28 @@ Singleton {
         return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
     }
 
+    // Whether a theme.json's colors follow the accent setting: its
+    // "accentColor" flag when set, else true when a color is "accent" or a
+    // hue tone, or when an accent-based token is left at its default.
+    function followsAccent(themeSpec) {
+        if (!themeSpec)
+            return true;
+        if (typeof themeSpec.accentColor === "boolean")
+            return themeSpec.accentColor;
+        var colorSection = themeSpec.colors !== null && typeof themeSpec.colors === "object" ? themeSpec.colors : ({});
+        var accentTokens = ["accent", "highlight", "primary", "primaryContainer", "buttonDefault"];
+        for (var i = 0; i < accentTokens.length; i++) {
+            if (colorSection[accentTokens[i]] === undefined)
+                return true;
+        }
+        for (var key in colorSection) {
+            var rawValue = colorSection[key];
+            if (rawValue === "accent" || (rawValue !== null && typeof rawValue === "object" && !Array.isArray(rawValue)))
+                return true;
+        }
+        return false;
+    }
+
     // Layout size (px at scale 1) at the current UI scale.
     function px(pixels) {
         return Math.round(pixels * uiScale);

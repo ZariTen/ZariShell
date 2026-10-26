@@ -102,6 +102,7 @@ install it and set the `font` setting to use it.
 | `name` | `""` | Display name. |
 | `description` | `""` | Short summary shown in the theme picker. |
 | `accent` | `"#7a9cc6"` | Accent seed: a color, or `"wallpaper"` to take the hue from the current wallpaper. |
+| `accentColor` | derived | Whether the theme follows the accent color setting; the theme picker marks such themes with "accent color". When left out it is true if a color is `"accent"` or an `{ "h", "s", "l" }` tone, or if `accent`, `highlight`, `primary`, `primaryContainer` or `buttonDefault` is left at its accent-based default. Set it to `false` when the theme's components ignore those colors. |
 | `components` | `[]` | Component looks / effects provided in `components/`. |
 | `barStyle` | `"full"` | Taskbar layout: `"full"` (an edge-to-edge strip) or `"pills"` (one floating pill per group: workspaces, media, notification area). The `barStyle` setting overrides it. |
 
