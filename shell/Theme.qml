@@ -170,9 +170,10 @@ Singleton {
     readonly property bool wallpaperAccent: accentMode === "wallpaper"
     readonly property color accentSeed: wallpaperAccent ? tone(hue, 0.6, 0.6) : accentMode
 
-    readonly property real wallpaperHue: {
+    // Hue of the most vivid wallpaper color, or -1 when none has a hue.
+    readonly property real sampledWallpaperHue: {
         var bestScore = -1;
-        var selectedHue = 0.62;
+        var selectedHue = -1;
         var palette = quantizer.colors;
         for (var i = 0; i < palette.length; i++) {
             var sampleColor = palette[i];
@@ -184,8 +185,21 @@ Singleton {
         }
         return selectedHue;
     }
+    readonly property real wallpaperHue: sampledWallpaperHue >= 0 ? sampledWallpaperHue : 0.62
     readonly property color fixedSeed: wallpaperAccent ? "#000000" : accentMode
-    readonly property real hue: wallpaperAccent ? wallpaperHue : Math.max(0, fixedSeed.hslHue)
+    // A user accent whose RGB channels spread less than this (chroma, 0..1,
+    // about 8/255) is a gray, white or black: its hue is noise, so hue tones
+    // follow the wallpaper hue instead, else the theme's own accent hue.
+    readonly property real grayAccentChroma: 0.03
+    readonly property bool grayUserAccent: userAccentOverride !== "" && !wallpaperAccent && fixedSeed.hsvSaturation * fixedSeed.hsvValue < grayAccentChroma
+    readonly property real themeAccentHue: themeAccent === "wallpaper" ? wallpaperHue : Math.max(0, Qt.lighter(themeAccent, 1).hslHue)
+    readonly property real hue: {
+        if (wallpaperAccent)
+            return wallpaperHue;
+        if (!grayUserAccent)
+            return Math.max(0, fixedSeed.hslHue);
+        return sampledWallpaperHue >= 0 ? sampledWallpaperHue : themeAccentHue;
+    }
 
     // -- Public API helpers -------------------------------------------------
     // URL of the look for a generic component: the theme's override when the
@@ -643,7 +657,7 @@ Singleton {
 
     ColorQuantizer {
         id: quantizer
-        source: root.wallpaperAccent ? root.fileUrl(Wallpaper.path) : ""
+        source: root.wallpaperAccent || root.grayUserAccent ? root.fileUrl(Wallpaper.path) : ""
         depth: 3
         rescaleSize: 96
     }
