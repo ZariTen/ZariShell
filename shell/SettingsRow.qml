@@ -73,6 +73,23 @@ Item {
         fontListOpen = false;
     }
 
+    // Collapse the font list and clear its search when the row is hidden
+    // or the settings panel closes, so it starts closed next time.
+    function closeFontList() {
+        fontListOpen = false;
+        filterInput.text = "";
+    }
+
+    onVisibleChanged: if (!visible) closeFontList()
+
+    Connections {
+        target: ShellState
+        function onPanelChanged() {
+            if (ShellState.panel !== "settings")
+                row.closeFontList();
+        }
+    }
+
     // -- Visual tree --------------------------------------------------------
     Surface {
         anchors.fill: parent
