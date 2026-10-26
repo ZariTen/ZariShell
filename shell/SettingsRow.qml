@@ -14,8 +14,28 @@ Item {
     readonly property var currentValue: Settings.get(modelData.key, modelData.def)
     readonly property real displayedSliderValue: slider.pendingValue >= 0 ? slider.pendingValue : Number(currentValue)
 
+    // Font picker (kind "font"): a searchable list of the installed families
+    // that opens under the row. The families come from Qt when it opens.
+    property bool fontListOpen: false
+    property string fontFilter: ""
+    readonly property string savedFont: modelData.kind === "font" ? Settings.get(modelData.key, "") : ""
+    readonly property var installedFonts: fontListOpen ? uniqueSorted(Qt.fontFamilies()) : []
+    readonly property bool savedFontMissing: savedFont !== "" && !Qt.fontFamilies().some(family => family.toLowerCase() === savedFont.toLowerCase())
+    readonly property var fontChoices: {
+        if (!fontListOpen)
+            return [];
+        var needle = fontFilter.trim().toLowerCase();
+        var families = savedFontMissing ? [savedFont].concat(installedFonts) : installedFonts;
+        var choices = needle === "" ? [{ family: "", label: Theme.themeFont + " (theme)" }] : [];
+        families.forEach(family => {
+            if (needle === "" || family.toLowerCase().indexOf(needle) >= 0)
+                choices.push({ family: family, label: family });
+        });
+        return choices;
+    }
+
     Layout.fillWidth: true
-    implicitHeight: Theme.px(40)
+    implicitHeight: Theme.px(40) + (fontListOpen ? fontPicker.height : 0)
 
     // -- Helper functions ---------------------------------------------------
     function formatValue(rowSpec, numericValue) {
@@ -31,6 +51,28 @@ Item {
         return Math.round(Math.max(rowSpec.min, Math.min(rowSpec.max, stepped)) * 100) / 100;
     }
 
+    function uniqueSorted(names) {
+        var seen = {};
+        var unique = [];
+        names.forEach(name => {
+            var trimmed = String(name).trim();
+            if (trimmed !== "" && !seen[trimmed.toLowerCase()]) {
+                seen[trimmed.toLowerCase()] = true;
+                unique.push(trimmed);
+            }
+        });
+        return unique.sort((first, second) => first.localeCompare(second));
+    }
+
+    // An empty family means the theme's font (the key is removed).
+    function pickFont(family) {
+        if (family === "")
+            Settings.reset(modelData.key);
+        else
+            Settings.set(modelData.key, family);
+        fontListOpen = false;
+    }
+
     // -- Visual tree --------------------------------------------------------
     Surface {
         anchors.fill: parent
@@ -40,7 +82,11 @@ Item {
     }
 
     RowLayout {
-        anchors.fill: parent
+        id: controls
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        height: Theme.px(40)
         anchors.leftMargin: Theme.spacingM
         anchors.rightMargin: Theme.spacingXs
         spacing: Theme.spacingM
@@ -97,38 +143,39 @@ Item {
             onToggled: Settings.set(row.modelData.key, !checked)
         }
 
-        // Font family
-        Field {
+        // Font family: shows the current family; opens the list below
+        Button {
             visible: row.modelData.kind === "font"
             Layout.fillWidth: true
             implicitHeight: Theme.px(30)
-            input: fontInput
-            TextInput {
-                id: fontInput
+            framed: true
+            active: row.fontListOpen
+            onClicked: row.fontListOpen = !row.fontListOpen
+
+            RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: Theme.spacingS
                 anchors.rightMargin: Theme.spacingS
-                verticalAlignment: TextInput.AlignVCenter
-                color: Theme.textSurface
-                selectionColor: Theme.primary
-                selectedTextColor: Theme.textPrimary
-                font.family: Theme.font
-                font.pixelSize: Theme.fontBody
-                clip: true
-                text: row.modelData.kind === "font" ? Settings.get("font", "") : ""
-                onAccepted: Settings.set("font", text.trim())
-                onEditingFinished: Settings.set("font", text.trim())
+                spacing: Theme.spacingS
                 StyledText {
-                    anchors.fill: parent
-                    visible: fontInput.text === ""
-                    text: Theme.themeFont + " (theme)"
+                    Layout.fillWidth: true
+                    text: row.savedFont !== "" ? row.savedFont : Theme.themeFont + " (theme)"
+                    color: row.savedFont !== "" ? Theme.textSurface : Theme.textSurfaceVariant
+                    font.italic: row.savedFont === ""
+                }
+                StyledText {
+                    visible: row.savedFontMissing
+                    text: "not installed"
+                    color: Theme.error
+                    font.pixelSize: Theme.fontSmall
+                }
+                MdIcon {
+                    codepoint: row.fontListOpen ? 0xF0143 : 0xF0140 // md-chevron_up / md-chevron_down
                     color: Theme.textSurfaceVariant
-                    font.italic: true
                 }
             }
         }
 
-        // Accent: theme / wallpaper / custom color
         RowLayout {
             visible: row.modelData.kind === "accent"
             Layout.fillWidth: true
@@ -234,6 +281,111 @@ Item {
             MdIcon {
                 anchors.centerIn: parent
                 codepoint: 0xF099B // md-restore
+                color: Theme.textSurfaceVariant
+            }
+        }
+    }
+
+    // Font list: search field and the matching families, each drawn in its
+    // own font. The current one is checked; a saved family that is not
+    // installed is listed first and marked.
+    ColumnLayout {
+        id: fontPicker
+        visible: row.fontListOpen
+        anchors.top: controls.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: Theme.spacingM
+        anchors.rightMargin: Theme.spacingM
+        height: Theme.px(260)
+        spacing: Theme.spacingXs
+
+        onVisibleChanged: {
+            if (!visible)
+                return;
+            filterInput.text = "";
+            filterInput.forceActiveFocus();
+            var selectedIndex = row.fontChoices.findIndex(choice => choice.family.toLowerCase() === row.savedFont.toLowerCase());
+            fontList.positionViewAtIndex(Math.max(0, selectedIndex), ListView.Center);
+        }
+
+        Field {
+            Layout.fillWidth: true
+            implicitHeight: Theme.px(30)
+            input: filterInput
+            TextInput {
+                id: filterInput
+                anchors.fill: parent
+                anchors.leftMargin: Theme.spacingS
+                anchors.rightMargin: Theme.spacingS
+                verticalAlignment: TextInput.AlignVCenter
+                color: Theme.textSurface
+                selectionColor: Theme.primary
+                selectedTextColor: Theme.textPrimary
+                font.family: Theme.font
+                font.pixelSize: Theme.fontBody
+                clip: true
+                onTextChanged: row.fontFilter = text
+                onAccepted: if (row.fontChoices.length > 0) row.pickFont(row.fontChoices[0].family)
+                Keys.onEscapePressed: row.fontListOpen = false
+                StyledText {
+                    anchors.fill: parent
+                    visible: filterInput.text === ""
+                    text: "Search " + row.installedFonts.length + " installed fonts"
+                    color: Theme.textSurfaceVariant
+                    font.italic: true
+                }
+            }
+        }
+
+        ListView {
+            id: fontList
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            Layout.bottomMargin: Theme.spacingS
+            clip: true
+            boundsBehavior: Flickable.StopAtBounds
+            model: row.fontChoices
+
+            delegate: Button {
+                id: fontChoice
+                required property var modelData
+                readonly property bool selected: modelData.family.toLowerCase() === row.savedFont.toLowerCase()
+                width: ListView.view.width
+                implicitHeight: Theme.px(32)
+                active: selected
+                passWheel: true
+                onClicked: row.pickFont(modelData.family)
+
+                RowLayout {
+                    anchors.fill: parent
+                    anchors.leftMargin: Theme.spacingS
+                    anchors.rightMargin: Theme.spacingS
+                    spacing: Theme.spacingS
+                    StyledText {
+                        Layout.fillWidth: true
+                        text: fontChoice.modelData.label
+                        font.family: fontChoice.modelData.family !== "" ? fontChoice.modelData.family : Theme.themeFont
+                        font.italic: fontChoice.modelData.family === ""
+                    }
+                    StyledText {
+                        visible: fontChoice.selected && row.savedFontMissing
+                        text: "not installed"
+                        color: Theme.error
+                        font.pixelSize: Theme.fontSmall
+                    }
+                    MdIcon {
+                        opacity: fontChoice.selected ? 1 : 0
+                        codepoint: 0xF012C // md-check
+                        color: Theme.accent
+                    }
+                }
+            }
+
+            StyledText {
+                anchors.centerIn: parent
+                visible: fontList.count === 0
+                text: "No installed font matches"
                 color: Theme.textSurfaceVariant
             }
         }

@@ -240,7 +240,7 @@ Nix does not manage this file.
 | `barOpacity` | theme | Bar background opacity, 0..1. |
 | `panelOpacity` | theme | Panel / dialog background opacity, 0..1. |
 | `accent` | theme | `"wallpaper"` or `"#rrggbb"`. |
-| `font` | theme | UI font family. |
+| `font` | theme | UI font family (Settings > Text lists the installed fonts). |
 | `fontSize` | theme (13) | Base font size in px; the other sizes follow. |
 | `iconSize` | 16 | Base icon size in px; the other icons follow. |
 | `animationSpeed` | 1 | Animation speed factor (2 = twice as fast). |
