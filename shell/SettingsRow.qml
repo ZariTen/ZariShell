@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import QtQuick.Layouts
+import Quickshell.Io
 
 // One row of the settings panel: label, control, value and a reset button.
 // `modelData` is a row spec from SettingsPanel.qml.
@@ -34,8 +35,15 @@ Item {
         return choices;
     }
 
+    // Accent picker (kind "accent"): a saturation/brightness square and a
+    // hue bar under the row, opened from the swatch. Picks apply live.
+    property bool colorPickerOpen: false
+    property real pickHue: 0
+    property real pickSaturation: 0
+    property real pickValue: 0
+
     Layout.fillWidth: true
-    implicitHeight: Theme.px(40) + (fontListOpen ? fontPicker.height : 0)
+    implicitHeight: Theme.px(40) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
 
     // -- Helper functions ---------------------------------------------------
     function formatValue(rowSpec, numericValue) {
@@ -80,13 +88,57 @@ Item {
         filterInput.text = "";
     }
 
-    onVisibleChanged: if (!visible) closeFontList()
+    // Start from the color in use, then save every pick as #rrggbb.
+    function openColorPicker() {
+        var seed = Theme.accentSeed;
+        pickHue = Math.max(0, seed.hsvHue);
+        pickSaturation = seed.hsvSaturation;
+        pickValue = seed.hsvValue;
+        colorPickerOpen = true;
+    }
+
+    function pickColor(hue, saturation, value) {
+        pickHue = Math.max(0, Math.min(1, hue));
+        pickSaturation = Math.max(0, Math.min(1, saturation));
+        pickValue = Math.max(0, Math.min(1, value));
+        Settings.set("accent", Qt.hsva(pickHue, pickSaturation, pickValue, 1).toString());
+    }
+
+    onVisibleChanged: {
+        if (!visible) {
+            closeFontList();
+            colorPickerOpen = false;
+        }
+    }
 
     Connections {
         target: ShellState
         function onPanelChanged() {
-            if (ShellState.panel !== "settings")
+            if (ShellState.panel !== "settings") {
                 row.closeFontList();
+                row.colorPickerOpen = false;
+            }
+        }
+    }
+
+    // Eyedropper: hide the panel, let hyprpicker pick from the screen, then
+    // reopen the panel. An empty result (Escape) changes nothing.
+    // The delay lets the panel fade out first so it is not in the frozen frame.
+    Timer {
+        id: eyedropperDelay
+        interval: Theme.durMedium + 100
+        onTriggered: screenColorPicker.running = true
+    }
+    Process {
+        id: screenColorPicker
+        command: ["hyprpicker", "--format=hex", "--lowercase-hex", "--no-fancy", "--quiet"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var pickedHex = text.trim();
+                if (/^#[0-9a-f]{6}$/.test(pickedHex))
+                    Settings.set("accent", pickedHex);
+                ShellState.panel = "settings";
+            }
         }
     }
 
@@ -250,13 +302,18 @@ Item {
                     }
                 }
             }
-            Rectangle {
+            Button {
                 implicitWidth: Theme.px(22)
                 implicitHeight: Theme.px(22)
                 radius: Theme.radiusFull
-                color: Theme.accent
-                border.width: 1
-                border.color: Theme.border
+                onClicked: row.colorPickerOpen ? row.colorPickerOpen = false : row.openColorPicker()
+                Rectangle {
+                    anchors.fill: parent
+                    radius: Theme.radiusFull
+                    color: Theme.accent
+                    border.width: 1
+                    border.color: Theme.border
+                }
             }
         }
 
@@ -404,6 +461,107 @@ Item {
                 visible: fontList.count === 0
                 text: "No installed font matches"
                 color: Theme.textSurfaceVariant
+            }
+        }
+    }
+
+    // Accent picker: saturation runs left to right and brightness bottom to
+    // top over the current hue; the bar below chooses the hue.
+    ColumnLayout {
+        id: colorPicker
+        visible: row.colorPickerOpen
+        anchors.top: controls.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: Theme.spacingM
+        anchors.rightMargin: Theme.spacingM
+        height: Theme.px(150)
+        spacing: Theme.spacingS
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            radius: Theme.radius
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0; color: "white" }
+                GradientStop { position: 1; color: Qt.hsva(row.pickHue, 1, 1, 1) }
+            }
+            Rectangle {
+                anchors.fill: parent
+                radius: parent.radius
+                gradient: Gradient {
+                    GradientStop { position: 0; color: "transparent" }
+                    GradientStop { position: 1; color: "black" }
+                }
+            }
+            Rectangle {
+                x: row.pickSaturation * parent.width - width / 2
+                y: (1 - row.pickValue) * parent.height - height / 2
+                width: Theme.px(14)
+                height: width
+                radius: Theme.radiusFull
+                color: Qt.hsva(row.pickHue, row.pickSaturation, row.pickValue, 1)
+                border.width: 2
+                border.color: "white"
+            }
+            MouseArea {
+                anchors.fill: parent
+                preventStealing: true
+                onPressed: mouse => row.pickColor(row.pickHue, mouse.x / width, 1 - mouse.y / height)
+                onPositionChanged: mouse => row.pickColor(row.pickHue, mouse.x / width, 1 - mouse.y / height)
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingS
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: Theme.px(14)
+                radius: Theme.radiusFull
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0 / 6; color: Qt.hsva(0 / 6, 1, 1, 1) }
+                    GradientStop { position: 1 / 6; color: Qt.hsva(1 / 6, 1, 1, 1) }
+                    GradientStop { position: 2 / 6; color: Qt.hsva(2 / 6, 1, 1, 1) }
+                    GradientStop { position: 3 / 6; color: Qt.hsva(3 / 6, 1, 1, 1) }
+                    GradientStop { position: 4 / 6; color: Qt.hsva(4 / 6, 1, 1, 1) }
+                    GradientStop { position: 5 / 6; color: Qt.hsva(5 / 6, 1, 1, 1) }
+                    GradientStop { position: 6 / 6; color: Qt.hsva(0, 1, 1, 1) }
+                }
+                Rectangle {
+                    x: row.pickHue * parent.width - width / 2
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Theme.px(14)
+                    height: width
+                    radius: Theme.radiusFull
+                    color: Qt.hsva(row.pickHue, 1, 1, 1)
+                    border.width: 2
+                    border.color: "white"
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    preventStealing: true
+                    onPressed: mouse => row.pickColor(mouse.x / width, row.pickSaturation, row.pickValue)
+                    onPositionChanged: mouse => row.pickColor(mouse.x / width, row.pickSaturation, row.pickValue)
+                }
+            }
+
+            // Eyedropper: pick the accent from anywhere on screen.
+            Button {
+                implicitWidth: Theme.px(30)
+                implicitHeight: Theme.px(30)
+                radius: Theme.radiusFull
+                onClicked: {
+                    ShellState.close();
+                    eyedropperDelay.start();
+                }
+                MdIcon {
+                    anchors.centerIn: parent
+                    codepoint: 0xF020A // md-eyedropper
+                    color: Theme.textSurfaceVariant
+                }
             }
         }
     }
