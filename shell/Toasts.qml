@@ -89,8 +89,9 @@ Scope {
                             onEntered: expireTimer.stop()
                             onExited: if (!toast.critical) expireTimer.restart()
                             onClicked: {
-                                if (toast.modelData.actions.length > 0)
-                                    toast.modelData.actions[0].invoke();
+                                var action = Notifs.clickAction(toast.modelData);
+                                if (action)
+                                    action.invoke();
                                 else
                                     Notifs.dismiss(toast.modelData);
                             }
@@ -159,11 +160,12 @@ Scope {
                                 Flow {
                                     Layout.fillWidth: true
                                     Layout.topMargin: Theme.spacingS
-                                    visible: toast.modelData.actions.length > 0
+                                    visible: buttons.count > 0
                                     spacing: Theme.spacingS
 
                                     Repeater {
-                                        model: toast.modelData.actions
+                                        id: buttons
+                                        model: Notifs.buttonActions(toast.modelData)
                                         delegate: ActionButton {
                                             required property var modelData
                                             text: modelData.text

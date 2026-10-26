@@ -87,6 +87,18 @@ Singleton {
         return rawAppName;
     }
 
+    // Actions that get a button. The spec's "default" action is invoked by
+    // clicking the notification itself, and an empty label would be a blank button.
+    function buttonActions(notification) {
+        return notification.actions.filter(action => action.identifier !== "default" && action.text.trim() !== "");
+    }
+
+    // What clicking the notification invokes: its "default" action, else the first one.
+    function clickAction(notification) {
+        var actions = notification.actions;
+        return actions.find(action => action.identifier === "default") ?? actions[0] ?? null;
+    }
+
     function iconFor(notification) {
         return imageFor(notification) || appIconFor(notification);
     }

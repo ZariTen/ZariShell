@@ -169,8 +169,9 @@ Scope {
                             HoverLayer {
                                 radius: entry.radius
                                 onClicked: {
-                                    if (entry.modelData.actions.length > 0)
-                                        entry.modelData.actions[0].invoke();
+                                    var action = Notifs.clickAction(entry.modelData);
+                                    if (action)
+                                        action.invoke();
                                 }
                             }
 
