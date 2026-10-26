@@ -2,9 +2,9 @@
 
 A themeable desktop shell for Hyprland built with [Quickshell](https://quickshell.org), plus a matching
 login screen. The shell code only draws neutral, flat parts; every look comes
-from a theme. Five themes are bundled: Aero (tinted glass, the default), Base
-(flat neutral slate), Ink (black ink on paper), Metro (Windows 8 tiles) and
-Modern (a Noctalia-style rice); see [Packaged themes](#packaged-themes).
+from a theme. Six themes are bundled: Aero (tinted glass, the default), Base
+(flat neutral slate), Ink (black ink on paper), Liquid Glass (Apple-style clear
+glass), Metro (Windows 8 tiles) and Modern (a Noctalia-style rice); see [Packaged themes](#packaged-themes).
 
 ## Install
 
@@ -45,7 +45,7 @@ themes/<name>/
 
 Themes are discovered from `${XDG_CONFIG_HOME:-~/.config}/zarishell/themes/<name>/theme.json`
 (user themes, which take precedence on name collisions) and the packaged
-`themes/<name>/theme.json` (`aero`, `base`, `ink`, `metro` and `modern`). The active theme is
+`themes/<name>/theme.json` (`aero`, `base`, `ink`, `liquid`, `metro` and `modern`). The active theme is
 `~/.config/zarishell/current` (a symlink to the active theme folder) when it
 contains a `theme.json`, otherwise the theme named by `$ZARISHELL_THEME`
 (default `aero`).
@@ -74,7 +74,8 @@ Colors are `"#rrggbb"`, `"#aarrggbb"`, `"transparent"`, `[r, g, b, a]` (0..1),
 `"accent"` or `{ "h", "s", "l", "a" }` (a tone whose hue is offset by `h` from
 the accent hue). A theme may add its own extra color names and read them in its
 components with `Theme.color("name", fallback)` (Aero uses `sheenTop`,
-`sheenMid` and `badgeTop`; Ink `paper`; Metro `tileHover` and `startScreen`;
+`sheenMid` and `badgeTop`; Ink `paper`; Liquid `glassFill`, `rimLight`, `rimShade`,
+`innerGlow`, `sheenTop`, `sheenBottom` and `glassShadow`; Metro `tileHover` and `startScreen`;
 Modern `glow` and `sheen`). Extra metrics work the same way with
 `Theme.metric("name", fallback)` (Modern uses `floatInset`). A theme folder may
 also carry its own assets next to `theme.json`; a look loads them with
@@ -87,6 +88,7 @@ also carry its own assets next to `theme.json`; a look loads them with
 | `aero` | Windows 7 glass: translucent tinted panels, glossy sheen, soft glow. | Wallpaper accent, translucency, gloss. | Backdrop, Button, Field, Fill, Frame, Glow, Highlight, Slider, Surface, Switch |
 | `base` | Flat neutral slate (no `components`). | The fallback looks in `shell/base/`. | none |
 | `ink` | Black ink on warm paper: paper grain, hairline rules, raised sheets printed slightly out of register, ink underlines on buttons, brush-stroke dividers, ruler sliders with a diamond thumb, square ink switches, the wallpaper as a faded monochrome print on the lock / login screen. Serif type (Noto Serif). | A light theme (every text-on-color token checked for dark text), custom typography, a theme asset. | Backdrop, Button, Divider, Field, Fill, Frame, Glow, Highlight, Slider, Surface, Switch |
+| `liquid` | Apple Liquid Glass: clear, lightly tinted capsules and circles with a bright specular rim (strongest top-left, again bottom-right), light gathered inside the edges, a soft drop shadow, white glyphs with a text shadow, capsule sliders and switches whose thumb stretches when pressed, springy motion, a pill bar. Noto Sans. | Wallpaper accent, alpha kept just above the compositor's blur threshold, a theme-private helper (`GlassEdge.qml`, not listed in `components`, used by its sibling looks). | Backdrop, Button, Field, Fill, Frame, Glow, Highlight, Slider, Surface, Switch |
 | `metro` | Windows 8: opaque flat tiles, square corners, flyouts attached to the bar, a cobalt accent band on panels, light-weight Noto Sans for large text, rectangular switches, thin sliders, buttons that shrink when pressed. | Metrics (all radii and the gap 0), motion (fast decelerating slide / scale), one accent on a solid palette. | Backdrop, Button, Field, Highlight, Slider, Surface, Switch |
 | `modern` | A Noctalia-style Hyprland rice: dark rounded islands with soft shadows, a floating pill bar, a pastel accent taken from the wallpaper, glowing orbs, thick gradient sliders, springy switches, a glowing lock clock. JetBrainsMono Nerd Font. | Wallpaper accent, large radii, the Glow effect, `shadowRoom`, overshooting motion curves. | Backdrop, Button, Divider, Field, Fill, Glow, Highlight, Slider, Surface, Switch |
 
@@ -94,6 +96,24 @@ Ink and Metro use fonts from `noto-fonts`; Modern uses
 `nerd-fonts.jetbrains-mono` (already needed for the icons). Metro looks closest
 to Windows 8 with Segoe UI (not packaged; Selawik is a free alternative):
 install it and set the `font` setting to use it.
+Liquid Glass uses Noto Sans; set the `font` setting to Inter or SF Pro if
+installed for a closer match.
+
+### Compositor blur
+
+The glass looks (Aero, Liquid Glass, Modern) only draw tint, rims and shadows;
+the frosting behind panels comes from Hyprland's layer blur. The shell's layers
+use the namespaces `shell-bar`, `shell-panel`, `shell-notification`,
+`shell-osd` and `shell-polkit`. Pixels at or below `ignore_alpha` are not
+blurred, so themes keep panel alpha above it and shadows below it. A rule like
+this (Lua config) enables it; a larger blur `size` and more `passes` in
+`decoration.blur` give the softer, Liquid-Glass-like frosting (that setting is
+global, so it also affects windows):
+
+```lua
+hl.layer_rule({ name = "shell", match = { namespace = "^shell-(bar|panel|notification|osd|polkit)$" },
+    no_anim = true, ignore_alpha = 0.5, blur = true, blur_popups = true })
+```
 
 ### Top-level keys
 
