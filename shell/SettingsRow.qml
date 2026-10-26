@@ -41,6 +41,10 @@ Item {
     property real pickHue: 0
     property real pickSaturation: 0
     property real pickValue: 0
+    readonly property real pickMarkerRadius: Theme.px(7)
+    // The accent in use while the picker is open; any change made outside
+    // the picker (hex field, Theme / Wallpaper, reset) reloads the markers.
+    readonly property string pickerSeed: colorPickerOpen ? Theme.accentSeed.toString() : ""
 
     Layout.fillWidth: true
     implicitHeight: Theme.px(40) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
@@ -88,21 +92,34 @@ Item {
         filterInput.text = "";
     }
 
-    // Start from the color in use, then save every pick as #rrggbb.
-    function openColorPicker() {
+    // Load the markers from the accent in use, unless it is the picker's own
+    // last pick: reading that back would round the markers, and a gray or
+    // black (no hue) would reset the hue to red.
+    function loadPickerFromAccent() {
         var seed = Theme.accentSeed;
-        pickHue = Math.max(0, seed.hsvHue);
+        if (seed.toString() === Qt.hsva(pickHue, pickSaturation, pickValue, 1).toString())
+            return;
+        if (seed.hsvHue >= 0)
+            pickHue = seed.hsvHue;
         pickSaturation = seed.hsvSaturation;
         pickValue = seed.hsvValue;
-        colorPickerOpen = true;
     }
 
+    // Position on a picker track as 0..1. Both ends are inset by the marker
+    // radius, so the marker stays inside and the extremes are easy to hit.
+    function trackRatio(position, length) {
+        return Math.max(0, Math.min(1, (position - pickMarkerRadius) / (length - 2 * pickMarkerRadius)));
+    }
+
+    // Save every pick as #rrggbb.
     function pickColor(hue, saturation, value) {
         pickHue = Math.max(0, Math.min(1, hue));
         pickSaturation = Math.max(0, Math.min(1, saturation));
         pickValue = Math.max(0, Math.min(1, value));
         Settings.set("accent", Qt.hsva(pickHue, pickSaturation, pickValue, 1).toString());
     }
+
+    onPickerSeedChanged: if (colorPickerOpen) loadPickerFromAccent()
 
     onVisibleChanged: {
         if (!visible) {
@@ -306,11 +323,13 @@ Item {
                 implicitWidth: Theme.px(22)
                 implicitHeight: Theme.px(22)
                 radius: Theme.radiusFull
-                onClicked: row.colorPickerOpen ? row.colorPickerOpen = false : row.openColorPicker()
+                onClicked: row.colorPickerOpen = !row.colorPickerOpen
+                // The picked accent itself; a theme may derive its accent
+                // tokens from it (aero and modern only use its hue).
                 Rectangle {
                     anchors.fill: parent
                     radius: Theme.radiusFull
-                    color: Theme.accent
+                    color: Theme.accentSeed
                     border.width: 1
                     border.color: Theme.border
                 }
@@ -496,9 +515,9 @@ Item {
                 }
             }
             Rectangle {
-                x: row.pickSaturation * parent.width - width / 2
-                y: (1 - row.pickValue) * parent.height - height / 2
-                width: Theme.px(14)
+                x: row.pickSaturation * (parent.width - width)
+                y: (1 - row.pickValue) * (parent.height - height)
+                width: row.pickMarkerRadius * 2
                 height: width
                 radius: Theme.radiusFull
                 color: Qt.hsva(row.pickHue, row.pickSaturation, row.pickValue, 1)
@@ -508,8 +527,8 @@ Item {
             MouseArea {
                 anchors.fill: parent
                 preventStealing: true
-                onPressed: mouse => row.pickColor(row.pickHue, mouse.x / width, 1 - mouse.y / height)
-                onPositionChanged: mouse => row.pickColor(row.pickHue, mouse.x / width, 1 - mouse.y / height)
+                onPressed: mouse => row.pickColor(row.pickHue, row.trackRatio(mouse.x, width), 1 - row.trackRatio(mouse.y, height))
+                onPositionChanged: mouse => row.pickColor(row.pickHue, row.trackRatio(mouse.x, width), 1 - row.trackRatio(mouse.y, height))
             }
         }
 
@@ -531,9 +550,9 @@ Item {
                     GradientStop { position: 6 / 6; color: Qt.hsva(0, 1, 1, 1) }
                 }
                 Rectangle {
-                    x: row.pickHue * parent.width - width / 2
+                    x: row.pickHue * (parent.width - width)
                     anchors.verticalCenter: parent.verticalCenter
-                    width: Theme.px(14)
+                    width: row.pickMarkerRadius * 2
                     height: width
                     radius: Theme.radiusFull
                     color: Qt.hsva(row.pickHue, 1, 1, 1)
@@ -543,8 +562,8 @@ Item {
                 MouseArea {
                     anchors.fill: parent
                     preventStealing: true
-                    onPressed: mouse => row.pickColor(mouse.x / width, row.pickSaturation, row.pickValue)
-                    onPositionChanged: mouse => row.pickColor(mouse.x / width, row.pickSaturation, row.pickValue)
+                    onPressed: mouse => row.pickColor(row.trackRatio(mouse.x, width), row.pickSaturation, row.pickValue)
+                    onPositionChanged: mouse => row.pickColor(row.trackRatio(mouse.x, width), row.pickSaturation, row.pickValue)
                 }
             }
 
