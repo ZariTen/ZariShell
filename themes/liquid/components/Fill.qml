@@ -3,8 +3,8 @@ import QtQuick.Effects
 import qs
 
 // Liquid Glass fill: a tinted glass drop, lighter at the top, with the
-// specular rim and a soft shadow. Badges are a plain capsule with a hairline
-// rim. `control` is the generic Fill.
+// specular rim as its only edge (also when bordered) and a soft shadow.
+// Badges are a plain capsule with a fainter rim. `control` is the generic Fill.
 Item {
     id: look
 
@@ -26,10 +26,7 @@ Item {
         gradient: Gradient {
             GradientStop { position: 0.0; color: Qt.lighter(control.color, 1.18) }
             GradientStop { position: 1.0; color: control.color }
-        }
-        border.width: control.bordered ? 1 : 0
-        border.color: Theme.border
-    }
+        }    }
 
     GlassEdge {
         anchors.fill: parent
