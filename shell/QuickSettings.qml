@@ -94,7 +94,8 @@ Scope {
                         if (!wifi.radioOn)
                             return 0xF05AA;
                         if (wifi.activeSsid !== "")
-                            return wifi.signalIcon(wifi.activeSignal);
+                            return ShellState.wifiGlyph(wifi.activeSignal / 100);
+
                         return 0xF05A9;
                     }
                     label: "Wi-Fi"

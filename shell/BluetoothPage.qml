@@ -86,15 +86,6 @@ QsPage {
         return Math.max(0, Math.min(1, device.battery > 1 ? device.battery / 100 : device.battery));
     }
 
-    function batteryGlyph(device) {
-        var decile = Math.floor(batteryLevel(device) * 10);
-        if (decile >= 10)
-            return 0xF0079;
-        if (decile < 1)
-            return 0xF008E;
-        return 0xF007A + decile - 1;
-    }
-
     // -- Header actions and visual tree -------------------------------------
     trailing: [
         Button {
@@ -277,7 +268,7 @@ QsPage {
                     spacing: Theme.px(2)
 
                     MdIcon {
-                        codepoint: page.batteryGlyph(entry.device)
+                        codepoint: ShellState.batteryGlyph(page.batteryLevel(entry.device))
                         font.pixelSize: Theme.iconPx(14)
                         color: page.batteryLevel(entry.device) <= 0.15 ? Theme.error : Theme.textSurfaceVariant
                     }

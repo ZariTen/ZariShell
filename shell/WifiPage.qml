@@ -81,16 +81,6 @@ QsPage {
         return fields;
     }
 
-    function signalIcon(signalPercent) {
-        if (signalPercent < 25)
-            return 0xF091F;
-        if (signalPercent < 50)
-            return 0xF0922;
-        if (signalPercent < 75)
-            return 0xF0925;
-        return 0xF0928;
-    }
-
     function isSaved(ssid) {
         return saved.indexOf(ssid) !== -1;
     }
@@ -393,7 +383,7 @@ QsPage {
 
             QsRow {
                 Layout.fillWidth: true
-                codepoint: page.signalIcon(entry.networkEntry.signal)
+                codepoint: ShellState.wifiGlyph(entry.networkEntry.signal / 100)
                 iconColor: entry.networkEntry.inUse ? Theme.accent : Theme.textSurface
                 title: entry.networkEntry.ssid
                 busy: entry.busy

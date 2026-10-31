@@ -55,14 +55,7 @@ Scope {
             return 0xF05AA; // md-wifi_off
         if (netDevice.type === DeviceType.Wired)
             return 0xF0200; // md-ethernet
-        var signalStrength = wifiNetwork ? wifiNetwork.signalStrength : 1;
-        if (signalStrength < 0.25)
-            return 0xF091F;
-        if (signalStrength < 0.5)
-            return 0xF0922;
-        if (signalStrength < 0.75)
-            return 0xF0925;
-        return 0xF0928;
+        return ShellState.wifiGlyph(wifiNetwork ? wifiNetwork.signalStrength : 1);
     }
 
     // -- Visual tree --------------------------------------------------------
@@ -429,16 +422,7 @@ Scope {
                                 spacing: Theme.px(2)
 
                                 MdIcon {
-                                    codepoint: {
-                                        if (battery.charging)
-                                            return 0xF0084;
-                                        var decile = Math.floor(battery.device.percentage / 10);
-                                        if (decile >= 10)
-                                            return 0xF0079;
-                                        if (decile < 1)
-                                            return 0xF008E;
-                                        return 0xF007A + decile - 1;
-                                    }
+                                    codepoint: battery.charging ? 0xF0084 : ShellState.batteryGlyph(battery.device.percentage / 100)
                                     color: {
                                         if (battery.low)
                                             return Theme.error;

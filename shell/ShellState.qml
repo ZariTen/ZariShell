@@ -61,4 +61,25 @@ QtObject {
             return 0xF0580; // md-volume_medium
         return 0xF057E;     // md-volume_high
     }
+
+    // Wi-Fi strength glyph for a 0..1 signal.
+    function wifiGlyph(signalStrength) {
+        if (signalStrength < 0.25)
+            return 0xF091F;
+        if (signalStrength < 0.5)
+            return 0xF0922;
+        if (signalStrength < 0.75)
+            return 0xF0925;
+        return 0xF0928;
+    }
+
+    // Battery glyph in tenths for a 0..1 charge level.
+    function batteryGlyph(chargeLevel) {
+        var decile = Math.floor(chargeLevel * 10);
+        if (decile >= 10)
+            return 0xF0079;
+        if (decile < 1)
+            return 0xF008E;
+        return 0xF007A + decile - 1;
+    }
 }
