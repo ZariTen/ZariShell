@@ -277,7 +277,7 @@ Item {
     // -- Background objects -------------------------------------------------
     SystemClock {
         id: clock
-        precision: SystemClock.Seconds
+        precision: SystemClock.Minutes
     }
 
     // Real name from passwd (GECOS field).
