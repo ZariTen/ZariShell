@@ -134,7 +134,6 @@ Scope {
                     }
 
                     ListView {
-                        id: list
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         Layout.preferredHeight: contentHeight

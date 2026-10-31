@@ -15,8 +15,6 @@ Scope {
         model: Quickshell.screens
 
         PanelWindow {
-            id: toastWindow
-
             required property var modelData
             readonly property bool showHere: root.live.length > 0
                 && ShellState.panel !== "notifications"

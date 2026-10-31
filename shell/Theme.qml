@@ -29,12 +29,10 @@ Singleton {
     // -- Active theme identity and discovered themes ------------------------
     property var themes: []
 
-    readonly property bool userActive: activeTheme.source !== "packaged"
     readonly property string dir: activeTheme.dir
     readonly property var spec: activeTheme.spec
     readonly property string currentId: activeTheme.id
     readonly property string name: typeof spec.name === "string" && spec.name !== "" ? spec.name : currentId
-    readonly property var overrides: Array.isArray(spec.components) ? spec.components : []
 
     // -- Colors (neutral defaults: flat translucent slate, white text) ------
     readonly property color surface: color("surface", "#24282e")              // desktop behind the wallpaper

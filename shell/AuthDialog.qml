@@ -5,8 +5,6 @@ import Quickshell.Services.Polkit
 import Quickshell.Wayland
 
 Scope {
-    id: root
-
     // -- Visual tree --------------------------------------------------------
     PanelWindow {
         id: window

@@ -99,10 +99,6 @@ Singleton {
         return actions.find(action => action.identifier === "default") ?? actions[0] ?? null;
     }
 
-    function iconFor(notification) {
-        return imageFor(notification) || appIconFor(notification);
-    }
-
     function without(list, targetNotification) {
         return list.filter(item => item !== targetNotification);
     }

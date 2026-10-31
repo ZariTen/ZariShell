@@ -18,7 +18,6 @@ Singleton {
     // [{ vendor, state, name, busy, temp, memUsed, memTotal, freq, maxFreq }]
     // busy 0..1, temp in C, mem in bytes, freq in MHz; -1 = unknown.
     property var gpus: []
-    readonly property bool hasGpu: gpus.length > 0
     property var disks: []        // [{ mount, used, size }]
 
     // -- Internal state -----------------------------------------------------

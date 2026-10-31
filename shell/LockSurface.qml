@@ -25,7 +25,6 @@ Item {
 
     // -- Clock --------------------------------------------------------------
     Column {
-        id: clockBlock
         anchors.horizontalCenter: parent.horizontalCenter
         y: parent.height * 0.12
         spacing: 0

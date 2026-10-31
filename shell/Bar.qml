@@ -393,7 +393,6 @@ Scope {
                     // System: network, volume and battery in one button.
                     // Opens quick settings; scroll adjusts the volume.
                     Button {
-                        id: systemButton
                         implicitWidth: systemRow.implicitWidth + Theme.spacingS * 2
                         implicitHeight: Theme.px(26)
                         active: ShellState.panel === "quicksettings"
@@ -460,7 +459,6 @@ Scope {
 
                     // Notification center (bell + unread badge)
                     Button {
-                        id: bellButton
                         implicitWidth: Theme.px(26)
                         implicitHeight: Theme.px(26)
                         active: ShellState.panel === "notifications"
