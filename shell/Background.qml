@@ -34,7 +34,7 @@ Scope {
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
                 cache: false
-                source: Wallpaper.path === "" ? "" : "file://" + encodeURIComponent(Wallpaper.path).replace(/%2F/g, "/")
+                source: Theme.fileUrl(Wallpaper.path)
             }
         }
     }
