@@ -28,29 +28,13 @@ Scope {
     // Remember the last list panel so contents stay put during the exit animation.
     property string mode: "launcher"
 
-    readonly property int headerGlyph: {
-        if (mode === "clipboard")
-            return 0xF0147;
-        if (mode === "switcher")
-            return 0xF05B6;
-        return 0xF1105;
-    }
-
-    readonly property string headerTitle: {
-        if (mode === "clipboard")
-            return "Clipboard history";
-        if (mode === "switcher")
-            return "Switch window";
-        return "All Programs";
-    }
-
-    readonly property string searchPlaceholder: {
-        if (mode === "clipboard")
-            return "Search clipboard";
-        if (mode === "switcher")
-            return "Search windows";
-        return "Search programs and files";
-    }
+    // Header glyph, header title and search placeholder for each mode.
+    readonly property var modeLabels: ({
+        launcher: { glyph: 0xF1105, title: "All Programs", placeholder: "Search programs and files" },
+        clipboard: { glyph: 0xF0147, title: "Clipboard history", placeholder: "Search clipboard" },
+        switcher: { glyph: 0xF05B6, title: "Switch window", placeholder: "Search windows" }
+    })
+    readonly property var currentLabels: modeLabels[mode] || modeLabels.launcher
 
     readonly property var apps: {
         var allApps = DesktopEntries.applications.values;
@@ -177,9 +161,6 @@ Scope {
         ShellState.close();
     }
 
-    function refreshClipboard() {
-        clipListProcess.running = true;
-    }
 
     // -- Visual tree --------------------------------------------------------
     Variants {
@@ -249,12 +230,12 @@ Scope {
                         spacing: Theme.spacingS
 
                         MdIcon {
-                            codepoint: root.headerGlyph
+                            codepoint: root.currentLabels.glyph
                             color: Theme.accent
                         }
                         StyledText {
                             Layout.fillWidth: true
-                            text: root.headerTitle
+                            text: root.currentLabels.title
                             font.pixelSize: Theme.fontTitle
                             font.weight: Font.DemiBold
                         }
@@ -407,7 +388,7 @@ Scope {
                                     visible: search.text === ""
                                     color: Theme.textSurfaceVariant
                                     font.italic: true
-                                    text: root.searchPlaceholder
+                                    text: root.currentLabels.placeholder
                                 }
 
                                 onTextChanged: {
@@ -465,7 +446,8 @@ Scope {
         function toggle(name: string): void {
             ShellState.toggle(name);
             if (name === "clipboard" && ShellState.panel === "clipboard")
-                root.refreshClipboard();
+                clipListProcess.running = true;
+
         }
 
         function close(): void {
