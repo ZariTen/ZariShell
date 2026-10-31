@@ -221,6 +221,16 @@ Singleton {
         return Array.isArray(componentNames) && componentNames.indexOf(componentName) >= 0;
     }
 
+    // State color for a Slider `tone` ("critical", "warning", "muted"); any
+    // other tone gets the look's own fallbackColor.
+    function toneColor(tone, fallbackColor) {
+        if (tone === "critical")
+            return error;
+        if (tone === "warning")
+            return warning;
+        return tone === "muted" ? outline : fallbackColor;
+    }
+
     // Theme color by name (also for theme-specific extras used by a theme's
     // own components), with a fallback.
     function color(key, fallbackValue) {

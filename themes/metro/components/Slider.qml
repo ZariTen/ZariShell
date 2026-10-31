@@ -7,15 +7,7 @@ import qs
 Item {
     id: look
 
-    readonly property color fill: {
-        if (control.tone === "critical")
-            return Theme.error;
-        if (control.tone === "warning")
-            return Theme.warning;
-        if (control.tone === "muted")
-            return Theme.outline;
-        return Theme.highlight;
-    }
+    readonly property color fill: Theme.toneColor(control.tone, Theme.highlight)
     readonly property real trackHeight: control.interactive ? Math.max(2, Math.round(parent.height * 0.4)) : parent.height
 
     Rectangle {

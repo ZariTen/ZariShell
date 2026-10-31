@@ -8,15 +8,7 @@ import qs
 Item {
     id: look
 
-    readonly property color stroke: {
-        if (control.tone === "critical")
-            return Theme.error;
-        if (control.tone === "warning")
-            return Theme.warning;
-        if (control.tone === "muted")
-            return Theme.outline;
-        return Theme.textSurface;
-    }
+    readonly property color stroke: Theme.toneColor(control.tone, Theme.textSurface)
 
     Rectangle {
         anchors.verticalCenter: parent.verticalCenter

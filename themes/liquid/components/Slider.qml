@@ -8,17 +8,8 @@ import qs
 Item {
     id: look
 
-    readonly property color fill: {
-        if (control.tone === "critical")
-            return Theme.error;
-        if (control.tone === "warning")
-            return Theme.warning;
-        if (control.tone === "muted")
-            return Theme.outline;
-        if (control.tone === "accent")
-            return Theme.highlight;
-        return Qt.rgba(1, 1, 1, 0.92);
-    }
+    readonly property color fill: Theme.toneColor(control.tone, control.tone === "accent" ? Theme.highlight : Qt.rgba(1, 1, 1, 0.92))
+
 
     Rectangle {
         anchors.fill: parent
