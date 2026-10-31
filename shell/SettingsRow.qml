@@ -85,11 +85,12 @@ Item {
         fontListOpen = false;
     }
 
-    // Collapse the font list and clear its search when the row is hidden
-    // or the settings panel closes, so it starts closed next time.
-    function closeFontList() {
+    // Collapse both pickers and clear the font search when the row is hidden
+    // or the settings panel closes, so they start closed next time.
+    function closePickers() {
         fontListOpen = false;
         filterInput.text = "";
+        colorPickerOpen = false;
     }
 
     // Load the markers from the accent in use, unless it is the picker's own
@@ -121,20 +122,14 @@ Item {
 
     onPickerSeedChanged: if (colorPickerOpen) loadPickerFromAccent()
 
-    onVisibleChanged: {
-        if (!visible) {
-            closeFontList();
-            colorPickerOpen = false;
-        }
-    }
+    onVisibleChanged: if (!visible) closePickers()
 
     Connections {
         target: ShellState
         function onPanelChanged() {
-            if (ShellState.panel !== "settings") {
-                row.closeFontList();
-                row.colorPickerOpen = false;
-            }
+            if (ShellState.panel !== "settings")
+                row.closePickers();
+
         }
     }
 
