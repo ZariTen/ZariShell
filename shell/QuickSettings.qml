@@ -60,24 +60,14 @@ Scope {
                 codepoint: 0xF0493 // md-cog
                 title: "Quick settings"
 
-                Button {
-                    implicitWidth: Theme.px(28)
-                    implicitHeight: Theme.px(28)
+                IconButton {
+                    codepoint: 0xF062E // md-tune
                     onClicked: ShellState.toggle("settings")
-                    MdIcon {
-                        anchors.centerIn: parent
-                        codepoint: 0xF062E // md-tune
-                    }
                 }
-                Button {
-                    implicitWidth: Theme.px(28)
-                    implicitHeight: Theme.px(28)
+                IconButton {
+                    codepoint: 0xF0425 // md-power
+                    icon.color: Theme.error
                     onClicked: ShellState.toggle("power")
-                    MdIcon {
-                        anchors.centerIn: parent
-                        codepoint: 0xF0425 // md-power
-                        color: Theme.error
-                    }
                 }
             }
 
@@ -151,15 +141,9 @@ Scope {
                 visible: root.sink !== null && root.sink.audio !== null
                 spacing: Theme.spacingS
 
-                Button {
-                    implicitWidth: Theme.px(28)
-                    implicitHeight: Theme.px(28)
+                IconButton {
+                    codepoint: ShellState.sinkGlyph(root.sink)
                     onClicked: root.sink.audio.muted = !root.sink.audio.muted
-                    MdIcon {
-                        anchors.centerIn: parent
-                        codepoint: ShellState.sinkGlyph(root.sink)
-
-                    }
                 }
                 Slider {
                     Layout.fillWidth: true

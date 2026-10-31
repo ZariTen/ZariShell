@@ -152,15 +152,11 @@ Scope {
                         }
                     }
 
-                    Button {
+                    IconButton {
                         implicitWidth: Theme.px(30)
-                        implicitHeight: Theme.px(30)
                         radius: Theme.radiusFull
+                        codepoint: 0xF0156 // md-close
                         onClicked: ShellState.close()
-                        MdIcon {
-                            anchors.centerIn: parent
-                            codepoint: 0xF0156 // md-close
-                        }
                     }
                 }
 

@@ -278,17 +278,13 @@ QsPage {
                         color: Theme.textSurfaceVariant
                     }
                 }
-                Button {
+                IconButton {
                     visible: entry.device.paired && !entry.device.connected && !entry.busy
                     implicitWidth: Theme.px(26)
-                    implicitHeight: Theme.px(26)
+                    codepoint: 0xF09E7 // md-delete_outline
+                    icon.font.pixelSize: Theme.iconPx(15)
+                    icon.color: Theme.textSurfaceVariant
                     onClicked: entry.device.forget()
-                    MdIcon {
-                        anchors.centerIn: parent
-                        codepoint: 0xF09E7 // md-delete_outline
-                        font.pixelSize: Theme.iconPx(15)
-                        color: Theme.textSurfaceVariant
-                    }
                 }
                 ActionButton {
                     visible: !entry.busy || entry.device.pairing

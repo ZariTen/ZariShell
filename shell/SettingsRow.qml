@@ -364,18 +364,14 @@ Item {
         }
 
         // Reset
-        Button {
+        IconButton {
             implicitWidth: Theme.px(30)
-            implicitHeight: Theme.px(30)
             radius: Theme.radiusFull
             enabled: row.isSet
             opacity: row.isSet ? 1 : Theme.dim(0.5)
+            codepoint: 0xF099B // md-restore
+            icon.color: Theme.textSurfaceVariant
             onClicked: Settings.reset(row.modelData.key)
-            MdIcon {
-                anchors.centerIn: parent
-                codepoint: 0xF099B // md-restore
-                color: Theme.textSurfaceVariant
-            }
         }
     }
 
@@ -568,18 +564,14 @@ Item {
             }
 
             // Eyedropper: pick the accent from anywhere on screen.
-            Button {
+            IconButton {
                 implicitWidth: Theme.px(30)
-                implicitHeight: Theme.px(30)
                 radius: Theme.radiusFull
+                codepoint: 0xF020A // md-eyedropper
+                icon.color: Theme.textSurfaceVariant
                 onClicked: {
                     ShellState.close();
                     eyedropperDelay.start();
-                }
-                MdIcon {
-                    anchors.centerIn: parent
-                    codepoint: 0xF020A // md-eyedropper
-                    color: Theme.textSurfaceVariant
                 }
             }
         }

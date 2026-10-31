@@ -66,11 +66,9 @@ Scope {
             Layout.fillWidth: true
             spacing: Theme.spacingXs
 
-            Button {
-                implicitWidth: Theme.px(28)
-                implicitHeight: Theme.px(28)
+            IconButton {
+                codepoint: 0xF0141 // md-chevron_left
                 onClicked: root.shift(-1)
-                MdIcon { anchors.centerIn: parent; codepoint: 0xF0141 } // md-chevron_left
             }
             Button {
                 Layout.fillWidth: true
@@ -85,11 +83,9 @@ Scope {
                     font.weight: Font.DemiBold
                 }
             }
-            Button {
-                implicitWidth: Theme.px(28)
-                implicitHeight: Theme.px(28)
+            IconButton {
+                codepoint: 0xF0142 // md-chevron_right
                 onClicked: root.shift(1)
-                MdIcon { anchors.centerIn: parent; codepoint: 0xF0142 } // md-chevron_right
             }
         }
 

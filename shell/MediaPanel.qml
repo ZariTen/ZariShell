@@ -290,15 +290,10 @@ Scope {
                         visible: root.hasVolume
                         spacing: Theme.spacingS
 
-                        Button {
-                            implicitWidth: Theme.px(28)
-                            implicitHeight: Theme.px(28)
+                        IconButton {
+                            codepoint: ShellState.volumeGlyph(root.volume, root.muted)
+                            icon.color: root.muted ? Theme.outline : Theme.textSurface
                             onClicked: root.toggleMute()
-                            MdIcon {
-                                anchors.centerIn: parent
-                                codepoint: ShellState.volumeGlyph(root.volume, root.muted)
-                                color: root.muted ? Theme.outline : Theme.textSurface
-                            }
                         }
 
                         Slider {
@@ -322,65 +317,56 @@ Scope {
                         Layout.alignment: Qt.AlignHCenter
                         spacing: Theme.spacingS
 
-                        Button {
+                        IconButton {
                             visible: card.activePlayer !== null && card.activePlayer.shuffleSupported
                             implicitWidth: Theme.px(34)
-                            implicitHeight: Theme.px(34)
                             active: card.activePlayer !== null && card.activePlayer.shuffle
+                            codepoint: active ? 0xF049D : 0xF049E
+                            icon.color: active ? Theme.accent : Theme.textSurfaceVariant
                             onClicked: card.activePlayer.shuffle = !card.activePlayer.shuffle
-                            MdIcon {
-                                anchors.centerIn: parent
-                                codepoint: card.activePlayer && card.activePlayer.shuffle ? 0xF049D : 0xF049E
-                                color: card.activePlayer && card.activePlayer.shuffle ? Theme.accent : Theme.textSurfaceVariant
-                            }
                         }
 
-                        Button {
+                        IconButton {
                             implicitWidth: Theme.px(44)
                             implicitHeight: Theme.px(40)
                             framed: true
                             enabled: card.activePlayer !== null && card.activePlayer.canGoPrevious
                             opacity: enabled ? 1 : Theme.dim(0.4)
+                            codepoint: 0xF04AE
+                            icon.font.pixelSize: Theme.iconPx(22)
                             onClicked: card.activePlayer.previous()
-                            MdIcon { anchors.centerIn: parent; codepoint: 0xF04AE; font.pixelSize: Theme.iconPx(22) }
                         }
 
-                        Button {
+                        IconButton {
                             implicitWidth: Theme.px(56)
                             implicitHeight: Theme.px(48)
                             framed: true
                             active: true
                             enabled: card.activePlayer !== null && card.activePlayer.canTogglePlaying
                             opacity: enabled ? 1 : Theme.dim(0.4)
+                            codepoint: card.activePlayer && card.activePlayer.isPlaying ? 0xF03E4 : 0xF040A
+                            icon.font.pixelSize: Theme.iconPx(28)
                             onClicked: card.activePlayer.togglePlaying()
-                            MdIcon {
-                                anchors.centerIn: parent
-                                codepoint: card.activePlayer && card.activePlayer.isPlaying ? 0xF03E4 : 0xF040A
-                                font.pixelSize: Theme.iconPx(28)
-                            }
                         }
 
-                        Button {
+                        IconButton {
                             implicitWidth: Theme.px(44)
                             implicitHeight: Theme.px(40)
                             framed: true
                             enabled: card.activePlayer !== null && card.activePlayer.canGoNext
                             opacity: enabled ? 1 : Theme.dim(0.4)
+                            codepoint: 0xF04AD
+                            icon.font.pixelSize: Theme.iconPx(22)
                             onClicked: card.activePlayer.next()
-                            MdIcon { anchors.centerIn: parent; codepoint: 0xF04AD; font.pixelSize: Theme.iconPx(22) }
                         }
 
-                        Button {
+                        IconButton {
                             visible: card.activePlayer !== null && card.activePlayer.loopSupported
                             implicitWidth: Theme.px(34)
-                            implicitHeight: Theme.px(34)
                             active: card.activePlayer !== null && card.activePlayer.loopState !== MprisLoopState.None
+                            codepoint: root.loopStateGlyph(card.activePlayer ? card.activePlayer.loopState : MprisLoopState.None)
+                            icon.color: active ? Theme.accent : Theme.textSurfaceVariant
                             onClicked: card.activePlayer.loopState = root.nextLoopState(card.activePlayer.loopState)
-                            MdIcon {
-                                anchors.centerIn: parent
-                                codepoint: root.loopStateGlyph(card.activePlayer ? card.activePlayer.loopState : MprisLoopState.None)
-                                color: card.activePlayer && card.activePlayer.loopState !== MprisLoopState.None ? Theme.accent : Theme.textSurfaceVariant
-                            }
                         }
                     }
                 }

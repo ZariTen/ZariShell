@@ -481,7 +481,7 @@ QsPage {
                                 event.accepted = true;
                             }
                         }
-                        Button {
+                        IconButton {
                             id: eye
 
                             property bool reveal: false
@@ -490,14 +490,11 @@ QsPage {
                             anchors.rightMargin: Theme.spacingXs
                             anchors.verticalCenter: parent.verticalCenter
                             implicitWidth: Theme.px(24)
-                            implicitHeight: Theme.px(24)
+                            codepoint: reveal ? 0xF0209 : 0xF0208 // md-eye_off / md-eye
+                            icon.font.pixelSize: Theme.iconPx(14)
                             onClicked: reveal = !reveal
-                            MdIcon {
-                                anchors.centerIn: parent
-                                codepoint: eye.reveal ? 0xF0209 : 0xF0208 // md-eye_off / md-eye
-                                font.pixelSize: Theme.iconPx(14)
-                            }
                         }
+
                     }
 
                     ActionButton {

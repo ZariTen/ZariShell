@@ -34,14 +34,9 @@ ColumnLayout {
         Layout.fillWidth: true
         spacing: Theme.spacingS
 
-        Button {
-            implicitWidth: Theme.px(28)
-            implicitHeight: Theme.px(28)
+        IconButton {
+            codepoint: 0xF0141 // md-chevron_left
             onClicked: page.back()
-            MdIcon {
-                anchors.centerIn: parent
-                codepoint: 0xF0141 // md-chevron_left
-            }
         }
         MdIcon {
             Layout.alignment: Qt.AlignVCenter
