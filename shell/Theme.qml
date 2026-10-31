@@ -204,8 +204,7 @@ Singleton {
     // theme lists it, else the neutral one in base/.
     function component(componentName) {
         var snapshot = activeTheme;
-        var componentNames = Array.isArray(snapshot.spec.components) ? snapshot.spec.components : [];
-        if (componentNames.indexOf(componentName) >= 0)
+        if (themeProvides(componentName))
             return fileUrl(snapshot.dir + "/components/" + componentName + ".qml") + "?r=" + snapshot.revision;
         return Qt.resolvedUrl("base/" + componentName + ".qml");
     }
@@ -213,18 +212,19 @@ Singleton {
     // Optional layer effect a theme may provide (e.g. "Glow"); null when the
     // theme has none, so `layer.enabled: Theme.effect(..) !== null` is a no-op.
     function effect(effectName) {
-        var snapshot = activeTheme;
-        var componentNames = Array.isArray(snapshot.spec.components) ? snapshot.spec.components : [];
-        if (componentNames.indexOf(effectName) >= 0)
-            return Qt.createComponent(component(effectName));
-        return null;
+        return themeProvides(effectName) ? Qt.createComponent(component(effectName)) : null;
+    }
+
+    // Whether the active theme ships its own look for a component or effect.
+    function themeProvides(componentName) {
+        var componentNames = activeTheme.spec.components;
+        return Array.isArray(componentNames) && componentNames.indexOf(componentName) >= 0;
     }
 
     // Theme color by name (also for theme-specific extras used by a theme's
     // own components), with a fallback.
     function color(key, fallbackValue) {
-        var rawValue = lookup("colors", key);
-        return rawValue === undefined ? toColor(fallbackValue) : toColor(rawValue);
+        return toColor(lookup("colors", key, fallbackValue));
     }
 
     // Resolve a color token from an arbitrary theme.json object (used by the
@@ -382,11 +382,12 @@ Singleton {
         return Qt.hsla(((hueValue % 1) + 1) % 1, saturation, lightness, alpha === undefined ? 1 : alpha);
     }
 
-    function lookup(sectionName, key) {
+    // spec[sectionName][key], or fallbackValue when the theme does not set it.
+    function lookup(sectionName, key, fallbackValue) {
         var section = spec[sectionName];
         if (section !== null && typeof section === "object" && section[key] !== undefined)
             return section[key];
-        return undefined;
+        return fallbackValue;
     }
 
     function resolveColorValue(rawValue, baseHue, seedColor) {
@@ -421,14 +422,13 @@ Singleton {
     }
 
     function fontValue(key, fallbackValue) {
-        var rawValue = lookup("fonts", key);
-        return rawValue === undefined ? fallbackValue : rawValue;
+        return lookup("fonts", key, fallbackValue);
     }
 
     function motion(key, fallbackValue) {
-        var rawValue = lookup("motion", key);
-        return rawValue === undefined ? fallbackValue : rawValue;
+        return lookup("motion", key, fallbackValue);
     }
+
 
     function radiusMetric(key, fallbackValue) {
         return Math.round(metric(key, fallbackValue) * uiScale * radiusScale);
