@@ -62,6 +62,12 @@ QtObject {
         return 0xF057E;     // md-volume_high
     }
 
+    // volumeGlyph for a Pipewire sink (muted when it has no audio node).
+    function sinkGlyph(sink) {
+        var audio = sink ? sink.audio : null;
+        return volumeGlyph(audio ? audio.volume : 0, !audio || audio.muted);
+    }
+
     // Wi-Fi strength glyph for a 0..1 signal.
     function wifiGlyph(signalStrength) {
         if (signalStrength < 0.25)

@@ -157,11 +157,8 @@ Scope {
                     onClicked: root.sink.audio.muted = !root.sink.audio.muted
                     MdIcon {
                         anchors.centerIn: parent
-                        codepoint: {
-                            var isMuted = !root.sink || !root.sink.audio || root.sink.audio.muted;
-                            var volumeLevel = root.sink && root.sink.audio ? root.sink.audio.volume : 0;
-                            return ShellState.volumeGlyph(volumeLevel, isMuted);
-                        }
+                        codepoint: ShellState.sinkGlyph(root.sink)
+
                     }
                 }
                 Slider {

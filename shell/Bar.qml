@@ -44,11 +44,7 @@ Scope {
         return null;
     }
 
-    readonly property int volumeIcon: {
-        var isMuted = !sink || !sink.audio || sink.audio.muted;
-        var volumeLevel = sink && sink.audio ? sink.audio.volume : 0;
-        return ShellState.volumeGlyph(volumeLevel, isMuted);
-    }
+    readonly property int volumeIcon: ShellState.sinkGlyph(sink)
 
     readonly property int networkIcon: {
         if (!netDevice)
