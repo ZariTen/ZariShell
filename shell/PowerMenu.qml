@@ -9,34 +9,36 @@ Scope {
 
     // -- State and action definitions ---------------------------------------
     property string pending: ""   // action awaiting confirmation
+    // Lock has no command: it goes through ShellState.lockRequested().
     readonly property var actions: [
         { id: "lock", label: "Lock", glyph: 0xF033E, confirm: false },
-        { id: "logout", label: "Log out", glyph: 0xF0343, confirm: true },
-        { id: "suspend", label: "Sleep", glyph: 0xF04B2, confirm: false },
-        { id: "reboot", label: "Restart", glyph: 0xF0709, confirm: true },
-        { id: "poweroff", label: "Shut down", glyph: 0xF0425, confirm: true }
+        { id: "logout", label: "Log out", glyph: 0xF0343, confirm: true, command: ["hyprctl", "dispatch", "exit"] },
+        { id: "suspend", label: "Sleep", glyph: 0xF04B2, confirm: false, command: ["systemctl", "suspend"] },
+        { id: "reboot", label: "Restart", glyph: 0xF0709, confirm: true, command: ["systemctl", "reboot"] },
+        { id: "poweroff", label: "Shut down", glyph: 0xF0425, confirm: true, command: ["systemctl", "poweroff"] }
     ]
 
     // -- Helper functions ---------------------------------------------------
+    function findAction(actionId) {
+        return actions.find(candidate => candidate.id === actionId) || null;
+    }
+
     function actionLabel(actionId) {
-        var actionEntry = actions.find(candidate => candidate.id === actionId);
+        var actionEntry = findAction(actionId);
         return actionEntry ? actionEntry.label : "";
     }
 
     function runAction(actionId) {
         pending = "";
         ShellState.close();
+        var actionEntry = findAction(actionId);
         if (actionId === "lock")
             ShellState.lockRequested();
-        else if (actionId === "logout")
-            Quickshell.execDetached(["hyprctl", "dispatch", "exit"]);
-        else if (actionId === "suspend")
-            Quickshell.execDetached(["systemctl", "suspend"]);
-        else if (actionId === "reboot")
-            Quickshell.execDetached(["systemctl", "reboot"]);
-        else if (actionId === "poweroff")
-            Quickshell.execDetached(["systemctl", "poweroff"]);
+        else if (actionEntry)
+            Quickshell.execDetached(actionEntry.command);
     }
+
+
 
     // -- Visual tree --------------------------------------------------------
     DropPanel {
