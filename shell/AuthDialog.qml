@@ -70,14 +70,13 @@ Scope {
                     font.pixelSize: Theme.fontSmall
                 }
 
-                Rectangle {
+                Item {
                     Layout.alignment: Qt.AlignHCenter
                     implicitWidth: Theme.px(52)
                     implicitHeight: Theme.px(52)
-                    radius: Theme.radiusFull
-                    color: "transparent"
 
                     MdIcon {
+
                         anchors.centerIn: parent
                         codepoint: 0xF0780 // md-shield_half_full (UAC shield)
                         color: Theme.warning
