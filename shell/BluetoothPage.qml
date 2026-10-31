@@ -144,44 +144,19 @@ QsPage {
         onAction: page.adapter.discovering = true
     }
 
-    ListView {
+    QsList {
         id: list
 
-        property bool keyActive: false
-        property int cursor: -1   // row under the mouse or keyboard
-
-        Layout.fillWidth: true
         Layout.preferredHeight: Math.min(contentHeight, 320)
         visible: page.powered && count > 0
-        clip: true
-        spacing: Theme.px(2)
-        boundsBehavior: Flickable.StopAtBounds
         model: ScriptModel {
             values: page.devices
             objectProp: "address"
         }
 
-        function step(by) {
-            keyActive = true;
-            cursor = Math.max(0, Math.min(count - 1, cursor + by));
-            positionViewAtIndex(cursor, ListView.Contain);
-        }
-
         onVisibleChanged: if (visible && page.shown) forceActiveFocus()
-        Keys.onUpPressed: step(-1)
-        Keys.onDownPressed: step(1)
-        Keys.onReturnPressed: if (itemAtIndex(cursor)) itemAtIndex(cursor).primary()
-        Keys.onEnterPressed: if (itemAtIndex(cursor)) itemAtIndex(cursor).primary()
+        onActivated: row => row.primary()
 
-        add: Transition {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.durMedium }
-        }
-        remove: Transition {
-            NumberAnimation { property: "opacity"; to: 0; duration: Theme.durShort }
-        }
-        displaced: Transition {
-            NumberAnimation { property: "y"; duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
-        }
 
         delegate: ColumnLayout {
             id: entry

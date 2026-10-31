@@ -323,44 +323,18 @@ QsPage {
         onAction: page.scan("yes")
     }
 
-    ListView {
+    QsList {
         id: list
 
-        property bool keyActive: false
-        property int cursor: -1   // row under the mouse or keyboard
-
-        Layout.fillWidth: true
         Layout.preferredHeight: Math.min(contentHeight, 304)
         visible: page.radioOn && count > 0
-        clip: true
-        spacing: Theme.px(2)
-        boundsBehavior: Flickable.StopAtBounds
         model: ScriptModel {
             values: page.sorted
             objectProp: "ssid"
         }
 
-        function step(by) {
-            keyActive = true;
-            cursor = Math.max(0, Math.min(count - 1, cursor + by));
-            positionViewAtIndex(cursor, ListView.Contain);
-        }
-
         onVisibleChanged: if (visible && page.shown) forceActiveFocus()
-        Keys.onUpPressed: step(-1)
-        Keys.onDownPressed: step(1)
-        Keys.onReturnPressed: if (itemAtIndex(cursor)) page.activate(itemAtIndex(cursor).networkEntry)
-        Keys.onEnterPressed: if (itemAtIndex(cursor)) page.activate(itemAtIndex(cursor).networkEntry)
-
-        add: Transition {
-            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.durMedium }
-        }
-        remove: Transition {
-            NumberAnimation { property: "opacity"; to: 0; duration: Theme.durShort }
-        }
-        displaced: Transition {
-            NumberAnimation { property: "y"; duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
-        }
+        onActivated: row => page.activate(row.networkEntry)
 
         delegate: ColumnLayout {
             id: entry
