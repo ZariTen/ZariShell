@@ -162,11 +162,13 @@ Singleton {
     readonly property var activeTheme: loadedThemeState !== null ? loadedThemeState : fallbackThemeState
 
     // -- Internal accent derivation -----------------------------------------
-    readonly property string themeAccent: typeof spec.accent === "string" && spec.accent !== "" ? spec.accent : "#7a9cc6"
+    readonly property string themeAccent: specAccent(spec)
     readonly property string userAccentOverride: Settings.get("accent", "")
-    readonly property string accentMode: userAccentOverride !== "" ? userAccentOverride : themeAccent
+    readonly property var activeAccent: resolveAccent(themeAccent)
+    readonly property string accentMode: activeAccent.mode
     readonly property bool wallpaperAccent: accentMode === "wallpaper"
-    readonly property color accentSeed: wallpaperAccent ? tone(hue, 0.6, 0.6) : accentMode
+    readonly property color accentSeed: activeAccent.seed
+    readonly property real hue: activeAccent.hue
 
     // Hue of the most vivid wallpaper color, or -1 when none has a hue.
     readonly property real sampledWallpaperHue: {
@@ -184,20 +186,10 @@ Singleton {
         return selectedHue;
     }
     readonly property real wallpaperHue: sampledWallpaperHue >= 0 ? sampledWallpaperHue : 0.62
-    readonly property color fixedSeed: wallpaperAccent ? "#000000" : accentMode
     // A user accent whose RGB channels spread less than this (chroma, 0..1,
     // about 8/255) is a gray, white or black: its hue is noise, so hue tones
     // follow the wallpaper hue instead, else the theme's own accent hue.
     readonly property real grayAccentChroma: 0.03
-    readonly property bool grayUserAccent: userAccentOverride !== "" && !wallpaperAccent && fixedSeed.hsvSaturation * fixedSeed.hsvValue < grayAccentChroma
-    readonly property real themeAccentHue: themeAccent === "wallpaper" ? wallpaperHue : Math.max(0, Qt.lighter(themeAccent, 1).hslHue)
-    readonly property real hue: {
-        if (wallpaperAccent)
-            return wallpaperHue;
-        if (!grayUserAccent)
-            return Math.max(0, fixedSeed.hslHue);
-        return sampledWallpaperHue >= 0 ? sampledWallpaperHue : themeAccentHue;
-    }
 
     // -- Public API helpers -------------------------------------------------
     // URL of the look for a generic component: the theme's override when the
@@ -238,17 +230,34 @@ Singleton {
     }
 
     // Resolve a color token from an arbitrary theme.json object (used by the
-    // theme picker to preview inactive themes).
+    // theme picker to preview inactive themes), with the same accent the
+    // theme would get if it were active.
     function specColor(themeSpec, key, fallbackValue) {
-        var specAccentMode = "#7a9cc6";
-        if (themeSpec && typeof themeSpec.accent === "string" && themeSpec.accent !== "")
-            specAccentMode = themeSpec.accent;
-
-        var usesWallpaper = specAccentMode === "wallpaper";
-        var previewSeed = usesWallpaper ? tone(wallpaperHue, 0.6, 0.6, 1) : Qt.lighter(specAccentMode, 1);
-        var previewHue = usesWallpaper ? wallpaperHue : Math.max(0, previewSeed.hslHue);
-        var resolved = resolveColorValue(specValue(themeSpec, "colors", key, fallbackValue), previewHue, previewSeed);
+        var accentState = resolveAccent(specAccent(themeSpec));
+        var resolved = resolveColorValue(specValue(themeSpec, "colors", key, fallbackValue), accentState.hue, accentState.seed);
         return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
+    }
+
+    // A theme.json's own accent seed: a color or "wallpaper".
+    function specAccent(themeSpec) {
+        if (themeSpec && typeof themeSpec.accent === "string" && themeSpec.accent !== "")
+            return themeSpec.accent;
+        return "#7a9cc6";
+    }
+
+    // Accent of a theme whose own accent is themeAccentValue: { mode, seed,
+    // hue }. The accent setting wins over the theme; "wallpaper" takes the
+    // wallpaper hue; a gray accent keeps the wallpaper or theme hue.
+    function resolveAccent(themeAccentValue) {
+        var mode = userAccentOverride !== "" ? userAccentOverride : themeAccentValue;
+        if (mode === "wallpaper")
+            return { "mode": mode, "seed": tone(wallpaperHue, 0.6, 0.6), "hue": wallpaperHue };
+        var seed = Qt.lighter(mode, 1);
+        var grayAccent = userAccentOverride !== "" && seed.hsvSaturation * seed.hsvValue < grayAccentChroma;
+        if (!grayAccent)
+            return { "mode": mode, "seed": seed, "hue": Math.max(0, seed.hslHue) };
+        var themeHue = themeAccentValue === "wallpaper" ? wallpaperHue : Math.max(0, Qt.lighter(themeAccentValue, 1).hslHue);
+        return { "mode": mode, "seed": seed, "hue": sampledWallpaperHue >= 0 ? sampledWallpaperHue : themeHue };
     }
 
     // themeSpec[sectionName][key], or fallbackValue when that theme does not set it.
@@ -641,7 +650,9 @@ Singleton {
 
     ColorQuantizer {
         id: quantizer
-        source: root.wallpaperAccent || root.grayUserAccent ? root.fileUrl(Wallpaper.path) : ""
+        // Always sampled: the picker previews wallpaper themes even while
+        // the active theme has a fixed accent.
+        source: root.fileUrl(Wallpaper.path)
         depth: 3
         rescaleSize: 96
     }
