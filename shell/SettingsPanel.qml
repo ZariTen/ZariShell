@@ -267,6 +267,18 @@ Scope {
                                         passWheel: true
                                         onClicked: Theme.setTheme(themeEntry.id)
 
+                                        // The preview shows the theme's own
+                                        // colors, so it sits outside the
+                                        // active restyle (Liquid Glass would
+                                        // tint it dark gray).
+                                        plainContent: ThemePreview {
+                                            id: preview
+                                            anchors.left: parent.left
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            anchors.leftMargin: Theme.spacingS
+                                            spec: themeCard.themeEntry.spec || ({})
+                                        }
+
                                         RowLayout {
                                             id: cardRow
                                             anchors.left: parent.left
@@ -276,8 +288,10 @@ Scope {
                                             anchors.rightMargin: Theme.spacingM
                                             spacing: Theme.spacingM
 
-                                            ThemePreview {
-                                                spec: themeCard.themeEntry.spec || ({})
+                                            // Room for the preview.
+                                            Item {
+                                                implicitWidth: preview.width
+                                                implicitHeight: preview.height
                                             }
 
                                             ColumnLayout {

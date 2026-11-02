@@ -145,7 +145,7 @@ Each generic component lives in `shell/<Name>.qml`; its look is loaded from
 | `Backdrop` | `source`, `role` (`lock`, `login`) | Wallpaper (or `surface`) under `scrim`. |
 | `Divider` | `strong` | `divider` / `dividerStrong` line. |
 | `Glow` (effect) | none; a `layer.effect` for the lock / login clock | None (no effect). |
-| `ActiveContent` (effect) | none; a `layer.effect` over an active Button's content (skipped when `restyleContent` is false, e.g. app icons) | None (content unchanged). |
+| `ActiveContent` (effect) | none; a `layer.effect` over an active Button's content (skipped when `restyleContent` is false, e.g. app icons; never applied to `plainContent`, e.g. theme previews) | None (content unchanged). |
 
 `Frame` (mat Surface plus clipped picture), `Fill` and `Backdrop` are used by
 the lock screen, login screen, bar and media panel; `Glow` is applied with

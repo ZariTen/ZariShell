@@ -9,6 +9,9 @@ Item {
     id: control
 
     default property alias content: contentItem.data
+    // Full-color content (previews, artwork) drawn above `content` and never
+    // restyled by the theme's ActiveContent effect.
+    property alias plainContent: plainItem.data
     property bool active: false
     property bool framed: false        // show the face at rest too
     property bool passWheel: false     // let wheel events reach the parent
@@ -48,6 +51,11 @@ Item {
         anchors.fill: parent
         layer.enabled: control.active && control.restyleContent && activeEffect !== null
         layer.effect: activeEffect
+    }
+
+    Item {
+        id: plainItem
+        anchors.fill: parent
     }
 
     MouseArea {
