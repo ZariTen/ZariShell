@@ -238,7 +238,7 @@ Singleton {
     }
 
     // Resolve a color token from an arbitrary theme.json object (used by the
-    // theme picker to render preview swatches for inactive themes).
+    // theme picker to preview inactive themes).
     function specColor(themeSpec, key, fallbackValue) {
         var specAccentMode = "#7a9cc6";
         if (themeSpec && typeof themeSpec.accent === "string" && themeSpec.accent !== "")
@@ -247,35 +247,16 @@ Singleton {
         var usesWallpaper = specAccentMode === "wallpaper";
         var previewSeed = usesWallpaper ? tone(wallpaperHue, 0.6, 0.6, 1) : Qt.lighter(specAccentMode, 1);
         var previewHue = usesWallpaper ? wallpaperHue : Math.max(0, previewSeed.hslHue);
-        var colorSection = themeSpec && themeSpec.colors;
-        var rawValue = fallbackValue;
-        if (colorSection !== null && typeof colorSection === "object" && colorSection[key] !== undefined)
-            rawValue = colorSection[key];
-
-        var resolved = resolveColorValue(rawValue, previewHue, previewSeed);
+        var resolved = resolveColorValue(specValue(themeSpec, "colors", key, fallbackValue), previewHue, previewSeed);
         return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
     }
 
-    // Whether a theme.json's colors follow the accent setting: its
-    // "accentColor" flag when set, else true when a color is "accent" or a
-    // hue tone, or when an accent-based token is left at its default.
-    function followsAccent(themeSpec) {
-        if (!themeSpec)
-            return true;
-        if (typeof themeSpec.accentColor === "boolean")
-            return themeSpec.accentColor;
-        var colorSection = themeSpec.colors !== null && typeof themeSpec.colors === "object" ? themeSpec.colors : ({});
-        var accentTokens = ["accent", "highlight", "primary", "primaryContainer", "buttonDefault"];
-        for (var i = 0; i < accentTokens.length; i++) {
-            if (colorSection[accentTokens[i]] === undefined)
-                return true;
-        }
-        for (var key in colorSection) {
-            var rawValue = colorSection[key];
-            if (rawValue === "accent" || (rawValue !== null && typeof rawValue === "object" && !Array.isArray(rawValue)))
-                return true;
-        }
-        return false;
+    // themeSpec[sectionName][key], or fallbackValue when that theme does not set it.
+    function specValue(themeSpec, sectionName, key, fallbackValue) {
+        var section = themeSpec ? themeSpec[sectionName] : null;
+        if (section !== null && typeof section === "object" && section[key] !== undefined)
+            return section[key];
+        return fallbackValue;
     }
 
     // Layout size (px at scale 1) at the current UI scale.
@@ -392,12 +373,9 @@ Singleton {
         return Qt.hsla(((hueValue % 1) + 1) % 1, saturation, lightness, alpha === undefined ? 1 : alpha);
     }
 
-    // spec[sectionName][key], or fallbackValue when the theme does not set it.
+    // spec[sectionName][key] of the active theme, or fallbackValue.
     function lookup(sectionName, key, fallbackValue) {
-        var section = spec[sectionName];
-        if (section !== null && typeof section === "object" && section[key] !== undefined)
-            return section[key];
-        return fallbackValue;
+        return specValue(spec, sectionName, key, fallbackValue);
     }
 
     function resolveColorValue(rawValue, baseHue, seedColor) {
@@ -498,7 +476,6 @@ Singleton {
     function createThemeEntry(themeId, themePath, realPath, sourceType, parsedSpec) {
         var displayName = typeof parsedSpec.name === "string" && parsedSpec.name !== "" ? parsedSpec.name : themeId;
         var description = typeof parsedSpec.description === "string" ? parsedSpec.description : "";
-        var componentList = Array.isArray(parsedSpec.components) ? parsedSpec.components : [];
         return {
             id: themeId,
             name: displayName,
@@ -506,8 +483,7 @@ Singleton {
             source: sourceType,
             path: themePath,
             realPath: realPath,
-            spec: parsedSpec,
-            componentsCount: componentList.length
+            spec: parsedSpec
         };
     }
 

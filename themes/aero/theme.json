@@ -1,6 +1,6 @@
 {
   "name": "Aero",
-  "description": "Windows 7 Aero glass: translucent tinted glass, glossy sheen, soft glow. The tint follows the wallpaper hue.",
+  "description": "Tinted Windows 7 glass",
   "accent": "wallpaper",
   "components": ["Backdrop", "Button", "Field", "Fill", "Frame", "Glow", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {

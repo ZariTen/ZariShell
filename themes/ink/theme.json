@@ -1,6 +1,6 @@
 {
   "name": "Ink",
-  "description": "Ink on paper: warm paper panels, black ink, hairline and brush-stroke rules, serif type. A light, monochrome theme.",
+  "description": "Black ink on warm paper",
   "accent": "#141414",
   "components": ["Backdrop", "Button", "Divider", "Field", "Fill", "Frame", "Glow", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {

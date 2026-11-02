@@ -60,15 +60,6 @@ Scope {
         return sectionSpec.rows.map(rowSpec => rowSpec.key);
     }
 
-    function themeSourceLabel(themeEntry) {
-        var labelParts = [themeEntry.source === "packaged" ? "built-in" : themeEntry.source];
-        if (themeEntry.componentsCount > 0)
-            labelParts.push(themeEntry.componentsCount + " components");
-        if (Theme.followsAccent(themeEntry.spec))
-            labelParts.push("accent color");
-        return labelParts.join(" / ");
-    }
-
     onOpenChanged: if (open) Theme.scan()
 
     // -- Visual tree --------------------------------------------------------
@@ -270,7 +261,7 @@ Scope {
                                         readonly property var themeEntry: Theme.themes[index] || ({})
                                         readonly property bool isCurrent: themeEntry.id === Theme.currentId
                                         Layout.fillWidth: true
-                                        implicitHeight: cardRow.implicitHeight + Theme.spacingM * 2
+                                        implicitHeight: cardRow.implicitHeight + Theme.spacingS * 2
                                         framed: true
                                         active: isCurrent
                                         passWheel: true
@@ -281,59 +272,27 @@ Scope {
                                             anchors.left: parent.left
                                             anchors.right: parent.right
                                             anchors.verticalCenter: parent.verticalCenter
-                                            anchors.leftMargin: Theme.spacingM
+                                            anchors.leftMargin: Theme.spacingS
                                             anchors.rightMargin: Theme.spacingM
                                             spacing: Theme.spacingM
 
-                                            RowLayout {
-                                                spacing: Theme.spacingXs
-                                                Repeater {
-                                                    model: [
-                                                        Theme.specColor(themeCard.themeEntry.spec, "surface", "#24282e"),
-                                                        Theme.specColor(themeCard.themeEntry.spec, "panel", [0.24, 0.26, 0.30, 0.96]),
-                                                        Theme.specColor(themeCard.themeEntry.spec, "primaryContainer", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.9 }),
-                                                        Theme.specColor(themeCard.themeEntry.spec, "accent", "accent")
-                                                    ]
-                                                    Rectangle {
-                                                        required property color modelData
-                                                        implicitWidth: Theme.px(16)
-                                                        implicitHeight: Theme.px(16)
-                                                        radius: Theme.radiusFull
-                                                        color: Qt.rgba(modelData.r, modelData.g, modelData.b, 1)
-                                                        border.width: 1
-                                                        border.color: Theme.border
-                                                    }
-                                                }
+                                            ThemePreview {
+                                                spec: themeCard.themeEntry.spec || ({})
                                             }
 
                                             ColumnLayout {
                                                 Layout.fillWidth: true
                                                 spacing: Theme.px(2)
 
-                                                RowLayout {
+                                                StyledText {
                                                     Layout.fillWidth: true
-                                                    spacing: Theme.spacingS
-
-                                                    StyledText {
-                                                        text: themeCard.themeEntry.name || ""
-                                                        font.weight: Font.DemiBold
-                                                    }
-
-                                                    StyledText {
-                                                        Layout.fillWidth: true
-                                                        text: root.themeSourceLabel(themeCard.themeEntry)
-                                                        font.pixelSize: Theme.fontSmall
-                                                        color: Theme.textSurfaceVariant
-                                                    }
+                                                    text: themeCard.themeEntry.name || ""
+                                                    font.weight: Font.DemiBold
                                                 }
 
-                                                // At most two lines, so long descriptions
-                                                // keep the cards compact.
                                                 StyledText {
                                                     visible: text !== ""
                                                     Layout.fillWidth: true
-                                                    wrapMode: Text.Wrap
-                                                    maximumLineCount: 2
                                                     text: themeCard.themeEntry.description || ""
                                                     color: Theme.textSurfaceVariant
                                                     font.pixelSize: Theme.fontSmall
@@ -341,8 +300,7 @@ Scope {
                                             }
 
                                             // Always laid out (only faded) so the
-                                            // checkmark never changes the card's
-                                            // height or the description's wrap width.
+                                            // checkmark never shifts the text.
                                             MdIcon {
                                                 opacity: themeCard.isCurrent ? 1 : 0
                                                 codepoint: 0xF012C // md-check
@@ -360,10 +318,10 @@ Scope {
                         StyledText {
                             visible: root.currentSection.id === "theme"
                             Layout.fillWidth: true
-                            wrapMode: Text.Wrap
+                            elide: Text.ElideMiddle
                             color: Theme.textSurfaceVariant
                             font.pixelSize: Theme.fontSmall
-                            text: "Place user themes in ~/.config/zarishell/themes/<name>/theme.json (with optional components/*.qml) and click Reload, or switch via IPC with `quickshell -c shell ipc call theme set <name>`."
+                            text: "User themes: ~/.config/zarishell/themes/<name>/theme.json"
                         }
                     }
                 }

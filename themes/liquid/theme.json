@@ -1,8 +1,7 @@
 {
   "name": "Liquid Glass",
-  "description": "Apple Liquid Glass: milky frosted glass capsules and circles with a thick bright rim, white type, solid white active states and springy motion. A faint hint of the wallpaper hue; pair it with Hyprland layer blur (see README).",
+  "description": "Frosted glass capsules",
   "accent": "wallpaper",
-  "accentColor": true,
   "barStyle": "pills",
   "components": ["ActiveContent", "Backdrop", "Button", "Field", "Fill", "Frame", "Glow", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {
