@@ -1,9 +1,8 @@
 import QtQuick
 import qs
 
-// Modern: a pill track that fills with the accent when on, and a round knob
-// that springs across (the emphasized curve overshoots). `control` is the
-// generic Switch.
+// Modern: a pill track that fills with the highlight when on, and a round
+// knob that slides across. `control` is the generic Switch.
 Rectangle {
     id: look
 
@@ -22,8 +21,6 @@ Rectangle {
         height: width
         radius: width / 2
         color: control.checked ? Theme.surface : Theme.textSurfaceVariant
-        scale: control.pressed ? 0.85 : (control.hovered ? 1.08 : 1)
-        Behavior on x { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
-        Behavior on scale { NumberAnimation { duration: Theme.durShort } }
+        Behavior on x { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
     }
 }

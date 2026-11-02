@@ -22,7 +22,7 @@ One shell, many looks, and a login screen to match.
 - **Ink**: black ink on warm paper
 - **Liquid Glass**: frosted glass capsules
 - **Metro**: Windows 8 tiles
-- **Modern**: dark rounded islands with a soft glow
+- **Modern**: dark rounded islands
 
 You can also write your own; see [docs/THEMES.md](docs/THEMES.md).
 

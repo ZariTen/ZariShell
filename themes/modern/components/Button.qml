@@ -1,9 +1,9 @@
 import QtQuick
 import qs
 
-// Modern: a soft pill. Hover lays a tint wash; `active` adds a tinted fill
-// with a glowing tinted ring; press dips the wash. Small buttons are fully
-// round; large tiles keep the large radius. `control` is the generic Button.
+// Modern: a soft pill. Hover lays a tint wash; `active` adds a stronger wash
+// and a tinted edge; press dips the wash. Small buttons are fully round;
+// large tiles keep the large radius. `control` is the generic Button.
 Rectangle {
     id: look
 
@@ -12,7 +12,7 @@ Rectangle {
     radius: Math.min(height / 2, Math.max(control.radius, Theme.radiusLarge))
     color: control.framed ? Theme.surfaceContainerHigh : "transparent"
     border.width: control.active ? 1 : 0
-    border.color: Qt.rgba(look.tint.r, look.tint.g, look.tint.b, 0.55)
+    border.color: Qt.rgba(look.tint.r, look.tint.g, look.tint.b, 0.45)
 
     Rectangle {
         anchors.fill: parent
@@ -24,16 +24,5 @@ Rectangle {
             return Qt.rgba(look.tint.r, look.tint.g, look.tint.b, strength * control.level / (control.active ? 0.9 : 0.6));
         }
         Behavior on color { ColorAnimation { duration: Theme.durShort } }
-    }
-
-    // Soft outer glow while active.
-    Rectangle {
-        visible: control.active
-        anchors.fill: parent
-        anchors.margins: -2
-        radius: parent.radius + 2
-        color: "transparent"
-        border.width: 2
-        border.color: Qt.rgba(look.tint.r, look.tint.g, look.tint.b, 0.14)
     }
 }
