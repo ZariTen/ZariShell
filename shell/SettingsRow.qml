@@ -319,8 +319,8 @@ Item {
                 implicitHeight: Theme.px(22)
                 radius: Theme.radiusFull
                 onClicked: row.colorPickerOpen = !row.colorPickerOpen
-                // The picked accent itself; a theme may derive its accent
-                // tokens from it (aero and modern only use its hue).
+                // The picked accent itself; themes derive their accent
+                // tokens from it (see Theme.accentTone).
                 Rectangle {
                     anchors.fill: parent
                     radius: Theme.radiusFull

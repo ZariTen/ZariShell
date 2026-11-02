@@ -32,7 +32,9 @@ quickshell -c shell ipc call theme reload     # rescan themes and reload QML loo
 
 Colors are `"#rrggbb"`, `"#aarrggbb"`, `"transparent"`, `[r, g, b, a]` (0..1),
 `"accent"` or `{ "h", "s", "l", "a" }` (a tone whose hue is offset by `h` from
-the accent hue). A theme may define extra color names and metrics and read them
+the accent hue). Tones are written against the theme's own `accent`; when the
+accent setting picks another color, their saturation and lightness shift with
+it, so a paler or darker accent gives paler or darker tones. A theme may define extra color names and metrics and read them
 in its looks with `Theme.color("name", fallback)` and
 `Theme.metric("name", fallback)`. Assets placed next to `theme.json` load with
 `Qt.resolvedUrl("../file.png")` from a look.

@@ -18,8 +18,9 @@ import Quickshell.Io
 //
 // theme.json colors accept "#rrggbb" / "#aarrggbb", [r, g, b, a] (0..1),
 // "accent" (the accent seed) or { "h", "s", "l", "a" }: a tone whose hue is
-// offset by h from the accent hue. "accent" is "wallpaper" (hue sampled from
-// the current wallpaper) or a color. Every token is listed in README.md.
+// offset by h from the accent hue, and whose saturation and lightness follow
+// the accent setting (see accentTone). "accent" is "wallpaper" (hue sampled
+// from the current wallpaper) or a color. Every token is listed in README.md.
 //
 // User settings (Settings.qml, settings.json) sit on top: scale factors and
 // overrides applied here, so shell code only ever reads Theme.*.
@@ -186,10 +187,6 @@ Singleton {
         return selectedHue;
     }
     readonly property real wallpaperHue: sampledWallpaperHue >= 0 ? sampledWallpaperHue : 0.62
-    // A user accent whose RGB channels spread less than this (chroma, 0..1,
-    // about 8/255) is a gray, white or black: its hue is noise, so hue tones
-    // follow the wallpaper hue instead, else the theme's own accent hue.
-    readonly property real grayAccentChroma: 0.03
 
     // -- Public API helpers -------------------------------------------------
     // URL of the look for a generic component: the theme's override when the
@@ -234,7 +231,7 @@ Singleton {
     // theme would get if it were active.
     function specColor(themeSpec, key, fallbackValue) {
         var accentState = resolveAccent(specAccent(themeSpec));
-        var resolved = resolveColorValue(specValue(themeSpec, "colors", key, fallbackValue), accentState.hue, accentState.seed);
+        var resolved = resolveColorValue(specValue(themeSpec, "colors", key, fallbackValue), accentState);
         return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
     }
 
@@ -245,19 +242,44 @@ Singleton {
         return "#7a9cc6";
     }
 
-    // Accent of a theme whose own accent is themeAccentValue: { mode, seed,
-    // hue }. The accent setting wins over the theme; "wallpaper" takes the
-    // wallpaper hue; a gray accent keeps the wallpaper or theme hue.
+    // Accent of a theme whose own accent is themeAccentValue: the accent
+    // setting wins over the theme's, and "wallpaper" is a tone of the
+    // wallpaper hue. { mode, seed, hue } plus, when the setting replaces
+    // it, the theme's own seed (base) that its tones are written against.
     function resolveAccent(themeAccentValue) {
         var mode = userAccentOverride !== "" ? userAccentOverride : themeAccentValue;
-        if (mode === "wallpaper")
-            return { "mode": mode, "seed": tone(wallpaperHue, 0.6, 0.6), "hue": wallpaperHue };
-        var seed = Qt.lighter(mode, 1);
-        var grayAccent = userAccentOverride !== "" && seed.hsvSaturation * seed.hsvValue < grayAccentChroma;
-        if (!grayAccent)
-            return { "mode": mode, "seed": seed, "hue": Math.max(0, seed.hslHue) };
-        var themeHue = themeAccentValue === "wallpaper" ? wallpaperHue : Math.max(0, Qt.lighter(themeAccentValue, 1).hslHue);
-        return { "mode": mode, "seed": seed, "hue": sampledWallpaperHue >= 0 ? sampledWallpaperHue : themeHue };
+        var seed = seedColor(mode);
+        return {
+            "mode": mode,
+            "seed": seed,
+            "hue": mode === "wallpaper" ? wallpaperHue : Math.max(0, seed.hslHue),
+            "base": mode === themeAccentValue ? null : seedColor(themeAccentValue)
+        };
+    }
+
+    function seedColor(accentValue) {
+        return accentValue === "wallpaper" ? tone(wallpaperHue, 0.6, 0.6) : Qt.lighter(accentValue, 1);
+    }
+
+    // A theme's { h, s, l } tone is written against its own seed. When the
+    // seed is another color (the accent setting), the tone moves with it:
+    // hue by the offset h, saturation in proportion, and lightness mapped so
+    // the theme seed's lightness lands on the new one while 0 and 1 stay put
+    // (dark tones stay darker than light ones).
+    function accentTone(accentState, hueOffset, saturation, lightness, alpha) {
+        var base = accentState.base;
+        var seed = accentState.seed;
+        if (base === null)
+            return tone(accentState.hue + hueOffset, saturation, lightness, alpha);
+        if (base.hslSaturation > 0.01)
+            saturation = clamp(saturation * seed.hslSaturation / base.hslSaturation, 0, 1);
+        var fromLightness = clamp(base.hslLightness, 0.01, 0.99);
+        var toLightness = seed.hslLightness;
+        if (lightness <= fromLightness)
+            lightness = lightness * toLightness / fromLightness;
+        else
+            lightness = toLightness + (lightness - fromLightness) * (1 - toLightness) / (1 - fromLightness);
+        return tone(accentState.hue + hueOffset, saturation, lightness, alpha);
     }
 
     // themeSpec[sectionName][key], or fallbackValue when that theme does not set it.
@@ -387,9 +409,9 @@ Singleton {
         return specValue(spec, sectionName, key, fallbackValue);
     }
 
-    function resolveColorValue(rawValue, baseHue, seedColor) {
+    function resolveColorValue(rawValue, accentState) {
         if (rawValue === "accent")
-            return seedColor;
+            return accentState.seed;
         if (Array.isArray(rawValue)) {
             var alpha = rawValue.length > 3 ? rawValue[3] : 1;
             return Qt.rgba(rawValue[0], rawValue[1], rawValue[2], alpha);
@@ -398,13 +420,13 @@ Singleton {
             var hueOffset = rawValue.h || 0;
             var saturation = rawValue.s === undefined ? 0.5 : rawValue.s;
             var lightness = rawValue.l === undefined ? 0.5 : rawValue.l;
-            return tone(baseHue + hueOffset, saturation, lightness, rawValue.a);
+            return accentTone(accentState, hueOffset, saturation, lightness, rawValue.a);
         }
         return rawValue;
     }
 
     function toColor(rawValue) {
-        return resolveColorValue(rawValue, hue, accentSeed);
+        return resolveColorValue(rawValue, activeAccent);
     }
 
     function withAlpha(colorValue, alphaValue) {
