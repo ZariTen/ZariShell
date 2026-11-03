@@ -392,6 +392,22 @@ Scope {
                         }
                     }
 
+                    // Keyboard layout (with more than one); click for the next.
+                    Button {
+                        visible: KeyboardLayout.several
+                        implicitWidth: layoutCode.implicitWidth + Theme.spacingS * 2
+                        implicitHeight: Theme.px(26)
+                        onClicked: KeyboardLayout.next()
+
+                        StyledText {
+                            id: layoutCode
+                            anchors.centerIn: parent
+                            text: KeyboardLayout.code
+                            font.pixelSize: Theme.fontSmall
+                            font.weight: Font.DemiBold
+                        }
+                    }
+
                     // System: network, volume and battery in one button.
                     // Opens quick settings; scroll adjusts the volume.
                     Button {

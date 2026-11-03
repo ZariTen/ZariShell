@@ -1,3 +1,4 @@
+pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -6,7 +7,8 @@ import Quickshell.Io
 // Keyboard layouts of Hyprland's main keyboard, from `hyprctl devices -j`
 // (layout "us,br", variant "intl,abnt2", active_layout_index). Updates on
 // Hyprland's activelayout and configreloaded events. Empty without Hyprland.
-Scope {
+// One instance, shared by the bar and quick settings.
+Singleton {
     id: root
 
     readonly property bool available: !!Quickshell.env("HYPRLAND_INSTANCE_SIGNATURE")
@@ -14,6 +16,7 @@ Scope {
     property var codes: []             // short code per layout: "US", "BR"
     property int index: 0              // active layout
     property string keymap: ""         // active layout's long name
+    readonly property bool several: codes.length > 1
     readonly property string code: codes.length > 0 ? codes[Math.max(0, Math.min(index, codes.length - 1))] : ""
 
     function refresh() {

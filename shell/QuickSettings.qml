@@ -23,7 +23,7 @@ Scope {
     function refresh() {
         wifi.refresh(false);
         backlightQuery.running = true;
-        keyboard.refresh();
+        KeyboardLayout.refresh();
     }
 
     onOpenChanged: if (open) {
@@ -63,11 +63,11 @@ Scope {
 
                 // Active keyboard layout; click for the next one.
                 Button {
-                    visible: keyboard.codes.length > 1
+                    visible: KeyboardLayout.several
                     framed: true
                     implicitWidth: layoutRow.implicitWidth + Theme.spacingS * 2
                     implicitHeight: Theme.px(28)
-                    onClicked: keyboard.next()
+                    onClicked: KeyboardLayout.next()
 
                     Row {
                         id: layoutRow
@@ -80,7 +80,7 @@ Scope {
                         }
                         StyledText {
                             anchors.verticalCenter: parent.verticalCenter
-                            text: keyboard.code
+                            text: KeyboardLayout.code
                             font.pixelSize: Theme.fontSmall
                             font.weight: Font.DemiBold
                         }
@@ -230,10 +230,6 @@ Scope {
     }
 
     // -- Background objects -------------------------------------------------
-    KeyboardLayout {
-        id: keyboard
-    }
-
     PwObjectTracker {
         objects: root.sink ? [root.sink] : []
     }
