@@ -399,12 +399,9 @@ Scope {
                         implicitHeight: Theme.px(26)
                         onClicked: KeyboardLayout.next()
 
-                        StyledText {
+                        LayoutCode {
                             id: layoutCode
                             anchors.centerIn: parent
-                            text: KeyboardLayout.code
-                            font.pixelSize: Theme.fontSmall
-                            font.weight: Font.DemiBold
                         }
                     }
 

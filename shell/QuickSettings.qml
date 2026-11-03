@@ -78,11 +78,8 @@ Scope {
                             anchors.verticalCenter: parent.verticalCenter
                             codepoint: 0xF030C // md-keyboard
                         }
-                        StyledText {
+                        LayoutCode {
                             anchors.verticalCenter: parent.verticalCenter
-                            text: KeyboardLayout.code
-                            font.pixelSize: Theme.fontSmall
-                            font.weight: Font.DemiBold
                         }
                     }
                 }
