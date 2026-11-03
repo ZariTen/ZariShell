@@ -68,6 +68,9 @@ Scope {
             color: "transparent"
             implicitHeight: Theme.barSpace + Theme.shadowRoom
             exclusiveZone: Theme.barSpace
+            // Only the bar band takes input; the shadow room below passes
+            // clicks through to the windows.
+            mask: Region { item: band }
 
             anchors {
                 top: true
@@ -77,21 +80,31 @@ Scope {
 
             WlrLayershell.namespace: "shell-bar"
 
-            // Taskbar strip (full style). Hidden in pills style, where it still
-            // marks the band the bar content is centered in.
+            Item {
+                id: band
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                height: Theme.barSpace
+            }
+
+            // Taskbar strip: along the top edge (full) or barMargin away from
+            // the screen edges (floating). Hidden in pills style, where it
+            // still marks the band the bar content is centered in.
             Surface {
                 id: strip
                 visible: !Theme.barPills
                 anchors.left: parent.left
                 anchors.right: parent.right
                 anchors.top: parent.top
-                anchors.topMargin: Theme.barMargin
+                anchors.margins: Theme.barMargin
                 height: Theme.barHeight
-                radius: Theme.barRadius
+                radius: Theme.barFloating ? Theme.barRadius : 0
                 color: Theme.bar
 
-                // Edge line along the bottom of the bar.
+                // Edge line along the bottom of an edge bar.
                 Divider {
+                    visible: !Theme.barFloating
                     anchors.left: parent.left
                     anchors.right: parent.right
                     anchors.bottom: parent.bottom
@@ -110,7 +123,7 @@ Scope {
                     y: Theme.barMargin
                     width: modelData.width + Theme.spacingS * 2
                     height: Theme.barHeight
-                    radius: Math.max(Theme.barRadius, Theme.radiusLarge)
+                    radius: Theme.barRadius
                     color: Theme.bar
                 }
             }

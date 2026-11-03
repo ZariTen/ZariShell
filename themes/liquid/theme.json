@@ -2,7 +2,6 @@
   "name": "Liquid Glass",
   "description": "Frosted glass capsules",
   "accent": "wallpaper",
-  "barStyle": "pills",
   "components": ["ActiveContent", "Backdrop", "Button", "Field", "Fill", "Frame", "Glow", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {
     "surface": { "h": 0, "s": 0.3, "l": 0.12 },
@@ -59,26 +58,12 @@
     "radius": 18,
     "radiusLarge": 32,
     "radiusFull": 999,
-    "spacingXs": 4,
-    "spacingS": 8,
-    "spacingM": 12,
-    "spacingL": 16,
-    "spacingXl": 24,
     "radiusFrame": 36,
-    "barRadius": 0,
-    "barHeight": 44,
-    "shadowRoom": 12,
-    "gap": 10
+    "barRadius": 0
   },
   "fonts": {
     "font": "Noto Sans",
     "iconFont": "JetBrainsMono Nerd Font Propo",
-    "fontSmall": 11,
-    "fontBody": 13,
-    "fontTitle": 15,
-    "fontHeadline": 22,
-    "fontLarge": 38,
-    "fontDisplay": 120,
     "fontDisplayWeight": 600
   },
   "motion": {

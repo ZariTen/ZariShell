@@ -22,8 +22,11 @@ import Quickshell.Io
 // the accent setting (see accentTone). "accent" is "wallpaper" (hue sampled
 // from the current wallpaper) or a color. Every token is listed in README.md.
 //
-// User settings (Settings.qml, settings.json) sit on top: scale factors and
-// overrides applied here, so shell code only ever reads Theme.*.
+// A theme sets only the look: colors, corner radii, fonts (family, display
+// weight), motion and component looks. Sizes, spacing and the bar layout are
+// the same in every theme and come from the user settings (Settings.qml,
+// settings.json); geometry keys left in an old theme.json are ignored.
+// Shell code only ever reads Theme.*.
 Singleton {
     id: root
 
@@ -79,54 +82,56 @@ Singleton {
     readonly property color danger: color("danger", error)                     // destructive action icon
     readonly property color dangerHighlight: color("dangerHighlight", error)   // destructive action hover
 
-    // -- User scale factors (settings.json; 1 = as the theme says) ----------
+    // -- User scale factors (settings.json; 1 = the defaults below) ---------
     readonly property real uiScale: clamp(Settings.get("scale", 1), 0.5, 2)
     readonly property real radiusScale: clamp(Settings.get("radius", 1), 0, 3)
     readonly property real spacingScale: clamp(Settings.get("spacing", 1), 0.25, 3)
-    readonly property real fontScale: clamp(Settings.get("fontSize", themeFontBody) / themeFontBody, 0.5, 3)
+    readonly property int defaultFontSize: 13
+    readonly property real fontScale: clamp(Settings.get("fontSize", defaultFontSize) / defaultFontSize, 0.5, 3)
     readonly property real iconScale: clamp(Settings.get("iconSize", 16) / 16, 0.5, 3)
     readonly property real widthScale: clamp(Settings.get("panelWidth", 1), 0.5, 2)
     readonly property real dimLevel: clamp(Settings.get("dim", 0.5), 0.05, 1)
     readonly property real speed: clamp(Settings.get("animationSpeed", 1), 0.1, 5)
     readonly property bool reduceMotion: Settings.get("reduceMotion", false)
 
-    // -- Shape and spacing --------------------------------------------------
+    // -- Shape (theme) --------------------------------------------------------
     readonly property int radiusSmall: radiusMetric("radiusSmall", 3)
     readonly property int radius: radiusMetric("radius", 5)
     readonly property int radiusLarge: radiusMetric("radiusLarge", 8)
     readonly property int radiusFull: metric("radiusFull", 999)
     readonly property int radiusFrame: radiusMetric("radiusFrame", 10)   // matted picture frames (avatars)
-    readonly property int barRadius: radiusMetric("barRadius", 0)        // full-width edge bars
-    readonly property int spacingXs: spacingMetric("spacingXs", 4)
-    readonly property int spacingS: spacingMetric("spacingS", 8)
-    readonly property int spacingM: spacingMetric("spacingM", 12)
-    readonly property int spacingL: spacingMetric("spacingL", 16)
-    readonly property int spacingXl: spacingMetric("spacingXl", 24)
-    readonly property int themeBarHeight: metric("barHeight", 42)
-    readonly property int barHeight: px(clamp(Settings.get("barHeight", themeBarHeight), 24, 96))
-    readonly property int shadowRoom: px(metric("shadowRoom", 0))        // extra bar window height for a theme's shadow
-    // Bar layout: "full" (edge-to-edge strip) or "pills" (one floating pill per
-    // group of bar content). settings.json wins over theme.json "barStyle".
-    readonly property string themeBarStyle: spec.barStyle === "pills" ? "pills" : "full"
-    readonly property string userBarStyle: Settings.get("barStyle", "")
-    readonly property string barStyle: userBarStyle === "pills" || userBarStyle === "full" ? userBarStyle : themeBarStyle
+    // Floating bar and bar pills: at least radiusLarge (edge bars are square).
+    readonly property int barRadius: Math.max(radiusMetric("barRadius", 0), radiusLarge)
+
+    // -- Spacing and bar layout (settings, the same in every theme) ---------
+    readonly property int spacingXs: spacing(4)
+    readonly property int spacingS: spacing(8)
+    readonly property int spacingM: spacing(12)
+    readonly property int spacingL: spacing(16)
+    readonly property int spacingXl: spacing(24)
+    readonly property int gap: spacing(8)                                // screen edge / bar to panels
+    readonly property int barHeight: px(clamp(Settings.get("barHeight", 42), 24, 96))
+    // Bar layout: "full" (strip along the top edge), "floating" (one strip
+    // barGap away from the screen edges) or "pills" (a floating pill per
+    // group of bar content).
+    readonly property string barStyle: ["full", "floating", "pills"].indexOf(Settings.get("barStyle", "")) >= 0 ? Settings.get("barStyle", "") : "full"
     readonly property bool barPills: barStyle === "pills"
-    readonly property int barMargin: barPills ? spacingS : 0             // pill gap from the screen edges
+    readonly property bool barFloating: barStyle !== "full"
+    readonly property int barMargin: barFloating ? px(clamp(Settings.get("barGap", 8), 0, 32)) : 0
     readonly property int barSpace: barHeight + barMargin                // screen height the bar reserves
-    readonly property int gap: spacingMetric("gap", 8)
+    readonly property int shadowRoom: px(12)                             // bar window room for a look's shadow (input-masked)
     readonly property int avatarSize: px(clamp(Settings.get("avatarSize", 112), 48, 256)) // lock screen avatar
 
-    // -- Typography ---------------------------------------------------------
-    readonly property int themeFontBody: fontValue("fontBody", 13)
+    // -- Typography (theme: families and display weight; sizes: settings) ---
     readonly property string themeFont: fontValue("font", "sans-serif")
     readonly property string font: Settings.get("font", "") !== "" ? Settings.get("font", "") : themeFont
     readonly property string iconFont: fontValue("iconFont", "JetBrainsMono Nerd Font Propo")
-    readonly property int fontSmall: fontSize("fontSmall", 11)
-    readonly property int fontBody: fontSize("fontBody", 13)
-    readonly property int fontTitle: fontSize("fontTitle", 15)
-    readonly property int fontHeadline: fontSize("fontHeadline", 22)
-    readonly property int fontLarge: fontSize("fontLarge", 34)          // calendar clock
-    readonly property int fontDisplay: fontSize("fontDisplay", 112)     // lock / login clock
+    readonly property int fontSmall: fontPx(11)
+    readonly property int fontBody: fontPx(defaultFontSize)
+    readonly property int fontTitle: fontPx(15)
+    readonly property int fontHeadline: fontPx(22)
+    readonly property int fontLarge: fontPx(34)                         // calendar clock
+    readonly property int fontDisplay: fontPx(112)                      // lock / login clock
     readonly property int fontDisplayWeight: fontValue("fontDisplayWeight", Font.Light)
 
     // -- Motion (M3 emphasized / standard) ----------------------------------
@@ -448,17 +453,12 @@ Singleton {
         return lookup("motion", key, fallbackValue);
     }
 
-
     function radiusMetric(key, fallbackValue) {
         return Math.round(metric(key, fallbackValue) * uiScale * radiusScale);
     }
 
-    function spacingMetric(key, fallbackValue) {
-        return Math.round(metric(key, fallbackValue) * uiScale * spacingScale);
-    }
-
-    function fontSize(key, fallbackValue) {
-        return Math.round(fontValue(key, fallbackValue) * uiScale * fontScale);
+    function spacing(pixels) {
+        return Math.round(pixels * uiScale * spacingScale);
     }
 
     // -- Internal theme discovery and loading helpers -----------------------

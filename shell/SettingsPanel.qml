@@ -7,7 +7,8 @@ import Quickshell.Wayland
 
 // Global settings dialog (ShellState.panel "settings"; quick settings cog,
 // or `qs ipc call settings toggle`). Every row edits one key of
-// settings.json through Settings; a key that is not set follows the theme.
+// settings.json through Settings; a key that is not set uses its default
+// (the theme's, for looks such as opacity and font family).
 // Built only from generic components, so the active theme styles it.
 Scope {
     id: root
@@ -18,20 +19,20 @@ Scope {
 
     // Rows: key, label, kind ("slider" | "switch" | "font" | "accent"),
     // slider range/step, unit ("pct" | "px" | "x") and the value used when
-    // the key is unset (the theme's value).
+    // the key is unset.
     readonly property var sections: [
         { id: "appearance", title: "Appearance", glyph: 0xF03D8, rows: [
             { key: "scale", label: "UI scale", kind: "slider", min: 0.75, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
             { key: "radius", label: "Corner radius", kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1 },
             { key: "spacing", label: "Spacing", kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1 },
-            { key: "barHeight", label: "Bar height", kind: "slider", min: 28, max: 64, step: 1, unit: "px", def: Theme.themeBarHeight, onRelease: true },
+            { key: "barHeight", label: "Bar height", kind: "slider", min: 28, max: 64, step: 1, unit: "px", def: 42, onRelease: true },
             { key: "barOpacity", label: "Bar opacity", kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themeBar.a },
             { key: "panelOpacity", label: "Panel opacity", kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a },
             { key: "accent", label: "Accent color", kind: "accent", def: "" }
         ] },
         { id: "text", title: "Text", glyph: 0xF06D6, rows: [
             { key: "font", label: "Font family", kind: "font", def: "" },
-            { key: "fontSize", label: "Base font size", kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.themeFontBody },
+            { key: "fontSize", label: "Base font size", kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
             { key: "iconSize", label: "Icon size", kind: "slider", min: 12, max: 24, step: 1, unit: "px", def: 16 }
         ] },
         { id: "motion", title: "Motion", glyph: 0xF04C5, rows: [
@@ -39,7 +40,8 @@ Scope {
             { key: "reduceMotion", label: "Reduce motion", kind: "switch", def: false }
         ] },
         { id: "layout", title: "Layout", glyph: 0xF056E, rows: [
-            { key: "barStyle", label: "Bar style", kind: "choice", choices: [{ value: "full", label: "Full width" }, { value: "pills", label: "Pills" }], def: Theme.themeBarStyle },
+            { key: "barStyle", label: "Bar style", kind: "choice", choices: [{ value: "full", label: "Full width" }, { value: "floating", label: "Floating" }, { value: "pills", label: "Pills" }], def: "full" },
+            { key: "barGap", label: "Bar gap", kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
             { key: "avatarSize", label: "Lock screen avatar", kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112 },
             { key: "panelWidth", label: "Panel width", kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
             { key: "dim", label: "Dimmed items", kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }

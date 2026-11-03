@@ -5,7 +5,7 @@ One shell, many looks, and a login screen to match.
 
 ## Features
 
-- Bar with workspaces, media, tray, and clock, as a full strip or floating pills
+- Bar with workspaces, media, tray, and clock, as a full strip, a floating strip, or floating pills
 - Quick settings for Wi-Fi, Bluetooth, volume, and brightness
 - App launcher, window switcher, and clipboard history
 - Notification center and toasts

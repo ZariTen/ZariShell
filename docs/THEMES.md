@@ -47,7 +47,6 @@ in its looks with `Theme.color("name", fallback)` and
 | `description` | `""` | A few words shown in the theme picker, next to a preview drawn from the theme's colors, radii, bar and font. |
 | `accent` | `"#7a9cc6"` | Accent seed: a color, or `"wallpaper"` to take the hue from the current wallpaper. |
 | `components` | `[]` | Component looks / effects provided in `components/`. |
-| `barStyle` | `"full"` | Taskbar layout: `"full"` (an edge-to-edge strip) or `"pills"` (one floating pill per group: workspaces, media, notification area). The `barStyle` setting overrides it. |
 
 ## Colors
 
@@ -103,11 +102,14 @@ in its looks with `Theme.color("name", fallback)` and
 | `radiusLarge` | 8 | Panels and surfaces. |
 | `radiusFull` | 999 | Pills and circles (clamped to half the size). |
 | `radiusFrame` | 10 | Matted picture frames (avatars). |
-| `barRadius` | 0 | Full-width edge bars (taskbar, lock / login bottom bar). |
-| `spacingXs` / `spacingS` / `spacingM` / `spacingL` / `spacingXl` | 4 / 8 / 12 / 16 / 24 | Spacing scale (`spacingS` is also the avatar mat). |
-| `barHeight` | 42 | Taskbar height and exclusive zone (plus `spacingS` with the `pills` bar style). |
-| `shadowRoom` | 0 | Extra taskbar window height so a theme's shadow is not clipped. |
-| `gap` | 8 | Gap between screen edge / bar and panels. |
+| `barRadius` | 0 | Floating taskbar and bar pills (at least `radiusLarge`). Edge bars are square. |
+
+Themes set looks, not sizes. Spacing (4 / 8 / 12 / 16 / 24), the panel gap
+(8), the bar's height, style and gap, control sizes and font sizes are the same
+in every theme and come from the settings below. The old geometry keys
+(`spacingXs` … `spacingXl`, `barHeight`, `shadowRoom`, `gap`, `floatInset`,
+top-level `barStyle`, and the font sizes `fontSmall` … `fontDisplay`) are
+ignored if a theme still sets them.
 
 ## Fonts
 
@@ -115,9 +117,6 @@ in its looks with `Theme.color("name", fallback)` and
 | --- | --- | --- |
 | `font` | `sans-serif` | UI text. |
 | `iconFont` | `JetBrainsMono Nerd Font Propo` | Material Design glyphs. |
-| `fontSmall` / `fontBody` / `fontTitle` / `fontHeadline` | 11 / 13 / 15 / 22 | Text scale. |
-| `fontLarge` | 34 | Calendar clock. |
-| `fontDisplay` | 112 | Lock / login clock. |
 | `fontDisplayWeight` | 300 (Light) | Weight of the large clocks. |
 
 ## Motion
@@ -171,21 +170,22 @@ hl.layer_rule({ name = "shell", match = { namespace = "^shell-(bar|panel|notific
 ## Settings keys
 
 User settings in `~/.config/zarishell/settings.json` are applied on top of the
-theme: a key there wins over `theme.json`, which wins over the neutral defaults.
-The login screen ignores this file and always uses the theme.
+theme. Keys marked "theme" default to the theme's value; the rest are the same
+in every theme. The login screen ignores this file and uses the defaults.
 
 | Key | Default | Effect |
 | --- | --- | --- |
 | `scale` | 1 | UI scale: sizes, spacing, radii, fonts and icons. |
 | `radius` | 1 | Corner radius factor (0 = square). |
 | `spacing` | 1 | Spacing factor. |
-| `barHeight` | theme (42) | Bar height in px (before UI scale). |
-| `barStyle` | theme (`"full"`) | `"full"`: the bar is one strip across the top edge. `"pills"`: each group (workspaces and windows, media, notification area and clock) is its own floating pill, `spacingS` from the screen edges, drawn with the theme's `Surface` and `radiusLarge` (or `barRadius` if larger). Also in Settings > Layout > Bar style. |
+| `barHeight` | 42 | Bar height in px (before UI scale). |
+| `barStyle` | `"full"` | `"full"`: one strip along the top edge. `"floating"`: one strip `barGap` from the top and sides, with rounded corners. `"pills"`: each group (workspaces and windows, media, notification area and clock) is its own floating pill, `barGap` from the screen edges. Floating strips and pills use the theme's `Surface` and `barRadius` (at least `radiusLarge`). Settings > Layout > Bar style. |
+| `barGap` | 8 | Gap in px between the screen edges and a floating bar or pills (before UI scale). Settings > Layout > Bar gap. |
 | `barOpacity` | theme | Bar background opacity, 0..1. |
 | `panelOpacity` | theme | Panel / dialog background opacity, 0..1. |
 | `accent` | theme | `"wallpaper"` or `"#rrggbb"`. |
 | `font` | theme | UI font family (Settings > Text lists the installed fonts). |
-| `fontSize` | theme (13) | Base font size in px; the other sizes follow. |
+| `fontSize` | 13 | Base font size in px; the other sizes follow. |
 | `iconSize` | 16 | Base icon size in px; the other icons follow. |
 | `animationSpeed` | 1 | Animation speed factor (2 = twice as fast). |
 | `reduceMotion` | false | Turn transitions off (spinners keep turning). |
@@ -194,4 +194,4 @@ The login screen ignores this file and always uses the theme.
 | `dim` | 0.5 | Opacity of disabled / hint elements. |
 
 The login screen does not read `settings.json` (it runs as the greeter user,
-which cannot read your home); it always uses the theme.
+which cannot read your home); it uses the theme's looks and the defaults.

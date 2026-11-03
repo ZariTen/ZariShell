@@ -484,7 +484,7 @@ Item {
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             height: 44
-            radius: Theme.barRadius
+            radius: 0
             shadow: false
 
             RowLayout {

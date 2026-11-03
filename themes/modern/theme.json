@@ -50,26 +50,12 @@
     "radius": 14,
     "radiusLarge": 22,
     "radiusFull": 999,
-    "spacingXs": 4,
-    "spacingS": 8,
-    "spacingM": 12,
-    "spacingL": 18,
-    "spacingXl": 26,
     "radiusFrame": 28,
-    "barRadius": 999,
-    "barHeight": 46,
-    "gap": 12,
-    "floatInset": 4
+    "barRadius": 999
   },
   "fonts": {
     "font": "JetBrainsMono Nerd Font Propo",
     "iconFont": "JetBrainsMono Nerd Font Propo",
-    "fontSmall": 11,
-    "fontBody": 13,
-    "fontTitle": 15,
-    "fontHeadline": 22,
-    "fontLarge": 36,
-    "fontDisplay": 116,
     "fontDisplayWeight": 700
   },
   "motion": {

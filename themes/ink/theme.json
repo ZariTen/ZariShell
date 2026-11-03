@@ -52,26 +52,12 @@
     "radius": 0,
     "radiusLarge": 0,
     "radiusFull": 999,
-    "spacingXs": 4,
-    "spacingS": 8,
-    "spacingM": 12,
-    "spacingL": 16,
-    "spacingXl": 26,
     "radiusFrame": 0,
-    "barRadius": 0,
-    "barHeight": 40,
-    "shadowRoom": 0,
-    "gap": 10
+    "barRadius": 0
   },
   "fonts": {
     "font": "Noto Serif",
     "iconFont": "JetBrainsMono Nerd Font Propo",
-    "fontSmall": 11,
-    "fontBody": 13,
-    "fontTitle": 16,
-    "fontHeadline": 24,
-    "fontLarge": 38,
-    "fontDisplay": 124,
     "fontDisplayWeight": 300
   },
   "motion": {

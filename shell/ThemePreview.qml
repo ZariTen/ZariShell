@@ -1,8 +1,9 @@
 import QtQuick
 
 // Tiny mock desktop for the theme picker, drawn from a theme.json's own
-// tokens: its surface, bar (shape and style) and a panel with text in the
-// theme's font and a highlight button. Fallbacks match Theme.qml defaults.
+// colors and shapes: its surface, bar and a panel with text in the theme's
+// font and a highlight button. Bar size and style are the user's (the same
+// in every theme). Fallbacks match Theme.qml defaults.
 Rectangle {
     id: root
 
@@ -12,9 +13,9 @@ Rectangle {
     readonly property real sizeScale: 0.2
     readonly property real radiusScale: 0.4
 
-    readonly property bool pills: spec.barStyle === "pills"
-    readonly property bool floating: pills || metric("floatInset", 0) > 0
-    readonly property int barHeight: Math.max(Theme.px(6), Theme.px(metric("barHeight", 42) * sizeScale))
+    readonly property bool pills: Theme.barPills
+    readonly property bool floating: Theme.barFloating
+    readonly property int barHeight: Math.max(Theme.px(6), Math.round(Theme.barHeight * sizeScale))
     readonly property int barInset: floating ? Theme.px(3) : 0
 
     function value(sectionName, key, fallbackValue) {
@@ -42,7 +43,7 @@ Rectangle {
     border.width: 1
     border.color: Theme.outlineVariant
 
-    // Bar: one strip, or a pill per group with "barStyle": "pills".
+    // Bar: one strip, or a pill per group in the Pills bar style.
     Repeater {
         model: root.pills ? [[0, 0.4], [0.7, 0.3]] : [[0, 1]]
 
@@ -53,7 +54,7 @@ Rectangle {
             y: root.barInset
             width: span * modelData[1]
             height: root.barHeight
-            radius: root.shapeRadius("barRadius", 0, height)
+            radius: root.floating ? Math.max(root.shapeRadius("barRadius", 0, height), root.shapeRadius("radiusLarge", 8, height)) : 0
             color: root.tint("bar", [0.21, 0.23, 0.26, 0.92])
             border.width: 1
             border.color: root.tint("border", [0, 0, 0, 0.35])
