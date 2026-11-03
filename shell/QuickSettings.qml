@@ -5,8 +5,8 @@ import Quickshell.Bluetooth
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 
-// Quick settings: Wi-Fi and Bluetooth (tiles open their pickers), DND, volume,
-// brightness, power.
+// Quick settings: keyboard layout (with more than one), Wi-Fi and Bluetooth
+// (tiles open their pickers), DND, volume, brightness, power.
 Scope {
     id: root
 
@@ -23,6 +23,7 @@ Scope {
     function refresh() {
         wifi.refresh(false);
         backlightQuery.running = true;
+        keyboard.refresh();
     }
 
     onOpenChanged: if (open) {
@@ -60,6 +61,31 @@ Scope {
                 codepoint: 0xF0493 // md-cog
                 title: "Quick settings"
 
+                // Active keyboard layout; click for the next one.
+                Button {
+                    visible: keyboard.codes.length > 1
+                    framed: true
+                    implicitWidth: layoutRow.implicitWidth + Theme.spacingS * 2
+                    implicitHeight: Theme.px(28)
+                    onClicked: keyboard.next()
+
+                    Row {
+                        id: layoutRow
+                        anchors.centerIn: parent
+                        spacing: Theme.spacingXs
+
+                        MdIcon {
+                            anchors.verticalCenter: parent.verticalCenter
+                            codepoint: 0xF030C // md-keyboard
+                        }
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: keyboard.code
+                            font.pixelSize: Theme.fontSmall
+                            font.weight: Font.DemiBold
+                        }
+                    }
+                }
                 IconButton {
                     codepoint: 0xF062E // md-tune
                     onClicked: ShellState.toggle("settings")
@@ -204,6 +230,10 @@ Scope {
     }
 
     // -- Background objects -------------------------------------------------
+    KeyboardLayout {
+        id: keyboard
+    }
+
     PwObjectTracker {
         objects: root.sink ? [root.sink] : []
     }
