@@ -267,8 +267,11 @@ Scope {
                     anchors.centerIn: parent
                     spacing: Theme.spacingS
 
-                    // Album art with a play/pause badge; play/pause orb when no art.
+                    // Album art (a music note without art). Paused: art dimmed
+                    // under a centered pause glyph; playing: just the art.
                     Item {
+                        id: mediaArt
+                        readonly property bool paused: !root.player || !root.player.isPlaying
                         implicitWidth: Theme.px(24)
                         implicitHeight: Theme.px(24)
 
@@ -280,8 +283,8 @@ Scope {
 
                             MdIcon {
                                 anchors.centerIn: parent
-                                codepoint: root.player && root.player.isPlaying ? 0xF03E4 : 0xF040A
-                                font.pixelSize: Theme.iconPx(13)
+                                codepoint: mediaArt.paused ? 0xF03E4 : 0xF075A // md-pause / md-music
+                                font.pixelSize: Theme.iconPx(14)
                             }
                         }
 
@@ -303,30 +306,25 @@ Scope {
                                 sourceSize.height: 64
                                 source: root.player ? root.player.trackArtUrl : ""
                             }
-                        }
 
-                        Rectangle {
-                            visible: albumArtClip.visible
-                            anchors.right: parent.right
-                            anchors.bottom: parent.bottom
-                            anchors.margins: Theme.px(-3)
-                            width: Theme.px(13)
-                            height: Theme.px(13)
-                            radius: Theme.radiusFull
-                            color: Theme.primary
-                            border.width: 1
-                            border.color: Theme.border
+                            Rectangle {
+                                anchors.fill: parent
+                                visible: mediaArt.paused
+                                color: Theme.scrimStrong
 
-                            MdIcon {
-                                anchors.centerIn: parent
-                                codepoint: root.player && root.player.isPlaying ? 0xF03E4 : 0xF040A
-                                font.pixelSize: Theme.iconPx(8)
+                                MdIcon {
+                                    anchors.centerIn: parent
+                                    codepoint: 0xF03E4 // md-pause
+                                    color: "#ffffff"
+                                    font.pixelSize: Theme.iconPx(14)
+                                }
                             }
                         }
                     }
 
                     StyledText {
                         Layout.maximumWidth: Theme.px(260)
+                        color: mediaArt.paused ? Theme.textSurfaceVariant : Theme.textSurface
                         text: root.player ? (root.player.trackTitle || root.player.identity) : ""
                     }
                 }
