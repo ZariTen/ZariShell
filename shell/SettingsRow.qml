@@ -11,6 +11,7 @@ Item {
 
     // -- Public / derived properties ----------------------------------------
     required property var modelData
+    readonly property bool stackedChoice: modelData.kind === "choice" && modelData.choiceLayout === "stacked"
     readonly property bool isSet: Settings.has(modelData.key)
     readonly property var currentValue: Settings.get(modelData.key, modelData.def)
     readonly property real displayedSliderValue: slider.pendingValue >= 0 ? slider.pendingValue : Number(currentValue)
@@ -47,7 +48,7 @@ Item {
     readonly property string pickerSeed: colorPickerOpen ? Theme.accentSeed.toString() : ""
 
     Layout.fillWidth: true
-    implicitHeight: Theme.px(40) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
+    implicitHeight: controls.height + (stackedChoice ? wrappedChoices.height + Theme.spacingS : 0) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
 
     // -- Helper functions ---------------------------------------------------
     function formatValue(rowSpec, numericValue) {
@@ -167,13 +168,14 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: Theme.px(40)
+        height: row.stackedChoice ? Math.max(Theme.px(40), implicitHeight) : Theme.px(40)
         anchors.leftMargin: Theme.spacingM
         anchors.rightMargin: Theme.spacingXs
         spacing: Theme.spacingM
 
         StyledText {
-            Layout.preferredWidth: Theme.px(140)
+            Layout.preferredWidth: row.stackedChoice ? implicitWidth : Theme.px(140)
+            Layout.fillWidth: row.stackedChoice
             text: row.modelData.label
             color: row.isSet ? Theme.textSurface : Theme.textSurfaceVariant
         }
@@ -333,11 +335,11 @@ Item {
 
         // Choice: one segmented button per value in `choices`
         RowLayout {
-            visible: row.modelData.kind === "choice"
+            visible: row.modelData.kind === "choice" && !row.stackedChoice
             Layout.fillWidth: true
             spacing: Theme.spacingXs
             Repeater {
-                model: row.modelData.kind === "choice" ? row.modelData.choices : []
+                model: row.modelData.kind === "choice" && !row.stackedChoice ? row.modelData.choices : []
                 Button {
                     id: optionButton
                     required property var modelData
@@ -367,6 +369,35 @@ Item {
             codepoint: 0xF099B // md-restore
             icon.color: Theme.textSurfaceVariant
             onClicked: Settings.reset(row.modelData.key)
+        }
+    }
+
+    Flow {
+        id: wrappedChoices
+        visible: row.stackedChoice
+        anchors.top: controls.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: Theme.spacingM
+        anchors.rightMargin: Theme.spacingM
+        spacing: Theme.spacingXs
+
+        Repeater {
+            model: row.stackedChoice ? row.modelData.choices : []
+            Button {
+                id: wrappedOption
+                required property var modelData
+                implicitWidth: wrappedLabel.implicitWidth + Theme.spacingM * 2
+                implicitHeight: Math.max(Theme.px(30), wrappedLabel.implicitHeight + Theme.spacingXs * 2)
+                framed: true
+                active: row.currentValue === modelData.value
+                onClicked: Settings.set(row.modelData.key, modelData.value)
+                StyledText {
+                    id: wrappedLabel
+                    anchors.centerIn: parent
+                    text: wrappedOption.modelData.label
+                }
+            }
         }
     }
 

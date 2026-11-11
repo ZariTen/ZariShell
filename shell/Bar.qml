@@ -142,40 +142,8 @@ Scope {
                     Repeater {
                         model: Hyprland.workspaces
 
-                        delegate: Button {
-                            id: workspaceButton
-                            required property var modelData
-                            readonly property bool occupied: modelData.toplevels.values.length > 0
-
+                        delegate: WorkspaceButton {
                             visible: bar.monitor !== null && modelData.monitor === bar.monitor && modelData.id > 0
-                            implicitWidth: modelData.active ? 44 : 32
-                            implicitHeight: Theme.px(30)
-                            active: modelData.active
-                            tint: modelData.urgent ? Theme.error : Theme.highlight
-                            onClicked: modelData.activate()
-
-                            Behavior on implicitWidth {
-                                NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized }
-                            }
-
-                            StyledText {
-                                anchors.centerIn: parent
-                                text: workspaceButton.modelData.name
-                                font.weight: workspaceButton.active ? Font.Bold : Font.Normal
-                                opacity: workspaceButton.active || workspaceButton.occupied || workspaceButton.hovered ? 1 : Theme.dim(0.5)
-                            }
-
-                            // Occupied marker
-                            Rectangle {
-                                visible: workspaceButton.occupied && !workspaceButton.active
-                                anchors.horizontalCenter: parent.horizontalCenter
-                                anchors.bottom: parent.bottom
-                                anchors.bottomMargin: Theme.spacingXs
-                                width: Theme.px(10)
-                                height: Theme.px(2)
-                                radius: Theme.radiusFull
-                                color: Theme.accent
-                            }
                         }
                     }
                 }

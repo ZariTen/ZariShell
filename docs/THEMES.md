@@ -180,6 +180,7 @@ in every theme. The login screen ignores this file and uses the defaults.
 | `spacing` | 1 | Spacing factor. |
 | `barHeight` | 42 | Bar height in px (before UI scale). |
 | `barStyle` | `"full"` | `"full"`: one strip along the top edge. `"floating"`: one strip `barGap` from the top and sides, with rounded corners. `"pills"`: each group (workspaces and windows, media, notification area and clock) is its own floating pill, `barGap` from the screen edges. Floating strips and pills use the theme's `Surface` and `barRadius` (at least `radiusLarge`). Settings > Layout > Bar style. |
+| `workspaceStyle` | `"dots"` | Workspace indicators: `"dots"` (default circles), `"numbers"` (workspace numbers or custom names), `"pills"` (horizontal capsules, elongated when active), or `"diamonds"`. Shape styles use hollow markers for empty workspaces and filled markers for occupied ones; the active workspace is highlighted, and urgent workspaces use the error color. Settings > Layout > Workspace style. Invalid values fall back to dots. |
 | `barGap` | 8 | Gap in px between the screen edges and a floating bar or pills (before UI scale). Settings > Layout > Bar gap. |
 | `barOpacity` | theme | Bar background opacity, 0..1. |
 | `panelOpacity` | theme | Panel / dialog background opacity, 0..1. |

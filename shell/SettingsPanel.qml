@@ -41,6 +41,7 @@ Scope {
         ] },
         { id: "layout", title: "Layout", glyph: 0xF056E, rows: [
             { key: "barStyle", label: "Bar style", kind: "choice", choices: [{ value: "full", label: "Full width" }, { value: "floating", label: "Floating" }, { value: "pills", label: "Pills" }], def: "full" },
+            { key: "workspaceStyle", label: "Workspace style", kind: "choice", choiceLayout: "stacked", choices: [{ value: "dots", label: "Dots" }, { value: "numbers", label: "Numbers" }, { value: "pills", label: "Pills" }, { value: "diamonds", label: "Diamonds" }], def: "dots" },
             { key: "barGap", label: "Bar gap", kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
             { key: "avatarSize", label: "Lock screen avatar", kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112 },
             { key: "panelWidth", label: "Panel width", kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
