@@ -2,7 +2,7 @@
   "name": "Aero",
   "description": "Tinted Windows 7 glass",
   "accent": "wallpaper",
-  "components": ["Backdrop", "Button", "Field", "Fill", "Frame", "Glow", "Highlight", "Slider", "Surface", "Switch"],
+  "components": ["Backdrop", "Button", "Field", "Fill", "Frame", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {
     "surface": { "h": 0, "s": 0.4, "l": 0.12 },
     "bar": { "h": -0.02, "s": 0.55, "l": 0.36, "a": 0.52 },
