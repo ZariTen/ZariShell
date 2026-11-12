@@ -42,6 +42,13 @@ Singleton {
         return values[key] !== undefined && values[key] !== null;
     }
 
+    function isModified(key, defaultValue) {
+        var value = get(key, defaultValue);
+        if (typeof value === "number" && typeof defaultValue === "number")
+            return Math.abs(value - defaultValue) > 0.000001;
+        return value !== defaultValue;
+    }
+
     function set(key, value) {
         if (values[key] === value)
             return;

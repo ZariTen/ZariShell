@@ -12,7 +12,7 @@ Item {
     // -- Public / derived properties ----------------------------------------
     required property var modelData
     readonly property bool stackedChoice: modelData.kind === "choice" && modelData.choiceLayout === "stacked"
-    readonly property bool isSet: Settings.has(modelData.key)
+    readonly property bool isModified: Settings.isModified(modelData.key, modelData.def)
     readonly property var currentValue: Settings.get(modelData.key, modelData.def)
     readonly property real displayedSliderValue: slider.pendingValue >= 0 ? slider.pendingValue : Number(currentValue)
 
@@ -177,7 +177,7 @@ Item {
             Layout.preferredWidth: row.stackedChoice ? implicitWidth : Theme.px(140)
             Layout.fillWidth: row.stackedChoice
             text: row.modelData.label
-            color: row.isSet ? Theme.textSurface : Theme.textSurfaceVariant
+            color: row.isModified ? Theme.textSurface : Theme.textSurfaceVariant
         }
 
         // Slider
@@ -364,8 +364,8 @@ Item {
         IconButton {
             implicitWidth: Theme.px(30)
             radius: Theme.radiusFull
-            enabled: row.isSet
-            opacity: row.isSet ? 1 : Theme.dim(0.5)
+            enabled: row.isModified
+            opacity: row.isModified ? 1 : Theme.dim(0.5)
             codepoint: 0xF099B // md-restore
             icon.color: Theme.textSurfaceVariant
             onClicked: Settings.reset(row.modelData.key)

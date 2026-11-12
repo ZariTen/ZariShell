@@ -217,7 +217,7 @@ Scope {
                             }
                             ActionButton {
                                 visible: root.currentSection.rows.length > 0
-                                enabled: root.sectionKeys(root.currentSection).some(key => Settings.has(key))
+                                enabled: root.currentSection.rows.some(rowSpec => Settings.isModified(rowSpec.key, rowSpec.def))
                                 opacity: enabled ? 1 : Theme.dim(0.5)
                                 text: "Reset section"
                                 onClicked: if (enabled) Settings.resetKeys(root.sectionKeys(root.currentSection))
