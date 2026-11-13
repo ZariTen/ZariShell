@@ -68,13 +68,13 @@ Singleton {
         let seenMounts = {};
         let parsedDisks = [];
         (sections[1] || "").trim().split("\n").forEach(line => {
-            let fields = line.trim().split(/\s+/);
-            if (fields.length >= 3 && !seenMounts[fields[0]]) {
-                seenMounts[fields[0]] = true;
+            let fields = /^(\/.*?)\s+(\d+)\s+(\d+)$/.exec(line.trim());
+            if (fields && !seenMounts[fields[1]]) {
+                seenMounts[fields[1]] = true;
                 parsedDisks.push({
-                    mount: fields[0],
-                    size: Number(fields[1]),
-                    used: Number(fields[2])
+                    mount: fields[1],
+                    size: Number(fields[2]),
+                    used: Number(fields[3])
                 });
             }
         });
@@ -133,7 +133,7 @@ Singleton {
 
     Process {
         id: extraStatsProcess
-        command: ["sh", root.sysstatsScriptPath, "extra"]
+        command: ["sh", root.sysstatsScriptPath, "extra"].concat(Theme.diskMounts)
         stdout: StdioCollector {
             onStreamFinished: root.parseExtraStats(text)
         }

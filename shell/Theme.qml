@@ -119,6 +119,7 @@ Singleton {
     readonly property int notificationTimeout: boundedSetting("notificationTimeout", 5000, 0, 600000)
     readonly property int notificationHistoryLimit: boundedSetting("notificationHistoryLimit", 50, 1, 1000)
     readonly property int notificationPopupLimit: boundedSetting("notificationPopupLimit", 4, 0, 20)
+    readonly property var diskMounts: diskMountList()
     readonly property bool clipboardHistory: Settings.get("clipboardHistory", true)
     readonly property string workspaceStyle: ["dots", "numbers", "pills", "diamonds"].indexOf(Settings.get("workspaceStyle", "")) >= 0 ? Settings.get("workspaceStyle", "") : "dots"
     readonly property bool barPills: barStyle === "pills"
@@ -407,6 +408,15 @@ Singleton {
     }
 
     // -- Internal token helpers ---------------------------------------------
+    function diskMountList() {
+        var home = Quickshell.env("HOME") || "/";
+        var defaults = home === "/" ? ["/"] : ["/", home];
+        var mounts = Settings.get("diskMounts");
+        if (!Array.isArray(mounts) || !mounts.every(path => typeof path === "string" && path[0] === "/" && !/[\x00-\x1f\x7f]/.test(path)))
+            return defaults;
+        return mounts.filter((path, index) => mounts.indexOf(path) === index);
+    }
+
     function boundedSetting(key, fallback, minimum, maximum) {
         var value = Settings.get(key, fallback);
         return Number.isFinite(value) ? Math.round(clamp(value, minimum, maximum)) : fallback;

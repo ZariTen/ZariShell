@@ -37,14 +37,6 @@ Scope {
         return "normal";
     }
 
-    function diskLabel(mountPoint) {
-        if (mountPoint === "/")
-            return qsTr("System");
-        if (mountPoint === "/home")
-            return qsTr("Home");
-        return qsTr("Disk");
-    }
-
     // -- Inline components --------------------------------------------------
     component Meter: RowLayout {
         id: meter
@@ -209,8 +201,7 @@ Scope {
                 readonly property var diskEntry: SysStats.disks[index] || ({ mount: "", size: 0, used: 0 })
 
                 codepoint: 0xF02CA // md-harddisk
-                label: root.diskLabel(diskEntry.mount)
-                sublabel: diskEntry.mount
+                label: diskEntry.mount
                 value: diskEntry.size > 0 ? diskEntry.used / diskEntry.size : 0
                 detail: root.formatGigabytes(diskEntry.used) + " / " + root.formatGigabytes(diskEntry.size) + root.separatorDot + root.formatPercent(diskMeter.value)
             }

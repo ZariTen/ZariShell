@@ -8,7 +8,7 @@
 #
 #   sysstats.sh extra
 #     Outputs the CPU package temperature (millidegrees C), a "---" separator,
-#     and filesystem usage for / and /home in bytes.
+#     and filesystem usage for the remaining path arguments in bytes.
 
 case ${1:-basic} in
 basic)
@@ -25,6 +25,9 @@ extra)
         esac
     done
     echo ---
-    df -B1 --output=target,size,used / /home 2>/dev/null | tail -n +2
+    shift
+    if [ "$#" -gt 0 ]; then
+        LC_ALL=C df -B1 --output=target,size,used -- "$@" 2>/dev/null | tail -n +2
+    fi
     ;;
 esac
