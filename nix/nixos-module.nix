@@ -1,7 +1,8 @@
-# NixOS module: services.zarishell.greeter (greetd + cage + Quickshell).
+# NixOS module: lock PAM policy and optional greetd greeter.
 { config, lib, pkgs, ... }:
 let
   cfg = config.services.zarishell.greeter;
+  pamCfg = config.services.zarishell.pam;
   zs = pkgs.callPackage ./packages.nix { };
   greeterQml = zs.mkGreeter { inherit (cfg) wallpaper; };
   stateDir = cfg.stateDir;
@@ -36,6 +37,16 @@ let
   '';
 in
 {
+  options.services.zarishell.pam = {
+    enable = lib.mkEnableOption "a dedicated PAM policy for the ZariShell lock screen";
+
+    serviceName = lib.mkOption {
+      type = lib.types.strMatching "[A-Za-z0-9][A-Za-z0-9_.-]*";
+      default = "zarishell";
+      description = "PAM service to provision. Must match programs.zarishell.pamService in Home Manager or ZARISHELL_PAM_SERVICE for standalone use.";
+    };
+  };
+
   options.services.zarishell.greeter = {
     enable = lib.mkEnableOption "the ZariShell greetd greeter (Quickshell in cage)";
 
@@ -91,19 +102,24 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    services.greetd = {
-      enable = true;
-      useTextGreeter = false;
-      settings.default_session = {
-        command = "${wrapper}";
-        user = "greeter";
+  config = lib.mkMerge [
+    (lib.mkIf pamCfg.enable {
+      security.pam.services.${pamCfg.serviceName} = { };
+    })
+    (lib.mkIf cfg.enable {
+      services.greetd = {
+        enable = true;
+        useTextGreeter = false;
+        settings.default_session = {
+          command = "${wrapper}";
+          user = "greeter";
+        };
       };
-    };
 
-    systemd.tmpfiles.rules = [ "d ${stateDir} 0750 greeter greeter - -" ];
+      systemd.tmpfiles.rules = [ "d ${stateDir} 0750 greeter greeter - -" ];
 
-    # The greeter runs in the logind seat session greetd opens.
-    users.users.greeter.extraGroups = [ "video" "input" ];
-  };
+      # The greeter runs in the logind seat session greetd opens.
+      users.users.greeter.extraGroups = [ "video" "input" ];
+    })
+  ];
 }

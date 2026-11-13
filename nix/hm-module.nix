@@ -20,6 +20,12 @@ in
       description = "Quickshell config name (`quickshell -c <name>`; used by IPC keybinds).";
     };
 
+    pamService = lib.mkOption {
+      type = lib.types.strMatching "[A-Za-z0-9][A-Za-z0-9_.-]*";
+      default = "hyprlock";
+      description = "PAM service used to unlock the session. Provision it with the ZariShell NixOS PAM module or a system-managed PAM policy; Home Manager cannot create /etc/pam.d entries.";
+    };
+
     systemdTarget = lib.mkOption {
       type = lib.types.str;
       default = "hyprland-session.target";
@@ -79,6 +85,7 @@ in
       Service.Environment = [
         "PATH=${lib.makeBinPath cfg.runtimePackages}:%h/.nix-profile/bin:/etc/profiles/per-user/%u/bin:/run/current-system/sw/bin"
         "ZARISHELL_WALLPAPER_DIR=${cfg.wallpaperDir}"
+        "ZARISHELL_PAM_SERVICE=${cfg.pamService}"
       ] ++ lib.optional (cfg.wallpaper != null) "ZARISHELL_WALLPAPER=${cfg.wallpaper}";
     };
   };

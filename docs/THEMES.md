@@ -196,3 +196,38 @@ in every theme. The login screen ignores this file and uses the defaults.
 
 The login screen does not read `settings.json` (it runs as the greeter user,
 which cannot read your home); it uses the theme's looks and the defaults.
+
+## Lock authentication
+
+The lock screen authenticates with the PAM service named by
+`ZARISHELL_PAM_SERVICE`. Standalone launches keep `hyprlock` as the fallback
+when that variable is unset or empty; the corresponding system PAM policy must
+already exist. This does not require running the hyprlock program.
+
+The Home Manager module exposes `programs.zarishell.pamService` (default
+`"hyprlock"` for compatibility) and passes it to the Quickshell user service.
+**Home Manager cannot install a system PAM policy.** To use a dedicated policy
+on NixOS, set `programs.zarishell.pamService = "zarishell"` in Home Manager,
+import the NixOS module and explicitly enable the policy in system configuration:
+
+```nix
+{
+  imports = [ zarishell.nixosModules.default ];
+  services.zarishell.pam.enable = true;
+  # services.zarishell.pam.serviceName = "zarishell"; # default
+}
+```
+
+This provisions `/etc/pam.d/zarishell` using NixOS's normal PAM policy, without
+enabling or requiring `services.zarishell.greeter.enable`. For a custom service
+name, set `services.zarishell.pam.serviceName` and
+`programs.zarishell.pamService` to the same name. Standalone launches using this
+dedicated policy must set `ZARISHELL_PAM_SERVICE=zarishell` (or the custom name).
+
+Without this NixOS module, an administrator must provision
+`/etc/pam.d/<service-name>` manually using the distribution's appropriate
+screen-lock authentication policy, or select an already-provisioned policy
+such as `hyprlock`. Do not use an allow-all PAM policy. A missing or unsuitable
+policy can leave authentication unavailable after locking; provision it before
+relying on the lock screen. These settings affect the session lock only, not
+greetd login authentication.

@@ -4,8 +4,8 @@ import Quickshell.Io
 import Quickshell.Services.Pam
 import Quickshell.Wayland
 
-// Session lock (ext-session-lock) with PAM auth via the existing "hyprlock"
-// PAM service. `ipc call lock lock` locks; a successful auth unlocks.
+// Session lock (ext-session-lock) with configurable PAM authentication.
+// `ipc call lock lock` locks; a successful auth unlocks.
 // Set QS_LOCK_PREVIEW=1 to show a harmless, non-locking preview window.
 Scope {
     id: root
@@ -15,6 +15,7 @@ Scope {
     property bool busy: false
     property string errorText: ""
     property string pending: ""
+    readonly property alias pamService: pam.config
     readonly property bool preview: Quickshell.env("QS_LOCK_PREVIEW") === "1"
 
     // -- Signals ------------------------------------------------------------
@@ -89,7 +90,7 @@ Scope {
     // -- Background objects -------------------------------------------------
     PamContext {
         id: pam
-        config: "hyprlock"
+        config: Quickshell.env("ZARISHELL_PAM_SERVICE") || "hyprlock"
 
         onPamMessage: {
             if (pam.responseRequired) {
