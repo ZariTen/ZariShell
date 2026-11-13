@@ -53,15 +53,13 @@ services.zarishell.greeter.enable = true;
 
 ## Configuration
 
-Open the settings panel from quick settings, or bind it in Hyprland:
+Open the settings panel from quick settings. Changes apply live and are saved
+to `${XDG_CONFIG_HOME:-~/.config}/zarishell/settings.json`.
 
-```
-bind = SUPER, comma, exec, quickshell -c shell ipc call settings toggle
-```
-
-Changes apply live and are saved to `~/.config/zarishell/settings.json`, which
-you can also edit by hand. For glass themes, enable Hyprland layer blur; see
-[docs/THEMES.md](docs/THEMES.md#compositor-blur).
+- [Configuration](docs/CONFIGURATION.md): settings, runtime integration, compositor
+  blur, lock authentication (PAM), and greeter setup. Provision a suitable PAM
+  policy before using the lock screen.
+- [Writing themes](docs/THEMES.md): theme tokens, components, and authoring guidance.
 
 ## License
 
