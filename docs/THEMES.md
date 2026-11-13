@@ -199,6 +199,14 @@ in every theme. The login screen ignores this file and uses the defaults.
 The login screen does not read `settings.json` (it runs as the greeter user,
 which cannot read your home); it uses the theme's looks and the defaults.
 
+## Greeter session commands
+
+`services.zarishell.greeter.sessionCommand` / `QS_GREETER_SESSION_COMMAND`
+accepts single/double-quoted and backslash-escaped arguments, without shell
+expansion. Detected desktop `Exec` lines use desktop-entry escaping: `%%` is a
+literal percent; standard file/URL/metadata field codes are removed. Malformed
+commands are skipped (an invalid configured fallback cannot start a session).
+
 ## Lock authentication
 
 The lock screen authenticates with the PAM service named by

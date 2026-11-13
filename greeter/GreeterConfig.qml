@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import "Command.js" as Command
 
 // Greeter behaviour knobs. Colors and fonts live in Theme.qml (shared with
 // the desktop shell); this file only holds greeter-specific settings.
@@ -15,7 +16,7 @@ QtObject {
 
     // Fallback/default session when no .desktop matches (or none are found).
     // A detected session whose Exec ends in this command is preselected.
-    readonly property var sessionCommand: (Quickshell.env("QS_GREETER_SESSION_COMMAND") || "start-hyprland").split(" ")
+    readonly property var sessionCommand: Command.parse(Quickshell.env("QS_GREETER_SESSION_COMMAND") || "start-hyprland", false)
     readonly property string sessionName: Quickshell.env("QS_GREETER_SESSION_NAME") || "Hyprland"
     readonly property var sessionEnv: ["XDG_SESSION_TYPE=wayland"]
     // Where wayland-sessions/*.desktop live (set by the Nix wrapper).

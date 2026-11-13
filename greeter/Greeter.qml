@@ -1,4 +1,5 @@
 import QtQuick
+import "Command.js" as Command
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -139,6 +140,10 @@ Item {
         }
         if (userName === "") {
             fail("Choose a user");
+            return;
+        }
+        if (currentSession.exec.length === 0) {
+            fail("Invalid session command");
             return;
         }
         errorText = "";
@@ -623,7 +628,9 @@ Item {
                     var desktopEntry = entriesByFile[filePath];
                     if (!desktopEntry.Exec || desktopEntry.NoDisplay === "true" || desktopEntry.Hidden === "true")
                         return;
-                    var commandArgs = desktopEntry.Exec.replace(/%[a-zA-Z]/g, "").trim().split(/\s+/);
+                    var commandArgs = Command.parse(desktopEntry.Exec, true);
+                    if (commandArgs.length === 0)
+                        return;
                     parsedSessions.push({
                         name: desktopEntry.Name || filePath.split("/").pop(),
                         exec: commandArgs

@@ -68,7 +68,7 @@ in
     sessionCommand = lib.mkOption {
       type = lib.types.str;
       default = "start-hyprland";
-      description = "Default session command (space-separated) when no .desktop session matches.";
+      description = "Default session command when no .desktop session matches. Single/double quotes and backslash escapes group arguments; no shell expansion.";
     };
 
     sessionName = lib.mkOption {
