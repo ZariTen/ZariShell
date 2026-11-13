@@ -20,7 +20,10 @@ QsPage {
     property int activeSignal: 0
     property var networks: []
     property var held: null            // list received while typing a password
-    property var saved: []             // saved Wi-Fi profile names
+    property var saved: []             // UUID, SSID and optional interface per profile
+    property string profilesState: "unknown"
+    property var profileQueue: []
+    property var pendingProfiles: []
     property bool scanning: false
     property string connecting: ""     // SSID being connected
     property string askSsid: ""        // SSID whose password field is open
@@ -34,8 +37,8 @@ QsPage {
         list.sort((firstNet, secondNet) => {
             if (firstNet.inUse !== secondNet.inUse)
                 return firstNet.inUse ? -1 : 1;
-            var firstSaved = saved.indexOf(firstNet.ssid) !== -1;
-            var secondSaved = saved.indexOf(secondNet.ssid) !== -1;
+            var firstSaved = isSaved(firstNet.ssid);
+            var secondSaved = isSaved(secondNet.ssid);
             if (firstSaved !== secondSaved)
                 return firstSaved ? -1 : 1;
             return secondNet.signal - firstNet.signal || firstNet.ssid.localeCompare(secondNet.ssid);
@@ -83,7 +86,64 @@ QsPage {
     }
 
     function isSaved(ssid) {
-        return saved.indexOf(ssid) !== -1;
+        return savedProfile(ssid) !== null;
+    }
+
+    function savedProfile(ssid) {
+        var matches = saved.filter(profile => profile.ssid === ssid
+                                   && (profile.ifname === "" || profile.ifname === device));
+        matches.sort((first, second) => {
+            if ((first.ifname === device) !== (second.ifname === device))
+                return first.ifname === device ? -1 : 1;
+            return first.uuid.localeCompare(second.uuid);
+        });
+        return matches.length ? matches[0] : null;
+    }
+
+    function profilesAvailable() {
+        if (profilesState === "ready")
+            return true;
+        error = profilesState === "failed"
+                ? "Couldn't load saved Wi-Fi profiles. Reopen Wi-Fi to retry, or use nm-connection-editor."
+                : "Saved Wi-Fi profiles are still loading. Try again shortly.";
+        return false;
+    }
+
+    function refreshProfiles() {
+        if (profilesState === "loading" || connectProcess.running || connecting !== "")
+            return;
+        profilesState = "loading";
+        pendingProfiles = [];
+        profileQueue = [];
+        savedQuery.output = "";
+        savedQuery.running = true;
+    }
+
+    function nextProfile() {
+        if (profileQueue.length === 0) {
+            saved = pendingProfiles;
+            pendingProfiles = [];
+            profilesState = "ready";
+            return;
+        }
+        profileQuery.uuid = profileQueue[0];
+        profileQueue = profileQueue.slice(1);
+        profileQuery.output = "";
+        profileQuery.running = true;
+    }
+
+    function parseProfile(text, uuid) {
+        var values = {};
+        text.split("\n").forEach(line => {
+            var fields = splitTerse(line);
+            if (fields.length === 2)
+                values[fields[0]] = fields[1];
+        });
+        if (values["connection.uuid"] !== uuid || values["connection.interface-name"] === undefined
+                || !values["802-11-wireless.ssid"])
+            return null;
+        var ifname = values["connection.interface-name"];
+        return { uuid: uuid, ssid: values["802-11-wireless.ssid"], ifname: ifname === "--" ? "" : ifname };
     }
 
     // Radio state, device, saved profiles and the cached scan; optionally
@@ -91,6 +151,7 @@ QsPage {
     function refresh(rescan) {
         wantRescan = rescan;
         radioQuery.running = true;
+        refreshProfiles();
     }
 
     function scan(mode) {
@@ -205,18 +266,28 @@ QsPage {
     function connectTo(networkEntry, password) {
         if (device === "" || connectProcess.running || connecting !== "")
             return;
-        if (networkEntry.ssid.charAt(0) === "-") {
+        if (!profilesAvailable())
+            return;
+        var profile = savedProfile(networkEntry.ssid);
+        var knownSsid = saved.some(entry => entry.ssid === networkEntry.ssid);
+        if (knownSsid && (!profile || password !== "")) {
+            error = "Edit this network's saved profile and credentials in nm-connection-editor, then try again.";
+            askSsid = "";
+            return;
+        }
+        if (!profile && networkEntry.ssid.charAt(0) === "-") {
             error = "Can't connect to a network whose name starts with \"-\".";
             return;
         }
-        var cmd = ["nmcli", "dev", "wifi", "connect", networkEntry.ssid, "ifname", device];
+        var cmd = profile
+                ? ["nmcli", "connection", "up", "uuid", profile.uuid, "ifname", device]
+                : ["nmcli", "dev", "wifi", "connect", networkEntry.ssid, "ifname", device];
         if (password !== "")
             cmd.push("password", password);
         error = "";
         connectProcess.errText = "";
         connectProcess.networkEntry = networkEntry;
-        connectProcess.usedPassword = password !== "";
-        connectProcess.wasSaved = isSaved(networkEntry.ssid);
+        connectProcess.generation = deviceGeneration;
         connecting = networkEntry.ssid;
         askSsid = "";
         connectProcess.command = cmd;
@@ -227,9 +298,11 @@ QsPage {
     function activate(networkEntry) {
         if (connecting !== "" || networkEntry.inUse)
             return;
+        if (!profilesAvailable())
+            return;
         if (askSsid === networkEntry.ssid) {
             askSsid = "";
-        } else if (!networkEntry.secured || isSaved(networkEntry.ssid)) {
+        } else if (!networkEntry.secured || saved.some(profile => profile.ssid === networkEntry.ssid)) {
             connectTo(networkEntry, "");
         } else if (networkEntry.enterprise) {
             error = "Enterprise (802.1X) networks need a saved profile (nm-connection-editor).";
@@ -247,6 +320,8 @@ QsPage {
     }
 
     function finishConnect() {
+        if (connectProcess.generation !== deviceGeneration)
+            return;
         connectGuard.stop();
         var networkEntry = connectProcess.networkEntry;
         var stderrText = connectProcess.errText;
@@ -259,19 +334,13 @@ QsPage {
         }
         var errorLine = stderrText.split("\n").filter(line => line.trim() !== "")[0] || "Couldn't connect.";
         errorLine = errorLine.replace(/^Error:\s*/, "").replace(/^Connection activation failed:\s*(\(\d+\)\s*)?/, "");
-        if (/secrets were required|no secrets|password/i.test(errorLine) && networkEntry && networkEntry.secured && !networkEntry.enterprise) {
-            error = connectProcess.usedPassword ? "Wrong password, try again." : "A password is required.";
-            askSsid = networkEntry.ssid;
+        if (/secrets were required|no secrets|password/i.test(errorLine) && networkEntry && networkEntry.secured) {
+            error = "Wi-Fi credentials need updating. Edit the saved profile in nm-connection-editor, then try again.";
+            askSsid = "";
         } else {
             error = errorLine;
         }
-        // A failed attempt with a new password leaves a broken profile behind; drop it.
-        if (connectProcess.usedPassword && !connectProcess.wasSaved && networkEntry) {
-            deleteProfileProcess.command = ["nmcli", "connection", "delete", "id", networkEntry.ssid];
-            deleteProfileProcess.running = true;
-        } else {
-            refresh(false);
-        }
+        refresh(false);
     }
 
     // -- Header actions and visual tree -------------------------------------
@@ -571,7 +640,6 @@ QsPage {
                     page.activeSsid = "";
                 }
                 devQuery.running = true;
-                savedQuery.running = true;
             }
         }
     }
@@ -586,21 +654,61 @@ QsPage {
         }
     }
 
-    // NAME:TYPE per saved profile
+    // Build a complete snapshot before replacing the published profile cache.
     Process {
         id: savedQuery
-        command: ["nmcli", "-t", "-f", "NAME,TYPE", "connection", "show"]
+        property string output: ""
+        command: ["nmcli", "-t", "-f", "UUID,TYPE", "connection", "show"]
         environment: ({ LC_ALL: "C" })
         stdout: StdioCollector {
-            onStreamFinished: {
-                var profileNames = [];
-                text.split("\n").forEach(line => {
-                    var fields = page.splitTerse(line);
-                    if (fields.length >= 2 && (fields[fields.length - 1] === "802-11-wireless" || fields[fields.length - 1] === "wifi"))
-                        profileNames.push(fields.slice(0, fields.length - 1).join(":"));
-                });
-                page.saved = profileNames;
+            onStreamFinished: savedQuery.output = text
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0) {
+                page.profilesState = "failed";
+                return;
             }
+            var valid = true;
+            var uuids = [];
+            output.split("\n").forEach(line => {
+                if (line !== "") {
+                    var fields = page.splitTerse(line);
+                    if (fields.length !== 2) {
+                        valid = false;
+                    } else if (fields[1] === "802-11-wireless" || fields[1] === "wifi") {
+                        if (!/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(fields[0]))
+                            valid = false;
+                        else if (uuids.indexOf(fields[0]) === -1)
+                            uuids.push(fields[0]);
+                    }
+                }
+            });
+            if (!valid) {
+                page.profilesState = "failed";
+                return;
+            }
+            page.profileQueue = uuids.sort();
+            Qt.callLater(page.nextProfile);
+        }
+    }
+
+    Process {
+        id: profileQuery
+        property string uuid: ""
+        property string output: ""
+        command: ["nmcli", "-t", "-f", "connection.uuid,connection.interface-name,802-11-wireless.ssid", "connection", "show", "uuid", uuid]
+        environment: ({ LC_ALL: "C" })
+        stdout: StdioCollector {
+            onStreamFinished: profileQuery.output = text
+        }
+        onExited: (exitCode, exitStatus) => {
+            var profile = exitCode === 0 ? page.parseProfile(output, uuid) : null;
+            if (profile === null) {
+                page.profilesState = "failed";
+                return;
+            }
+            page.pendingProfiles.push(profile);
+            Qt.callLater(page.nextProfile);
         }
     }
 
@@ -646,8 +754,7 @@ QsPage {
         id: connectProcess
 
         property var networkEntry: null
-        property bool usedPassword: false
-        property bool wasSaved: false
+        property int generation: 0
         property int code: 0
         property string errText: ""
 
@@ -659,12 +766,6 @@ QsPage {
             connectProcess.code = exitCode;
             finishTimer.restart();
         }
-    }
-
-    Process {
-        id: deleteProfileProcess
-        environment: ({ LC_ALL: "C" })
-        onExited: page.refresh(false)
     }
 
     Process {
