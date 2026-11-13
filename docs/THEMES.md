@@ -189,6 +189,7 @@ in every theme. The login screen ignores this file and uses the defaults.
 | `fontSize` | 13 | Base font size in px; the other sizes follow. |
 | `iconSize` | 16 | Base icon size in px; the other icons follow. |
 | `animationSpeed` | 1 | Animation speed factor (2 = twice as fast). |
+| `useSystemdScope` | `"auto"` | Launcher scope mode: `"auto"` uses systemd scopes when systemd-run and a reachable user manager are available, otherwise launches directly; `false` bypasses systemd and `true` requires it. Applications are never retried after launching. Terminal entries retain desktop-entry execution. |
 | `clipboardHistory` | true | Settings > Privacy > Clipboard history. Disabling stops history collection, queries and pasting, and drops the in-memory list. Existing cliphist database entries are not deleted. |
 | `reduceMotion` | false | Turn transitions off (spinners keep turning). |
 | `avatarSize` | 112 | Lock screen avatar size in px. |

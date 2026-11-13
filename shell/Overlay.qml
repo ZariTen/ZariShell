@@ -139,13 +139,12 @@ Scope {
             return;
         if (mode === "launcher") {
             var app = apps[index];
-            // Run each app in its own systemd scope so restarting the shell
-            // (quickshell.service) doesn't kill everything launched from it.
+            // Keep app lifetimes separate from quickshell.service when supported.
             if (app.runInTerminal || !app.command || app.command.length === 0)
                 app.execute();
             else
                 Quickshell.execDetached({
-                    command: ["systemd-run", "--user", "--scope", "--collect", "--quiet", "--"].concat(app.command),
+                    command: ["sh", Quickshell.shellDir + "/scripts/launch-app.sh", Theme.useSystemdScope].concat(app.command),
                     workingDirectory: app.workingDirectory || ""
                 });
             root.recordLaunch(app);
