@@ -34,7 +34,7 @@ Item {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: Qt.formatDateTime(clock.date, "HH:mm")
+            text: ClockFormat.time(clock.date)
             color: Theme.textSurface
             font.family: Theme.font
             font.pixelSize: Theme.fontDisplay
@@ -42,7 +42,7 @@ Item {
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: Qt.formatDateTime(clock.date, "dddd, d MMMM")
+            text: ClockFormat.date(clock.date, true)
             color: Theme.textSoft
             font.family: Theme.font
             font.pixelSize: Theme.fontHeadline

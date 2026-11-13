@@ -480,12 +480,12 @@ Scope {
 
                         StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: Qt.formatDateTime(clock.date, "HH:mm")
+                            text: ClockFormat.time(clock.date)
                             font.pixelSize: Theme.fontBody
                         }
                         StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: Qt.formatDateTime(clock.date, "dd/MM/yyyy")
+                            text: ClockFormat.date(clock.date, false)
                             font.pixelSize: Theme.fontSmall
                         }
                     }

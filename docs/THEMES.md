@@ -189,6 +189,7 @@ in every theme. The login screen ignores this file and uses the defaults.
 | `fontSize` | 13 | Base font size in px; the other sizes follow. |
 | `iconSize` | 16 | Base icon size in px; the other icons follow. |
 | `animationSpeed` | 1 | Animation speed factor (2 = twice as fast). |
+| `clockFormat` / `dateFormat` / `longDateFormat` | `""` | Qt date/time patterns; empty uses locale short time, short date and long date. Shared by bar, calendar and lock. Greeter equivalents: `QS_GREETER_CLOCK_FORMAT`, `QS_GREETER_DATE_FORMAT`, `QS_GREETER_LONG_DATE_FORMAT`. Clocks update each minute, even if a custom format contains seconds. |
 | `useSystemdScope` | `"auto"` | Launcher scope mode: `"auto"` uses systemd scopes when systemd-run and a reachable user manager are available, otherwise launches directly; `false` bypasses systemd and `true` requires it. Applications are never retried after launching. Terminal entries retain desktop-entry execution. |
 | `clipboardHistory` | true | Settings > Privacy > Clipboard history. Disabling stops history collection, queries and pasting, and drops the in-memory list. Existing cliphist database entries are not deleted. |
 | `reduceMotion` | false | Turn transitions off (spinners keep turning). |

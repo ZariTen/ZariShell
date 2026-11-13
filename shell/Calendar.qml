@@ -45,12 +45,12 @@ Scope {
             Layout.fillWidth: true
             spacing: 0
             StyledText {
-                text: Qt.formatDateTime(clock.date, "HH:mm")
+                text: ClockFormat.time(clock.date)
                 font.pixelSize: Theme.fontLarge
                 font.weight: Theme.fontDisplayWeight
             }
             StyledText {
-                text: root.locale.toString(clock.date, "dddd, d MMMM yyyy")
+                text: ClockFormat.date(clock.date, true)
                 color: Theme.accent
             }
         }
