@@ -1,7 +1,7 @@
 .pragma library
 
 // Argument vectors only: no shell expansion or execution. Invalid input is inert.
-function parse(command, desktop) {
+function parse(command, desktop, metadata) {
     if (typeof command !== "string" || /[\x00-\x1f\x7f]/.test(command))
         return [];
     if (desktop) {
@@ -55,8 +55,16 @@ function parse(command, desktop) {
     if (!desktop)
         return args;
 
+    var info = metadata || {};
     var expanded = [];
     for (var a = 0; a < args.length; a++) {
+        if (args[a] === "%i") {
+            if (a === 0)
+                return [];
+            if (info.icon)
+                expanded.push("--icon", info.icon);
+            continue;
+        }
         var value = "";
         var removed = false;
         for (var c = 0; c < args[a].length; c++) {
@@ -67,7 +75,11 @@ function parse(command, desktop) {
             var code = args[a][++c];
             if (code === "%")
                 value += "%";
-            else if (code && "fFuUickdDnNvm".indexOf(code) >= 0) {
+            else if (code === "c" || code === "k") {
+                if (a === 0)
+                    return [];
+                value += (code === "c" ? info.name : info.path) || "";
+            } else if (code && "fFuUdDnNvm".indexOf(code) >= 0) {
                 if (a === 0)
                     return [];
                 removed = true;

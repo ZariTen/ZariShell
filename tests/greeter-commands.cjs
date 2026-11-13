@@ -17,14 +17,19 @@ assert.deepEqual(fallback("start 'single quoted' \"\" '$HOME;$(id)'"), ['start',
 assert.deepEqual(fallback('start "unfinished'), [], 'Malformed fallback must not become a launchable command');
 const source = fs.readFileSync(path.join(base, 'greeter/Greeter.qml'), 'utf8');
 const collector = source.slice(source.indexOf('// Wayland sessions')).match(/onStreamFinished: \{([\s\S]*?)^            \}/m)[1];
-function sessions(exec) {
-    context.text = '/fixture.desktop\tName=Fixture\n/fixture.desktop\tExec=' + exec + '\n';
+function sessions(exec, metadata = {}) {
+    const file = metadata.path || '/fixture.desktop';
+    context.text = file + '\tName=' + (metadata.name || 'Fixture') + '\n' + file + '\tIcon=' + (metadata.icon || '') + '\n' + file + '\tExec=' + exec + '\n';
     context.root = {pickDefaultSession() {}};
     vm.runInContext(collector, context);
     return JSON.parse(JSON.stringify(context.root.sessions));
 }
 assert.deepEqual(sessions('"/session dir/start" "two words" escaped\\ value %% %f %F %u %U %i %c %k %d %D %n %N %v %m')[0].exec,
-    ['/session dir/start', 'two words', 'escaped value', '%']);
+    ['/session dir/start', 'two words', 'escaped value', '%', 'Fixture', '/fixture.desktop']);
+const metadata = {name: 'Name "quoted" $(id)', path: '/session dir/quoted.desktop', icon: 'icon with spaces;$HOME'};
+assert.deepEqual(sessions('start "%c" --desktop=%k %i %%', metadata)[0].exec,
+    ['start', metadata.name, '--desktop=' + metadata.path, '--icon', metadata.icon, '%']);
+assert.deepEqual(sessions('start prefix%i', metadata), [], 'Multi-argument icon code cannot be embedded');
 assert.deepEqual(sessions(String.raw`start "a\\\\b" "quote\\"here" "dollar\\$HOME" ""`)[0].exec,
     ['start', 'a\\b', 'quote"here', 'dollar$HOME', '']);
 for (const command of ['start "unterminated', 'start trailing\\', 'start %Z', '%f', '"" arg', 'start %'])

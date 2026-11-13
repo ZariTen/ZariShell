@@ -628,7 +628,11 @@ Item {
                     var desktopEntry = entriesByFile[filePath];
                     if (!desktopEntry.Exec || desktopEntry.NoDisplay === "true" || desktopEntry.Hidden === "true")
                         return;
-                    var commandArgs = Command.parse(desktopEntry.Exec, true);
+                    var commandArgs = Command.parse(desktopEntry.Exec, true, {
+                        name: desktopEntry.Name || filePath.split("/").pop(),
+                        path: filePath,
+                        icon: desktopEntry.Icon || ""
+                    });
                     if (commandArgs.length === 0)
                         return;
                     parsedSessions.push({
