@@ -284,6 +284,7 @@ QsPage {
                 : ["nmcli", "dev", "wifi", "connect", networkEntry.ssid, "ifname", device];
         if (password !== "")
             cmd.push("password", password);
+        finishTimer.stop();
         error = "";
         connectProcess.errText = "";
         connectProcess.networkEntry = networkEntry;

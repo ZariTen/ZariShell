@@ -40,7 +40,16 @@ function harness(calls, settings = {}) {
     const context = vm.createContext({
         Settings: { get: (key, fallback) => settings[key] ?? fallback },
         connectGuard: { restart() {}, stop() {} },
-        finishTimer: { restart() {} },
+        finishTimer: {
+            running: false,
+            restart() { this.running = true; },
+            stop() { this.running = false; },
+            fire() {
+                if (!this.running) return;
+                this.running = false;
+                vm.runInContext(source.match(/id: finishTimer[\s\S]*?onTriggered: ([^\n]+)/)[1], context);
+            }
+        },
         networkChanged() {},
         Qt: { callLater: (fn, ...args) => queue.push(() => fn(...args)) }
     });
@@ -216,6 +225,24 @@ assert.equal(staleConnect.page.askSsid, 'Current adapter SSID');
 assert.equal(staleConnect.page.connecting, 'Current pending state');
 assert.equal(staleConnect.page.held, currentHeld);
 staleConnect.drain(); // No refresh or other old-adapter effect is allowlisted.
+
+// A finishes, selection changes, then B starts before A's delayed completion.
+const delayedFinish = harness([
+    { args: ['dev', 'wifi', 'connect', 'A', 'ifname', 'wlan0'], code: 4 },
+    { args: ['dev', 'wifi', 'connect', 'B', 'ifname', 'wlan1'], code: 0 }
+]);
+delayedFinish.page.profilesState = 'ready';
+delayedFinish.page.parseDevices('wlan0:wifi:disconnected:\n');
+delayedFinish.page.connectTo({ ssid: 'A' }, '');
+delayedFinish.step();
+assert.equal(delayedFinish.page.finishTimer.running, true);
+delayedFinish.page.parseDevices('wlan1:wifi:disconnected:\n');
+delayedFinish.page.connectTo({ ssid: 'B' }, '');
+assert.equal(delayedFinish.page.connectProcess.running, true);
+delayedFinish.page.finishTimer.fire();
+assert.equal(delayedFinish.page.connecting, 'B', 'A delayed completion must not clear the running B attempt');
+assert.equal(delayedFinish.page.error, '');
+delayedFinish.drain();
 
 // A connected second adapter must own the displayed results and both actions.
 const h = harness([
