@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const source=fs.readFileSync(__dirname+'/../shell/AuthDialog.qml','utf8');
+const handler=source.match(/onActiveChanged: \{([\s\S]*?)^        \}/m)[1];
+const first={name:'first'},focused={name:'focused'};
+let current=focused,focusCalls=0;
+const context=vm.createContext({active:true,screen:first,ShellState:{focusedScreen:()=>current},secret:{forceActiveFocus:()=>{assert.equal(context.screen,current,'Select output before focusing the prompt');focusCalls++;}}});
+vm.runInContext(handler,context);
+assert.equal(context.screen,focused,'Activation must choose the focused output, not screens[0]');
+current=first;
+assert.equal(context.screen,focused,'An active prompt must not jump with later focus changes');
+context.active=false;vm.runInContext(handler,context);
+context.active=true;vm.runInContext(handler,context);
+assert.equal(context.screen,first,'Next activation must sample the new focused output');
+assert.equal(focusCalls,2);
+console.log('PASS polkit activation screen selection using fake focus only');

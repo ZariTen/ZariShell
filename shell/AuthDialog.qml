@@ -11,7 +11,7 @@ Scope {
 
         readonly property bool active: agent.isActive && agent.flow !== null
 
-        screen: Quickshell.screens[0]
+        screen: ShellState.focusedScreen()
         visible: active || card.animating
         color: "transparent"
         aboveWindows: true
@@ -28,8 +28,10 @@ Scope {
         WlrLayershell.keyboardFocus: active ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
         onActiveChanged: {
-            if (active)
+            if (active) {
+                screen = ShellState.focusedScreen();
                 secret.forceActiveFocus();
+            }
         }
 
         function submit() {
