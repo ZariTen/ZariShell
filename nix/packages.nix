@@ -1,5 +1,5 @@
 # Package set; call with `pkgs.callPackage ./nix/packages.nix { }`.
-{ lib, runCommandLocal, writeShellScriptBin, hyprpicker, slurp, grim, wl-clipboard, libnotify, coreutils }:
+{ lib, runCommandLocal, writeShellScriptBin, hyprpicker, slurp, grim, wl-clipboard, libnotify, coreutils, gawk }:
 let
   src = lib.cleanSource ../.;
 in
@@ -25,7 +25,7 @@ rec {
   # Region screenshot (frozen screen, slurp, grim, copy, notify).
   screenshot-region = writeShellScriptBin "screenshot-region" ''
     set -eu
-    export PATH=${lib.makeBinPath [ hyprpicker slurp grim wl-clipboard libnotify coreutils ]}:$PATH
+    export PATH=${lib.makeBinPath [ hyprpicker slurp grim wl-clipboard libnotify coreutils gawk ]}:$PATH
     ${builtins.readFile ./scripts/screenshot-region.sh}
   '';
 }

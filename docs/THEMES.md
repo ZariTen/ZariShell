@@ -203,6 +203,14 @@ in every theme. The login screen ignores this file and uses the defaults.
 The login screen does not read `settings.json` (it runs as the greeter user,
 which cannot read your home); it uses the theme's looks and the defaults.
 
+## Screenshot directory
+
+`screenshot-region` saves to `ZARISHELL_SCREENSHOT_DIR` when set. Otherwise it
+uses `$XDG_PICTURES_DIR/Screenshots`, or the Pictures directory from
+`$XDG_CONFIG_HOME/user-dirs.dirs`, falling back to `$HOME/Pictures/Screenshots`.
+The configuration is parsed as data (only a leading `$HOME`/`${HOME}` is expanded),
+never sourced or evaluated as shell code.
+
 ## Translation readiness
 
 Shell and greeter interface messages use extractable `qsTr()` literals, with
