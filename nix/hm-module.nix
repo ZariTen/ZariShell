@@ -53,7 +53,7 @@ in
 
     runtimePackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
-      default = with pkgs; [ bash brightnessctl cliphist wl-clipboard coreutils pciutils glibc.bin ];
+      default = with pkgs; [ bash brightnessctl cliphist wl-clipboard coreutils pciutils getent ];
       description = "Programs the shell's Process {} calls need on the service PATH (pciutils names GPUs for the system monitor).";
     };
 

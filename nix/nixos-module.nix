@@ -37,7 +37,7 @@ let
     export QS_GREETER_SESSION_COMMAND=${lib.escapeShellArg cfg.sessionCommand}
     export QS_GREETER_SESSION_NAME=${lib.escapeShellArg cfg.sessionName}
     export QS_GREETER_HOST_LABEL=${lib.escapeShellArg cfg.hostLabel}
-    export PATH=${lib.escapeShellArg (lib.makeBinPath [ pkgs.systemd pkgs.coreutils pkgs.bash pkgs.glibc.bin ])}:"$PATH"
+    export PATH=${lib.escapeShellArg (lib.makeBinPath [ pkgs.systemd pkgs.coreutils pkgs.bash pkgs.getent ])}:"$PATH"
     exec ${lib.escapeShellArg "${pkgs.cage}/bin/cage"} -s -d -- ${lib.escapeShellArg "${cfg.quickshellPackage}/bin/quickshell"} -p ${lib.escapeShellArg (toString greeterQml)}
   '';
 in

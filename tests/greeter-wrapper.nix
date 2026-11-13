@@ -30,11 +30,17 @@ let
   };
   config = evaluate values;
   wrapper = config.services.greetd.settings.default_session.command;
+  getentBin = builtins.unsafeDiscardStringContext "${pkgs.getent}/bin";
+  shellPackages = (import ../nix/hm-module.nix { config = {}; inherit lib pkgs; }).options.programs.zarishell.runtimePackages.default;
   controls = [ "\n" "\r" "\t" (builtins.fromJSON ''"\u0001"'') (builtins.fromJSON ''"\u007f"'') ];
   keys = [ "stateDir" "mainMonitor" "sessionCommand" "sessionName" "hostLabel" ];
   rejected = key: value:
     !(builtins.tryEval (builtins.deepSeq (evaluate { ${key} = value; }).services.greetd.settings.default_session.command true)).success;
 in
+assert lib.assertMsg (lib.hasInfix getentBin wrapper)
+  "Greeter PATH must include the output that provides getent";
+assert lib.assertMsg (lib.hasInfix getentBin (lib.makeBinPath shellPackages))
+  "Shell runtime PATH must include the output that provides getent";
 assert lib.assertMsg (lib.hasInfix "export HOME=${lib.escapeShellArg values.stateDir}" wrapper)
   "Greeter HOME must quote stateDir as a single literal shell value";
 assert lib.assertMsg (builtins.all (key: builtins.all (control: rejected key ("/unsafe" + control)) controls) keys)
