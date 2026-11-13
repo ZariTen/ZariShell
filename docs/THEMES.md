@@ -207,6 +207,9 @@ accepts single/double-quoted and backslash-escaped arguments, without shell
 expansion. Detected desktop `Exec` lines use desktop-entry escaping: `%%` is a
 literal percent; standard file/URL/metadata field codes are removed. Malformed
 commands are skipped (an invalid configured fallback cannot start a session).
+Greeter text options and cursor names reject ASCII control characters. Spaces,
+quotes and shell metacharacters are passed literally; `stateDir` also preserves
+literal percent signs in its tmpfiles rule.
 
 ## Lock authentication
 
