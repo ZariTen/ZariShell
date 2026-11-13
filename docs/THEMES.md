@@ -189,6 +189,7 @@ in every theme. The login screen ignores this file and uses the defaults.
 | `fontSize` | 13 | Base font size in px; the other sizes follow. |
 | `iconSize` | 16 | Base icon size in px; the other icons follow. |
 | `animationSpeed` | 1 | Animation speed factor (2 = twice as fast). |
+| `clipboardHistory` | true | Settings > Privacy > Clipboard history. Disabling stops history collection, queries and pasting, and drops the in-memory list. Existing cliphist database entries are not deleted. |
 | `reduceMotion` | false | Turn transitions off (spinners keep turning). |
 | `avatarSize` | 112 | Lock screen avatar size in px. |
 | `panelWidth` | 1 | Width factor of panels, dialogs and the lock card. |

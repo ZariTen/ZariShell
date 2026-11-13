@@ -115,6 +115,7 @@ Singleton {
     // barGap away from the screen edges) or "pills" (a floating pill per
     // group of bar content).
     readonly property string barStyle: ["full", "floating", "pills"].indexOf(Settings.get("barStyle", "")) >= 0 ? Settings.get("barStyle", "") : "full"
+    readonly property bool clipboardHistory: Settings.get("clipboardHistory", true)
     readonly property string workspaceStyle: ["dots", "numbers", "pills", "diamonds"].indexOf(Settings.get("workspaceStyle", "")) >= 0 ? Settings.get("workspaceStyle", "") : "dots"
     readonly property bool barPills: barStyle === "pills"
     readonly property bool barFloating: barStyle !== "full"

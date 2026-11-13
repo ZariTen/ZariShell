@@ -47,6 +47,9 @@ Scope {
             { key: "panelWidth", label: "Panel width", kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
             { key: "dim", label: "Dimmed items", kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }
         ] },
+        { id: "privacy", title: "Privacy", glyph: 0xF033E, rows: [
+            { key: "clipboardHistory", label: "Clipboard history", kind: "switch", def: true }
+        ] },
         { id: "theme", title: "Theme", glyph: 0xF00E3, rows: [] }
     ]
 

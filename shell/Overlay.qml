@@ -11,8 +11,8 @@ Scope {
 
     // -- State and derived properties ---------------------------------------
     property string query: ""
-    property var clipIds: []
-    property var clipPreviews: []
+    readonly property var clipIds: ClipboardHistory.ids
+    readonly property var clipPreviews: ClipboardHistory.previews
 
     // Launch-frequency ranking: {desktopEntryId: count} in $XDG_STATE_HOME/quickshell/launches.json.
     readonly property string stateDir: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/quickshell"
@@ -150,11 +150,7 @@ Scope {
                 });
             root.recordLaunch(app);
         } else if (mode === "clipboard") {
-            var entryId = clipIds[clipHits[index]];
-            if (/^\d+$/.test(entryId)) {
-                clipPasteProcess.command = ["sh", "-c", "cliphist decode \"$1\" | wl-copy", "sh", entryId];
-                clipPasteProcess.running = true;
-            }
+            ClipboardHistory.paste(clipIds[clipHits[index]]);
         } else if (windows[index].wayland) {
             windows[index].wayland.activate();
         }
@@ -446,7 +442,7 @@ Scope {
         function toggle(name: string): void {
             ShellState.toggle(name);
             if (name === "clipboard" && ShellState.panel === "clipboard")
-                clipListProcess.running = true;
+                ClipboardHistory.refresh();
 
         }
 
@@ -455,29 +451,4 @@ Scope {
         }
     }
 
-    Process {
-        id: clipListProcess
-        command: ["cliphist", "list"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var trimmed = text.trim();
-                var lines = trimmed === "" ? [] : trimmed.split("\n");
-                var ids = [];
-                var previews = [];
-                for (var i = 0; i < lines.length && ids.length < 80; i++) {
-                    var tabIndex = lines[i].indexOf("\t");
-                    if (tabIndex < 1)
-                        continue;
-                    ids.push(lines[i].slice(0, tabIndex));
-                    previews.push(lines[i].slice(tabIndex + 1));
-                }
-                root.clipIds = ids;
-                root.clipPreviews = previews;
-            }
-        }
-    }
-
-    Process {
-        id: clipPasteProcess
-    }
 }
