@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
-# Job control puts the binary pipe in its own process group. Stop both ends
-# when Quickshell cancels this supervisor, including a foreground wl-copy.
-set -m
+# Keep binary bytes in a pipe and retain both direct child PIDs for cancellation.
+decode=
+copy=
 cancelled=0
-stop_pipe() {
+stop_children() {
     cancelled=1
-    kill -TERM %1 2>/dev/null || :
+    trap '' HUP INT TERM
+    if [[ -n $decode ]]; then kill -TERM "$decode" 2>/dev/null || :; fi
+    if [[ -n $copy ]]; then kill -TERM "$copy" 2>/dev/null || :; fi
 }
-trap stop_pipe HUP INT TERM
-cliphist decode "$1" | wl-copy --foreground &
+trap stop_children HUP INT TERM
+exec {input}< <(exec cliphist decode "$1")
+decode=$!
+if ((cancelled)); then stop_children; fi
+wl-copy --foreground <&"$input" &
 copy=$!
-if ((cancelled)); then stop_pipe; fi
+exec {input}<&-
+if ((cancelled)); then stop_children; fi
+wait "$decode" 2>/dev/null || :
 wait "$copy"
 status=$?
 if ((cancelled)); then
-    stop_pipe
-    wait %1 2>/dev/null || :
+    wait "$decode" 2>/dev/null || :
+    wait "$copy" 2>/dev/null || :
 fi
 exit "$status"

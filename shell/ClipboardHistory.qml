@@ -8,9 +8,13 @@ Singleton {
     readonly property bool enabled: Theme.clipboardHistory
     property var ids: []
     property var previews: []
+    property string pendingPaste: ""
+    // Remain busy until exit, not merely until running=false requests a stop.
+    property bool pasteInFlight: false
 
     onEnabledChanged: {
         if (!enabled) {
+            pendingPaste = "";
             listProcess.running = false;
             pasteProcess.running = false;
             ids = [];
@@ -26,6 +30,19 @@ Singleton {
     function paste(entryId) {
         if (!enabled || !/^\d+$/.test(entryId))
             return;
+        pendingPaste = entryId;
+        if (pasteInFlight)
+            pasteProcess.running = false;
+        else
+            startPendingPaste();
+    }
+
+    function startPendingPaste() {
+        if (!enabled || pasteInFlight || pendingPaste === "")
+            return;
+        var entryId = pendingPaste;
+        pendingPaste = "";
+        pasteInFlight = true;
         pasteProcess.command = ["bash", Quickshell.shellDir + "/scripts/clipboard-paste.sh", entryId];
         pasteProcess.running = true;
     }
@@ -55,5 +72,11 @@ Singleton {
         }
     }
 
-    Process { id: pasteProcess }
+    Process {
+        id: pasteProcess
+        onExited: {
+            root.pasteInFlight = false;
+            Qt.callLater(root.startPendingPaste);
+        }
+    }
 }
