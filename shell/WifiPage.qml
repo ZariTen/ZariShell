@@ -520,7 +520,7 @@ QsPage {
             // Inline password prompt for new secured networks.
             Item {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 42 * entry.reveal
+                Layout.preferredHeight: Theme.px(42) * entry.reveal
                 visible: entry.reveal > 0.01
                 clip: true
                 opacity: entry.reveal
@@ -528,7 +528,7 @@ QsPage {
                 RowLayout {
                     anchors.left: parent.left
                     anchors.right: parent.right
-                    anchors.leftMargin: Theme.spacingS + 26 + Theme.spacingS
+                    anchors.leftMargin: Theme.spacingS + Theme.px(26) + Theme.spacingS
                     anchors.rightMargin: Theme.spacingS
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Theme.spacingS
