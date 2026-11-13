@@ -1,151 +1,87 @@
 # Writing themes
 
-This page is a reference for theme authors. A theme is a folder with a
-`theme.json` and, optionally, QML looks for some components. Anything a theme
-leaves out falls back to the neutral defaults below and the flat looks in
-`shell/base/`, so an empty `{}` theme gives the plain base shell.
+A theme is a folder containing `theme.json` and optional QML components:
 
-## Layout
-
-```
+```text
 themes/<name>/
-  theme.json          tokens: name, accent, colors, metrics, fonts, motion,
-                      and "components" (the looks this theme overrides)
-  components/*.qml    optional looks for the components listed below
+  theme.json
+  components/<Name>.qml
 ```
 
-User themes live in `${XDG_CONFIG_HOME:-~/.config}/zarishell/themes/<name>/`
-and take precedence over packaged themes with the same name. For selecting and
-switching themes, see [Theme selection](CONFIGURATION.md#theme-selection).
+Put user themes in `${XDG_CONFIG_HOME:-~/.config}/zarishell/themes/<name>/`.
+Missing tokens and components use the defaults in
+[`shell/Theme.qml`](../shell/Theme.qml) and [`shell/base/`](../shell/base/).
+An empty `{}` gives the flat Base look.
 
-## Values
+## theme.json
 
-Colors are `"#rrggbb"`, `"#aarrggbb"`, `"transparent"`, `[r, g, b, a]` (0..1),
-`"accent"` or `{ "h", "s", "l", "a" }` (a tone whose hue is offset by `h` from
-the accent hue). Tones are written against the theme's own `accent`; when the
-accent setting picks another color, their saturation and lightness shift with
-it, so a paler or darker accent gives paler or darker tones. A theme may define extra color names and metrics and read them
-in its looks with `Theme.color("name", fallback)` and
-`Theme.metric("name", fallback)`. Assets placed next to `theme.json` load with
-`Qt.resolvedUrl("../file.png")` from a look.
+```json
+{
+  "name": "My theme",
+  "description": "A short description",
+  "accent": "#7a9cc6",
+  "colors": { "panel": "#24282e", "textSurface": "#ffffff" },
+  "metrics": { "radius": 5 },
+  "fonts": { "font": "sans-serif" },
+  "components": ["Button"]
+}
+```
 
-## Top-level keys
-
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `name` | `""` | Display name. |
-| `description` | `""` | A few words shown in the theme picker, next to a preview drawn from the theme's colors, radii, bar and font. |
-| `accent` | `"#7a9cc6"` | Accent seed: a color, or `"wallpaper"` to take the hue from the current wallpaper. |
-| `components` | `[]` | Component looks / effects provided in `components/`. |
+List only components you supply. `accent` accepts a color or `"wallpaper"`.
 
 ## Colors
 
-| Token | Neutral default | Used for |
-| --- | --- | --- |
-| `surface` | `#24282e` | Desktop color behind the wallpaper; base of backdrops. |
-| `bar` | slate, a 0.92 | Taskbar and the lock / login bottom bars. |
-| `panel` | slate, a 0.96 | Panels, dialogs, toasts, logon card. |
-| `panelError` | red, a 0.94 | Critical toasts. |
-| `accent` | `"accent"` | Accent icons and text. |
-| `highlight` | `"accent"` | Hover, selection and active fills. |
-| `primary` | `"accent"` | Filled controls (slider fill, round go button, orbs). |
-| `textPrimary` | `#ffffff` | Text on `primary`. |
-| `primaryContainer` | accent tone, a 0.9 | Picture-frame background, launcher selection. |
-| `textPrimaryContainer` | `#ffffff` | Text on `primaryContainer`. |
-| `surfaceContainer` | white a 0.08 | Cards inside panels. |
-| `surfaceContainerHigh` | white a 0.14 | Raised cards. |
-| `surfaceContainerHighest` | white a 0.12 | Picture-frame mats. |
-| `inset` | black a 0.22 | Recessed wells (tracks, fields, trays). |
-| `insetBorder` | black a 0.30 | Edge of recessed wells. |
-| `border` | black a 0.35 | Outer 1px edge of controls, orbs and badges. |
-| `borderLight` | white a 0.10 | Surface edge, picture edge. |
-| `insetEdge` | white a 0.10 | Edge of framed bar trays. |
-| `outline` | white a 0.45 | Focus rings and strong outlines. |
-| `outlineVariant` | white a 0.16 | Subtle outlines. |
-| `outlineFaint` | white a 0.08 | Notification cards, inner edge of the launcher list. |
-| `divider` | white a 0.12 | Divider lines. |
-| `dividerStrong` | white a 0.22 | Strong divider lines (bar edge, split tiles). |
-| `textSurface` | `#ffffff` | Body text and icons. |
-| `textSurfaceVariant` | white a 0.70 | Secondary text. |
-| `textSoft` | white a 0.85 | Secondary display text (lock-screen date). |
-| `textShadow` | `transparent` | Shadow under text (none when transparent). |
-| `scrim` | black a 0.35 | Dim behind popups; base backdrop dim. |
-| `scrimStrong` | black a 0.6 | Dim behind modal dialogs (polkit). |
-| `backdrop` | `#000000` | Window color behind the lock / login backdrop. |
-| `buttonDefault` | accent tone, a 0.63 | Fill of the default dialog button. |
-| `badge` | `#d9463a` | Unread count badge. |
-| `error` | `#ff6b5e` | Error text and icons. |
-| `errorContainer` | `error` a 0.22 | Error banners. |
-| `errorOutline` | `error` a 0.6 | Error banner edge. |
-| `criticalContainer` | `error` a 0.3 | Critical notification cards. |
-| `danger` | `error` | Destructive action icon (shut down). |
-| `dangerHighlight` | `error` | Destructive action hover (shut down, restart). |
-| `success` | `#7fd45a` | Success and "normal" meters. |
-| `warning` | `#f2c94c` | Warnings and caps lock hint. |
+Color values accept `"#rrggbb"`, `"#aarrggbb"`, `"transparent"`, `[r, g, b, a]`
+(channels 0–1), or `"accent"`. Use `{ "h": 0, "s": 0.4, "l": 0.5, "a": 1 }`
+for accent-relative tones: `h` offsets the hue; saturation and lightness follow
+accent overrides.
 
-## Metrics
+| Group | Tokens |
+| --- | --- |
+| Backgrounds | `surface`, `bar`, `panel`, `panelError`, `backdrop` |
+| Accent and selection | `accent`, `highlight`, `primary`, `primaryContainer`, `buttonDefault` |
+| Containers | `surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest` |
+| Recessed areas | `inset`, `insetBorder`, `insetEdge` |
+| Borders and lines | `border`, `borderLight`, `outline`, `outlineVariant`, `outlineFaint`, `divider`, `dividerStrong` |
+| Text | `textSurface`, `textSurfaceVariant`, `textPrimary`, `textPrimaryContainer`, `textSoft`, `textShadow` |
+| Overlays | `scrim`, `scrimStrong`, `badge` |
+| Status | `error`, `errorContainer`, `errorOutline`, `criticalContainer`, `danger`, `dangerHighlight`, `success`, `warning` |
 
-| Token | Default | Used for |
-| --- | --- | --- |
-| `radiusSmall` | 3 | Small chips, bar cover art. |
-| `radius` | 5 | Controls, cards, pictures inside frames. |
-| `radiusLarge` | 8 | Panels and surfaces. |
-| `radiusFull` | 999 | Pills and circles (clamped to half the size). |
-| `radiusFrame` | 10 | Matted picture frames (avatars). |
-| `barRadius` | 0 | Floating taskbar and bar pills (at least `radiusLarge`). Edge bars are square. |
+## Shape, fonts and motion
 
-Themes set looks, not sizes. Spacing (4 / 8 / 12 / 16 / 24), the panel gap
-(8), the bar's height, style and gap, control sizes and font sizes are the same
-in every theme and come from [user settings](CONFIGURATION.md#settings-keys).
-The old geometry keys
-(`spacingXs` … `spacingXl`, `barHeight`, `shadowRoom`, `gap`, `floatInset`,
-top-level `barStyle`, and the font sizes `fontSmall` … `fontDisplay`) are
-ignored if a theme still sets them.
+| Section | Tokens |
+| --- | --- |
+| `metrics` | `radiusSmall`, `radius`, `radiusLarge`, `radiusFull`, `radiusFrame`, `barRadius` |
+| `fonts` | `font`, `iconFont`, `fontDisplayWeight` |
+| `motion` | `durShort`, `durMedium`, `durLong` (ms); `emphasized`, `standard` (Bezier curves) |
 
-## Fonts
-
-| Token | Default | Used for |
-| --- | --- | --- |
-| `font` | `sans-serif` | UI text. |
-| `iconFont` | `JetBrainsMono Nerd Font Propo` | Material Design glyphs. |
-| `fontDisplayWeight` | 300 (Light) | Weight of the large clocks. |
-
-## Motion
-
-| Token | Default | Used for |
-| --- | --- | --- |
-| `durShort` / `durMedium` / `durLong` | 150 / 280 / 420 | Animation durations (ms). |
-| `emphasized` / `standard` | M3 curves | Bezier easing curves. |
+Sizes, spacing and bar layout come from
+[user settings](CONFIGURATION.md#settings-keys), not theme tokens.
 
 ## Components
 
-Each generic component lives in `shell/<Name>.qml`; its look is loaded from
-`themes/<theme>/components/<Name>.qml` when the theme lists the name, else from
-`shell/base/<Name>.qml`. A look reads its component as `control` (see
-`shell/Button.qml` and `shell/base/Button.qml`).
+Each look reads the generic component through `control`.
 
-| Component | Properties a look reads | Base look |
-| --- | --- | --- |
-| `Surface` | `radius`, `color`, `shadow`, `headerHeight` | Flat body with a `borderLight` edge. |
-| `Button` | `active`, `framed`, `radius`, `tint`, `hovered`, `pressed`, `lit`, `level`, `restyleContent` | Faint fill when framed, tint wash on hover / active. |
-| `Highlight` | `tint`, `level`, `bordered`, `radius` | Even tint wash, optional tinted edge. |
-| `Switch` | `checked`, `hovered`, `pressed` | Pill track filled with `highlight` when on, round thumb. |
-| `Slider` | `value`, `tone`, `interactive`, `hovered`, `pressed` | Inset track, solid fill colored by `tone`. |
-| `Field` | `focused`, `prominent` | Inset well, accent edge when focused. |
-| `Frame` | `padding`, `radius`, `innerRadius`, `color`, `bordered` | Nothing (drawn over the picture). |
-| `Fill` | `color`, `radius`, `bordered`, `role` (`button`, `orb`, `badge`) | Solid shape. |
-| `Backdrop` | `source`, `role` (`lock`, `login`) | Wallpaper (or `surface`) under `scrim`. |
-| `Divider` | `strong` | `divider` / `dividerStrong` line. |
-| `Glow` (effect) | none; a `layer.effect` for the lock / login clock | None (no effect). |
-| `ActiveContent` (effect) | none; a `layer.effect` over an active Button's content (skipped when `restyleContent` is false, e.g. app icons; never applied to `plainContent`, e.g. theme previews) | None (content unchanged). |
+| Component | Properties |
+| --- | --- |
+| `Surface` | `radius`, `color`, `shadow`, `headerHeight` |
+| `Button` | `active`, `framed`, `radius`, `tint`, `hovered`, `pressed`, `lit`, `level`, `restyleContent` |
+| `Highlight` | `tint`, `level`, `bordered`, `radius` |
+| `Switch` | `checked`, `hovered`, `pressed` |
+| `Slider` | `value`, `tone`, `interactive`, `hovered`, `pressed` |
+| `Field` | `focused`, `prominent` |
+| `Frame` | `padding`, `radius`, `innerRadius`, `color`, `bordered` |
+| `Fill` | `color`, `radius`, `bordered`, `role` (`button`, `orb`, `badge`) |
+| `Backdrop` | `source`, `role` (`lock`, `login`) |
+| `Divider` | `strong` |
 
-`Frame` (mat Surface plus clipped picture), `Fill` and `Backdrop` are used by
-the lock screen, login screen, bar and media panel; `Glow` is applied with
-`Theme.effect("Glow")` and `ActiveContent` with `Theme.effect("ActiveContent")`;
-each is skipped when the theme does not provide it.
+Optional effects: `Glow` for clocks and `ActiveContent` for active button content.
+`restyleContent: false` skips `ActiveContent`; `plainContent` is never restyled.
+See the [bundled themes](../themes/) for working examples.
 
-## Compositor requirements
+Read custom tokens with `Theme.color("name", fallback)` or
+`Theme.metric("name", fallback)`. Load assets relative to a component with
+`Qt.resolvedUrl("../file.png")`.
 
-Glass themes draw tint, rims and shadows; Hyprland provides the background blur.
-See [Compositor blur](CONFIGURATION.md#compositor-blur) for layer rules and
-`ignore_alpha` requirements, including the Liquid Glass threshold.
+For [theme selection](CONFIGURATION.md#theme-selection) and
+[Hyprland blur](CONFIGURATION.md#compositor-blur), see the configuration guide.

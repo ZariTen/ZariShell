@@ -1,30 +1,13 @@
 # ZariShell
 
 A themeable desktop shell for Hyprland, built with [Quickshell](https://quickshell.org).
-One shell, many looks, and a login screen to match.
 
-## Features
+- Bar, workspaces, app launcher, window switcher and clipboard history
+- Wi-Fi, Bluetooth, audio, brightness and media controls
+- Notifications, calendar, system monitor and wallpaper picker
+- Lock screen, polkit prompts and optional greetd login screen
 
-- Bar with workspaces, media, tray, and clock, as a full strip, a floating strip, or floating pills
-- Quick settings for Wi-Fi, Bluetooth, volume, brightness, and the keyboard layout
-- App launcher, window switcher, and clipboard history
-- Notification center and toasts
-- Media, calendar, and system monitor panels
-- Lock screen, power menu, and polkit prompts
-- Wallpaper picker with an accent color taken from the wallpaper
-- Live theme switching and a settings panel, no restart needed
-- Optional greetd login screen in the same style
-
-## Themes
-
-- **Aero** (default): tinted Windows 7 glass
-- **Base**: flat, neutral slate
-- **Ink**: black ink on warm paper
-- **Liquid Glass**: frosted glass capsules
-- **Metro**: Windows 8 tiles
-- **Modern**: dark rounded islands
-
-You can also write your own; see [docs/THEMES.md](docs/THEMES.md).
+Bundled themes: Aero (default), Base, Ink, Liquid Glass, Metro and Modern.
 
 ## Installation
 
@@ -37,29 +20,26 @@ inputs.zarishell = {
 };
 ```
 
-Enable the shell with Home Manager:
+Enable the shell in Home Manager:
 
 ```nix
 imports = [ inputs.zarishell.homeManagerModules.default ];
 programs.zarishell.enable = true;
 ```
 
-Enable the login screen on NixOS (optional):
+For the optional NixOS login screen:
 
 ```nix
 imports = [ inputs.zarishell.nixosModules.default ];
 services.zarishell.greeter.enable = true;
 ```
 
-## Configuration
+Before using the lock screen, [configure PAM](docs/CONFIGURATION.md#lock-authentication).
 
-Open the settings panel from quick settings. Changes apply live and are saved
-to `${XDG_CONFIG_HOME:-~/.config}/zarishell/settings.json`.
+## Documentation
 
-- [Configuration](docs/CONFIGURATION.md): settings, runtime integration, compositor
-  blur, lock authentication (PAM), and greeter setup. Provision a suitable PAM
-  policy before using the lock screen.
-- [Writing themes](docs/THEMES.md): theme tokens, components, and authoring guidance.
+- [Configuration](docs/CONFIGURATION.md): settings and system setup
+- [Writing themes](docs/THEMES.md): tokens and components
 
 ## License
 
