@@ -82,10 +82,9 @@ Scope {
                         }
 
                         MouseArea {
+                            id: hoverArea
                             anchors.fill: parent
                             hoverEnabled: true
-                            onEntered: expireTimer.stop()
-                            onExited: if (!toast.critical) expireTimer.restart()
                             onClicked: {
                                 var action = Notifs.clickAction(toast.modelData);
                                 if (action)
@@ -176,11 +175,10 @@ Scope {
                         }
 
                         // Popup expiry only hides the toast; it stays in the notification center.
-                        Timer {
-                            id: expireTimer
-                            interval: 5000
-                            running: !toast.critical
-                            onTriggered: Notifs.expirePopup(toast.modelData)
+                        PopupExpiry {
+                            notification: toast.modelData
+                            hovered: hoverArea.containsMouse
+                            onExpired: Notifs.expirePopup(toast.modelData)
                         }
                     }
                 }

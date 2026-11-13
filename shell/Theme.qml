@@ -116,6 +116,9 @@ Singleton {
     // group of bar content).
     readonly property string barStyle: ["full", "floating", "pills"].indexOf(Settings.get("barStyle", "")) >= 0 ? Settings.get("barStyle", "") : "full"
     readonly property string useSystemdScope: Settings.get("useSystemdScope") === true ? "true" : Settings.get("useSystemdScope") === false ? "false" : "auto"
+    readonly property int notificationTimeout: boundedSetting("notificationTimeout", 5000, 0, 600000)
+    readonly property int notificationHistoryLimit: boundedSetting("notificationHistoryLimit", 50, 1, 1000)
+    readonly property int notificationPopupLimit: boundedSetting("notificationPopupLimit", 4, 0, 20)
     readonly property bool clipboardHistory: Settings.get("clipboardHistory", true)
     readonly property string workspaceStyle: ["dots", "numbers", "pills", "diamonds"].indexOf(Settings.get("workspaceStyle", "")) >= 0 ? Settings.get("workspaceStyle", "") : "dots"
     readonly property bool barPills: barStyle === "pills"
@@ -404,6 +407,11 @@ Singleton {
     }
 
     // -- Internal token helpers ---------------------------------------------
+    function boundedSetting(key, fallback, minimum, maximum) {
+        var value = Settings.get(key, fallback);
+        return Number.isFinite(value) ? Math.round(clamp(value, minimum, maximum)) : fallback;
+    }
+
     function clamp(value, minValue, maxValue) {
         return Math.max(minValue, Math.min(maxValue, value));
     }

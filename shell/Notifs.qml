@@ -137,6 +137,12 @@ Singleton {
         return qsTr("%1 %2").arg(ClockFormat.date(timestamp, false)).arg(ClockFormat.time(timestamp));
     }
 
+    Connections {
+        target: Theme
+        function onNotificationHistoryLimitChanged() { root.history = root.history.slice(0, Theme.notificationHistoryLimit); }
+        function onNotificationPopupLimitChanged() { root.popups = root.popups.slice(Math.max(0, root.popups.length - Theme.notificationPopupLimit)); }
+    }
+
     // -- Background objects -------------------------------------------------
     NotificationServer {
         id: server
@@ -152,10 +158,10 @@ Singleton {
                 root.popups = root.without(root.popups, notification);
                 root.history = root.without(root.history, notification);
             });
-            root.history = [notification].concat(root.history).slice(0, 50);
+            root.history = [notification].concat(root.history).slice(0, Theme.notificationHistoryLimit);
             if (!root.dnd || notification.urgency === NotificationUrgency.Critical) {
                 let nextPopups = root.popups.concat([notification]);
-                root.popups = nextPopups.slice(Math.max(0, nextPopups.length - 4));
+                root.popups = nextPopups.slice(Math.max(0, nextPopups.length - Theme.notificationPopupLimit));
             }
             if (ShellState.panel !== "notifications")
                 root.unread++;
