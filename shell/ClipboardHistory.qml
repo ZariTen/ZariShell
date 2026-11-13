@@ -26,7 +26,7 @@ Singleton {
     function paste(entryId) {
         if (!enabled || !/^\d+$/.test(entryId))
             return;
-        pasteProcess.command = ["sh", "-c", "cliphist decode \"$1\" | wl-copy", "sh", entryId];
+        pasteProcess.command = ["bash", Quickshell.shellDir + "/scripts/clipboard-paste.sh", entryId];
         pasteProcess.running = true;
     }
 
