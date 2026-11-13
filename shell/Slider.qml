@@ -18,7 +18,7 @@ Item {
     signal moved(real value)
     signal released(real value)
 
-    implicitHeight: interactive ? 10 : 8
+    implicitHeight: Theme.px(interactive ? 10 : 8)
 
     Loader {
         anchors.fill: parent
