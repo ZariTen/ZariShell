@@ -26,6 +26,7 @@ QsPage {
     property string askSsid: ""        // SSID whose password field is open
     property string error: ""
     property bool wantRescan: false
+    property int deviceGeneration: 0
     readonly property bool hasDevice: device !== ""
 
     readonly property var sorted: {
@@ -93,14 +94,57 @@ QsPage {
     }
 
     function scan(mode) {
-        if (listQuery.running || !radioOn)
+        if (listQuery.running || !radioOn || device === "")
             return;
         scanning = mode !== "no";
         listQuery.mode = mode;
+        listQuery.deviceName = device;
+        listQuery.generation = deviceGeneration;
         listQuery.running = true;
     }
 
+    function parseDevices(text) {
+        var wifiDevices = [];
+        var wiredConnection = "";
+        text.split("\n").forEach(line => {
+            var fields = page.splitTerse(line);
+            if (fields[1] === "wifi" && fields[0] !== "" && fields[0] !== "--"
+                    && ["unavailable", "unmanaged", "unknown"].indexOf(fields[2]) === -1) {
+                wifiDevices.push({ name: fields[0], connected: fields[2] === "connected" });
+            } else if (fields[1] === "ethernet" && fields[2] === "connected" && wiredConnection === "") {
+                wiredConnection = fields[3] || fields[0];
+            }
+        });
+        var preferred = Settings.get("wifiDevice", "");
+        wifiDevices.sort((first, second) => {
+            if ((first.name === preferred) !== (second.name === preferred))
+                return first.name === preferred ? -1 : 1;
+            if (first.connected !== second.connected)
+                return first.connected ? -1 : 1;
+            if ((first.name === page.device) !== (second.name === page.device))
+                return first.name === page.device ? -1 : 1;
+            return first.name.localeCompare(second.name);
+        });
+        var nextDevice = wifiDevices.length ? wifiDevices[0].name : "";
+        if (device !== nextDevice) {
+            deviceGeneration++;
+            device = nextDevice;
+            held = null;
+            askSsid = "";
+            networks = [];
+            activeSsid = "";
+            activeSignal = 0;
+            connecting = "";
+            error = "";
+            scanning = false;
+        }
+        wired = wiredConnection;
+        scan("no");
+    }
+
     function parseList(text) {
+        if (!radioOn || device === "" || listQuery.generation !== deviceGeneration)
+            return;
         if (text.trim() === "" && listQuery.mode !== "no")
             return;
         var bestBySsid = {};
@@ -159,13 +203,13 @@ QsPage {
     }
 
     function connectTo(networkEntry, password) {
-        if (connectProcess.running || connecting !== "")
+        if (device === "" || connectProcess.running || connecting !== "")
             return;
         if (networkEntry.ssid.charAt(0) === "-") {
             error = "Can't connect to a network whose name starts with \"-\".";
             return;
         }
-        var cmd = ["nmcli", "dev", "wifi", "connect", networkEntry.ssid];
+        var cmd = ["nmcli", "dev", "wifi", "connect", networkEntry.ssid, "ifname", device];
         if (password !== "")
             cmd.push("password", password);
         error = "";
@@ -528,9 +572,6 @@ QsPage {
                 }
                 devQuery.running = true;
                 savedQuery.running = true;
-                if (page.radioOn) {
-                    page.scan("no");
-                }
             }
         }
     }
@@ -541,19 +582,7 @@ QsPage {
         command: ["nmcli", "-t", "-f", "DEVICE,TYPE,STATE,CONNECTION", "dev"]
         environment: ({ LC_ALL: "C" })
         stdout: StdioCollector {
-            onStreamFinished: {
-                var wifiDevice = "";
-                var wiredConnection = "";
-                text.split("\n").forEach(line => {
-                    var fields = page.splitTerse(line);
-                    if (fields[1] === "wifi" && wifiDevice === "")
-                        wifiDevice = fields[0];
-                    else if (fields[1] === "ethernet" && fields[2] === "connected" && wiredConnection === "")
-                        wiredConnection = fields[3] || fields[0];
-                });
-                page.device = wifiDevice;
-                page.wired = wiredConnection;
-            }
+            onStreamFinished: page.parseDevices(text)
         }
     }
 
@@ -580,15 +609,19 @@ QsPage {
         id: listQuery
 
         property string mode: "no"
+        property string deviceName: ""
+        property int generation: 0
 
-        command: ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list", "--rescan", mode]
+        command: ["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY", "dev", "wifi", "list", "ifname", deviceName, "--rescan", mode]
         environment: ({ LC_ALL: "C" })
         stdout: StdioCollector {
             onStreamFinished: page.parseList(text)
         }
         onExited: (exitCode, exitStatus) => {
             page.scanning = false;
-            if (exitCode !== 0 && mode !== "no")
+            if (generation !== page.deviceGeneration)
+                Qt.callLater(page.scan, "no");
+            else if (exitCode !== 0 && mode !== "no")
                 Qt.callLater(page.scan, "no");   // forced rescan refused: show the cached list instead
             else if (mode === "no" && page.wantRescan) {
                 page.wantRescan = false;

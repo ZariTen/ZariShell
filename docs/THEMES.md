@@ -193,6 +193,7 @@ in every theme. The login screen ignores this file and uses the defaults.
 | `avatarSize` | 112 | Lock screen avatar size in px. |
 | `panelWidth` | 1 | Width factor of panels, dialogs and the lock card. |
 | `dim` | 0.5 | Opacity of disabled / hint elements. |
+| `wifiDevice` | `""` | Prefer this discovered, usable Wi-Fi interface. Empty or invalid values select a connected adapter, then retain the current usable adapter or choose by interface name. |
 
 The login screen does not read `settings.json` (it runs as the greeter user,
 which cannot read your home); it uses the theme's looks and the defaults.
