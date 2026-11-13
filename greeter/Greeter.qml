@@ -620,15 +620,20 @@ Item {
                     var desktopEntry = entriesByFile[filePath];
                     if (!desktopEntry.Exec || desktopEntry.NoDisplay === "true" || desktopEntry.Hidden === "true")
                         return;
+                    var entryName = Command.decodeString(desktopEntry.Name || "");
+                    var entryIcon = Command.decodeString(desktopEntry.Icon || "");
+                    if (entryName === null || entryIcon === null)
+                        return;
+                    entryName = entryName || filePath.split("/").pop();
                     var commandArgs = Command.parse(desktopEntry.Exec, true, {
-                        name: desktopEntry.Name || filePath.split("/").pop(),
+                        name: entryName,
                         path: filePath,
-                        icon: desktopEntry.Icon || ""
+                        icon: entryIcon
                     });
                     if (commandArgs.length === 0)
                         return;
                     parsedSessions.push({
-                        name: desktopEntry.Name || filePath.split("/").pop(),
+                        name: entryName,
                         exec: commandArgs
                     });
                 });

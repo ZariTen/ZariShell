@@ -35,4 +35,28 @@ assert.deepEqual(sessions(String.raw`start "a\\\\b" "quote\\"here" "dollar\\$HOM
 for (const command of ['start "unterminated', 'start trailing\\', 'start %Z', '%f', '"" arg', 'start %'])
     assert.deepEqual(sessions(command), [], 'Malformed desktop entry must be skipped: ' + command);
 assert.deepEqual(fallback('start $HOME ~ ; $(id) `id`'), ['start', '$HOME', '~', ';', '$(id)', '`id`']);
-console.log('PASS greeter quoted commands, desktop field codes, and malformed input');
+const {spawnSync} = require('node:child_process');
+const work = fs.mkdtempSync(path.join(process.env.TMPDIR, 'zs-session-metadata.'));
+console.log('Retained session metadata scratch:', work);
+const discovery = path.join(work, 'discover.sh');
+fs.copyFileSync(path.join(base, 'shell/scripts/greeter-sessions.sh'), discovery);
+const desktop = path.join(work, 'fixture.desktop');
+function discovered(name, icon) {
+    fs.writeFileSync(desktop, '[Desktop Entry]\nName=' + name + '\nIcon=' + icon + '\nExec=start %c %i %k\n');
+    const result = spawnSync('/bin/sh', [discovery, work], {encoding:'utf8',env:{PATH:work,HOME:work,XDG_CONFIG_HOME:work,
+        DBUS_SESSION_BUS_ADDRESS:'unix:path=/nonexistent/zs-test',DBUS_SYSTEM_BUS_ADDRESS:'unix:path=/nonexistent/zs-test'}});
+    assert.equal(result.status,0,result.stderr);
+    context.text = result.stdout;
+    context.root = {pickDefaultSession() {}};
+    vm.runInContext(collector, context);
+    return JSON.parse(JSON.stringify(context.root.sessions));
+}
+const decodedName = String.raw`Fancy Session\s ; $(probe)`;
+assert.deepEqual(discovered(String.raw`Fancy\sSession\\s ; $(probe)`, String.raw`/fixture/icons/Fancy\sSession.svg`),
+    [{name:decodedName,exec:['start',decodedName,'--icon','/fixture/icons/Fancy Session.svg',desktop]}], 'Discovery must decode metadata exactly once for display and argv');
+assert.deepEqual(discovered(String.raw`Line\nTab\tCarriage\rEnd`, ''),
+    [{name:'Line\nTab\tCarriage\rEnd',exec:['start','Line\nTab\tCarriage\rEnd',desktop]}], 'Standard string escapes must remain valid argv data');
+assert.deepEqual(discovered('Trailing' + '\\', ''), [], 'Incomplete escapes must skip the entry');
+assert.deepEqual(discovered(String.raw`Bad\qName`, ''), [], 'Unknown Name escapes must skip the entry');
+assert.deepEqual(discovered('Valid', String.raw`bad\qIcon`), [], 'Unknown Icon escapes must skip the entry');
+console.log('PASS greeter quoted commands, decoded desktop metadata, and malformed input');

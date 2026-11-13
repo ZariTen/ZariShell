@@ -1,5 +1,24 @@
 .pragma library
 
+// Decode Desktop Entry string values once, independently of Exec tokenization.
+function decodeString(value) {
+    if (typeof value !== "string" || value.indexOf("\u0000") >= 0)
+        return null;
+    var escapes = {s: " ", n: "\n", t: "\t", r: "\r", "\\": "\\"};
+    var result = "";
+    for (var i = 0; i < value.length; i++) {
+        if (value[i] !== "\\") {
+            result += value[i];
+        } else {
+            var decoded = escapes[value[++i]];
+            if (decoded === undefined)
+                return null;
+            result += decoded;
+        }
+    }
+    return result;
+}
+
 // Argument vectors only: no shell expansion or execution. Invalid input is inert.
 function parse(command, desktop, metadata) {
     if (typeof command !== "string" || /[\x00-\x1f\x7f]/.test(command))
