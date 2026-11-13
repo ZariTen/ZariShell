@@ -221,6 +221,17 @@ catalog loader: these annotations prepare translation sources, but do not load
 `.qm` files or provide language packs. Setting `Qt.uiLanguage` alone is not a
 translation loader.
 
+## Greeter user discovery
+
+The greeter enumerates accounts with NSS `getent passwd`, including directory
+providers that support enumeration. `services.zarishell.greeter.minUid` /
+`maxUid` (defaults 1000 / 60000) set the picker range and are exported as
+`QS_GREETER_MIN_UID` / `QS_GREETER_MAX_UID`. Environment values outside
+0–4294967294 or an inverted range fall back to defaults. Non-login shells are
+excluded. Other user/manual login stays available when discovery fails or a
+provider does not enumerate users. The lock screen resolves its displayed
+identity with a keyed NSS lookup and falls back to the account name.
+
 ## Greeter session commands
 
 `services.zarishell.greeter.sessionCommand` / `QS_GREETER_SESSION_COMMAND`

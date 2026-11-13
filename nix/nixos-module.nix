@@ -30,12 +30,14 @@ let
       export WLR_NO_HARDWARE_CURSORS=1
     ''}
     export QS_GREETER_SESSIONS=${lib.escapeShellArg "${config.services.displayManager.sessionData.desktops}/share/wayland-sessions"}
+    export QS_GREETER_MIN_UID=${lib.escapeShellArg (toString cfg.minUid)}
+    export QS_GREETER_MAX_UID=${lib.escapeShellArg (toString cfg.maxUid)}
     export QS_GREETER_STATE=${lib.escapeShellArg stateDir}
     export QS_GREETER_MAIN_MONITOR=${lib.escapeShellArg cfg.mainMonitor}
     export QS_GREETER_SESSION_COMMAND=${lib.escapeShellArg cfg.sessionCommand}
     export QS_GREETER_SESSION_NAME=${lib.escapeShellArg cfg.sessionName}
     export QS_GREETER_HOST_LABEL=${lib.escapeShellArg cfg.hostLabel}
-    export PATH=${lib.escapeShellArg (lib.makeBinPath [ pkgs.systemd pkgs.coreutils pkgs.bash ])}:"$PATH"
+    export PATH=${lib.escapeShellArg (lib.makeBinPath [ pkgs.systemd pkgs.coreutils pkgs.bash pkgs.glibc.bin ])}:"$PATH"
     exec ${lib.escapeShellArg "${pkgs.cage}/bin/cage"} -s -d -- ${lib.escapeShellArg "${cfg.quickshellPackage}/bin/quickshell"} -p ${lib.escapeShellArg (toString greeterQml)}
   '';
 in
@@ -66,6 +68,18 @@ in
       default = "";
       example = "DP-1";
       description = "Output for the login card; empty = auto (external, most pixels, at 0,0).";
+    };
+
+    minUid = lib.mkOption {
+      type = lib.types.ints.between 0 4294967294;
+      default = 1000;
+      description = "Minimum UID shown in the NSS user picker (manual login is unrestricted).";
+    };
+
+    maxUid = lib.mkOption {
+      type = lib.types.addCheck (lib.types.ints.between 0 4294967294) (value: value >= cfg.minUid);
+      default = 60000;
+      description = "Maximum UID shown in the NSS user picker; must not be below minUid.";
     };
 
     sessionCommand = lib.mkOption {

@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import "Command.js" as Command
+import "UserAccounts.js" as UserAccounts
 
 // Greeter behaviour knobs. Colors and fonts live in Theme.qml (shared with
 // the desktop shell); this file only holds greeter-specific settings.
@@ -11,8 +12,9 @@ QtObject {
     readonly property string mainMonitor: Quickshell.env("QS_GREETER_MAIN_MONITOR") || ""
 
     // Users shown in the picker: uid range + any login shell (not nologin/false).
-    readonly property int minUid: 1000
-    readonly property int maxUid: 60000
+    readonly property var uidRange: UserAccounts.uidRange(Quickshell.env("QS_GREETER_MIN_UID"), Quickshell.env("QS_GREETER_MAX_UID"))
+    readonly property real minUid: uidRange[0]
+    readonly property real maxUid: uidRange[1]
 
     // Fallback/default session when no .desktop matches (or none are found).
     // A detected session whose Exec ends in this command is preselected.

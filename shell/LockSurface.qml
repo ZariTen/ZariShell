@@ -1,4 +1,5 @@
 import QtQuick
+import "UserAccounts.js" as UserAccounts
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -280,19 +281,17 @@ Item {
         precision: SystemClock.Minutes
     }
 
-    // Real name from passwd (GECOS field).
-    FileView {
-        path: "/etc/passwd"
-        onLoaded: {
-            var user = Quickshell.env("USER");
-            var lines = text().split("\n");
-            for (var i = 0; i < lines.length; i++) {
-                var fields = lines[i].split(":");
-                if (fields[0] === user && fields[4]) {
-                    surface.realName = fields[4].split(",")[0];
-                    break;
-                }
-            }
+    // Resolve the account through NSS, including non-local passwd providers.
+    Process {
+        id: userQuery
+        property string output: ""
+        running: Quickshell.env("USER") !== ""
+        command: ["getent", "--", "passwd", Quickshell.env("USER")]
+        stdout: StdioCollector {
+            onStreamFinished: userQuery.output = text
+        }
+        onExited: (exitCode, exitStatus) => {
+            surface.realName = exitCode === 0 ? UserAccounts.realName(userQuery.output, Quickshell.env("USER")) : Quickshell.env("USER");
         }
     }
 

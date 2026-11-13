@@ -19,6 +19,8 @@ let
   }).config;
   odd = "space ' \" \\ $HOME $(probe) ; %n";
   values = {
+    minUid = 100000;
+    maxUid = 300000;
     stateDir = "/var/lib/${odd}";
     mainMonitor = odd;
     sessionCommand = "session --label '${odd}'";
@@ -40,6 +42,9 @@ assert lib.assertMsg (builtins.all (key: builtins.all (control: rejected key ("/
 assert lib.assertMsg (builtins.all (control:
   !(builtins.tryEval (builtins.deepSeq (evaluate { cursor.name = "cursor" + control; }).services.greetd.settings.default_session.command true)).success
 ) controls) "Cursor name must reject control characters";
+assert lib.assertMsg (builtins.all (settings:
+  !(builtins.tryEval (builtins.deepSeq (evaluate settings).services.greetd.settings.default_session.command true)).success
+) [ { minUid = -1; } { maxUid = 4294967295; } { minUid = 3000; maxUid = 2000; } ]) "Invalid or inverted UID bounds must be rejected";
 {
   inherit wrapper;
   rule = builtins.head config.systemd.tmpfiles.rules;

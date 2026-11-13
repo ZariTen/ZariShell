@@ -1,5 +1,6 @@
 import QtQuick
 import "Command.js" as Command
+import "UserAccounts.js" as UserAccounts
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
@@ -553,27 +554,18 @@ Item {
     }
 
     // -- Background objects -------------------------------------------------
-    FileView {
-        path: "/etc/passwd"
-        onLoaded: {
-            var parsedUsers = [];
-            var lines = text().split("\n");
-            for (var i = 0; i < lines.length; i++) {
-                var fields = lines[i].split(":");
-                if (fields.length < 7)
-                    continue;
-                var uid = parseInt(fields[2]);
-                if (uid < GreeterConfig.minUid || uid > GreeterConfig.maxUid)
-                    continue;
-                if (fields[6] === "" || /(nologin|false)$/.test(fields[6]))
-                    continue;
-                parsedUsers.push({
-                    name: fields[0],
-                    real: (fields[4] || "").split(",")[0] || fields[0],
-                    home: fields[5]
-                });
-            }
-            root.users = parsedUsers;
+    Process {
+        id: userQuery
+        property string output: ""
+        running: true
+        command: ["getent", "passwd"]
+        stdout: StdioCollector {
+            onStreamFinished: userQuery.output = text
+        }
+        onExited: (exitCode, exitStatus) => {
+            root.users = exitCode === 0 ? UserAccounts.loginUsers(userQuery.output, GreeterConfig.minUid, GreeterConfig.maxUid) : [];
+            if (exitCode !== 0 && !root.submitted && !root.awaitingPrompt)
+                root.infoText = qsTr("User discovery unavailable. Choose Other user to sign in.");
             root.pickDefaultUser();
         }
     }
