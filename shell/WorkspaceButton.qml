@@ -15,7 +15,7 @@ Button {
     onClicked: modelData.activate()
 
     Accessible.role: Accessible.Button
-    Accessible.name: "Workspace " + modelData.name
+    Accessible.name: qsTr("Workspace %1").arg(modelData.name)
     Accessible.description: modelData.urgent ? "Urgent" : active ? "Active" : occupied ? "Occupied" : "Empty"
     Accessible.onPressAction: modelData.activate()
 

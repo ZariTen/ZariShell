@@ -87,14 +87,14 @@ Scope {
 
                         StyledText {
                             Layout.fillWidth: true
-                            text: "Notifications"
+                            text: qsTr("Notifications")
                             font.pixelSize: Theme.fontTitle + 2
                             font.weight: Font.Bold
                         }
 
                         ActionButton {
                             visible: Notifs.history.length > 0
-                            text: "Clear all"
+                            text: qsTr("Clear all")
                             implicitHeight: Theme.px(30)
                             onClicked: Notifs.clearAll()
                         }
@@ -127,7 +127,7 @@ Scope {
 
                             StyledText {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: "You're all caught up"
+                                text: qsTr("You're all caught up")
                                 color: Theme.textSurfaceVariant
                             }
                         }

@@ -15,7 +15,7 @@ Scope {
     function formatGigabytes(bytes) {
         var gigabytes = bytes / 1073741824;
         var decimals = bytes >= 107374182400 ? 0 : 1;
-        return gigabytes.toFixed(decimals) + " GB";
+        return qsTr("%1 GB").arg(gigabytes.toFixed(decimals));
     }
 
     function formatTemperature(celsius) {
@@ -39,10 +39,10 @@ Scope {
 
     function diskLabel(mountPoint) {
         if (mountPoint === "/")
-            return "System";
+            return qsTr("System");
         if (mountPoint === "/home")
-            return "Home";
-        return "Disk";
+            return qsTr("Home");
+        return qsTr("Disk");
     }
 
     // -- Inline components --------------------------------------------------
@@ -126,21 +126,21 @@ Scope {
 
         PanelHeader {
             codepoint: 0xF04C5 // md-speedometer
-            title: "System monitor"
+            title: qsTr("System monitor")
         }
 
         Meter {
             codepoint: 0xF0EE0 // md-cpu-64-bit
-            label: "CPU"
+            label: qsTr("CPU")
             value: SysStats.cpu
             detail: root.formatPercent(SysStats.cpu) + root.formatTemperature(SysStats.cpuTemp)
         }
 
         Meter {
             codepoint: 0xF035B // md-memory
-            label: "Memory"
+            label: qsTr("Memory")
             value: SysStats.mem
-            detail: SysStats.memUsedGb.toFixed(1) + " / " + SysStats.memTotalGb.toFixed(1) + " GB" + root.separatorDot + root.formatPercent(SysStats.mem)
+            detail: qsTr("%1 / %2 GB").arg(SysStats.memUsedGb.toFixed(1)).arg(SysStats.memTotalGb.toFixed(1)) + root.separatorDot + root.formatPercent(SysStats.mem)
         }
 
         // Model is the count, so delegates survive the 2s refresh and the
@@ -162,7 +162,7 @@ Scope {
 
                 Meter {
                     codepoint: 0xF08AE // md-expansion-card
-                    label: SysStats.gpus.length > 1 ? "GPU " + (gpuRow.index + 1) : "GPU"
+                    label: SysStats.gpus.length > 1 ? qsTr("GPU %1").arg(gpuRow.index + 1) : qsTr("GPU")
                     sublabel: gpuRow.gpu.name || ""
                     showBar: gpuRow.hasBusyRatio || gpuRow.hasClockRatio
                     value: {
@@ -174,21 +174,21 @@ Scope {
                     }
                     detail: {
                         if (gpuRow.isAsleep)
-                            return "Sleeping";
+                            return qsTr("Sleeping");
                         if (gpuRow.hasBusyRatio)
                             return root.formatPercent(gpuRow.gpu.busy) + root.formatTemperature(gpuRow.gpu.temp);
                         if (gpuRow.hasClockRatio)
                             return gpuRow.gpu.freq + " MHz" + root.formatTemperature(gpuRow.gpu.temp);
                         if (gpuRow.gpu.temp >= 0)
                             return Math.round(gpuRow.gpu.temp) + " \u00b0C";
-                        return "No data";
+                        return qsTr("No data");
                     }
                 }
 
                 Meter {
                     visible: !gpuRow.isAsleep && gpuRow.gpu.memTotal > 0
                     codepoint: 0xF061A // md-chip
-                    label: "Video memory"
+                    label: qsTr("Video memory")
                     value: gpuRow.gpu.memTotal > 0 ? gpuRow.gpu.memUsed / gpuRow.gpu.memTotal : 0
                     detail: root.formatGigabytes(gpuRow.gpu.memUsed) + " / " + root.formatGigabytes(gpuRow.gpu.memTotal)
                 }

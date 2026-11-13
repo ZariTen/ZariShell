@@ -30,9 +30,9 @@ Scope {
 
     // Header glyph, header title and search placeholder for each mode.
     readonly property var modeLabels: ({
-        launcher: { glyph: 0xF1105, title: "All Programs", placeholder: "Search programs and files" },
-        clipboard: { glyph: 0xF0147, title: "Clipboard history", placeholder: "Search clipboard" },
-        switcher: { glyph: 0xF05B6, title: "Switch window", placeholder: "Search windows" }
+        launcher: { glyph: 0xF1105, title: qsTr("All Programs"), placeholder: qsTr("Search programs and files") },
+        clipboard: { glyph: 0xF0147, title: qsTr("Clipboard history"), placeholder: qsTr("Search clipboard") },
+        switcher: { glyph: 0xF05B6, title: qsTr("Switch window"), placeholder: qsTr("Search windows") }
     })
     readonly property var currentLabels: modeLabels[mode] || modeLabels.launcher
 
@@ -125,7 +125,7 @@ Scope {
         var windowItem = windows[index];
         var appId = windowItem.wayland ? windowItem.wayland.appId : "";
         var desktopEntry = appId !== "" ? DesktopEntries.heuristicLookup(appId) : null;
-        var workspaceSuffix = windowItem.workspace ? "  \u00b7  workspace " + windowItem.workspace.name : "";
+        var workspaceSuffix = windowItem.workspace ? qsTr("  \u00b7  workspace %1").arg(windowItem.workspace.name) : "";
         return {
             title: windowItem.title,
             subtitle: (desktopEntry ? desktopEntry.name : appId) + workspaceSuffix,
@@ -235,7 +235,7 @@ Scope {
                             font.weight: Font.DemiBold
                         }
                         StyledText {
-                            text: list.count + (list.count === 1 ? " item" : " items")
+                            text: (list.count === 1 ? qsTr("%1 item") : qsTr("%1 items")).arg(list.count)
                             color: Theme.textSurfaceVariant
                             font.pixelSize: Theme.fontSmall
                         }
@@ -280,7 +280,7 @@ Scope {
                                 anchors.centerIn: parent
                                 visible: list.count === 0
                                 color: Theme.textSurfaceVariant
-                                text: "No items match your search."
+                                text: qsTr("No items match your search.")
                             }
 
                             delegate: Item {

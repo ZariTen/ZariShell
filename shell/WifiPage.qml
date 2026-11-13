@@ -50,7 +50,7 @@ QsPage {
     signal networkChanged
 
     codepoint: 0xF05A9 // md-wifi
-    title: "Wi-Fi"
+    title: qsTr("Wi-Fi")
 
     onShownChanged: {
         askSsid = "";
@@ -104,8 +104,8 @@ QsPage {
         if (profilesState === "ready")
             return true;
         error = profilesState === "failed"
-                ? "Couldn't load saved Wi-Fi profiles. Reopen Wi-Fi to retry, or use nm-connection-editor."
-                : "Saved Wi-Fi profiles are still loading. Try again shortly.";
+                ? qsTr("Couldn't load saved Wi-Fi profiles. Reopen Wi-Fi to retry, or use nm-connection-editor.")
+                : qsTr("Saved Wi-Fi profiles are still loading. Try again shortly.");
         return false;
     }
 
@@ -271,12 +271,12 @@ QsPage {
         var profile = savedProfile(networkEntry.ssid);
         var knownSsid = saved.some(entry => entry.ssid === networkEntry.ssid);
         if (knownSsid && (!profile || password !== "")) {
-            error = "Edit this network's saved profile and credentials in nm-connection-editor, then try again.";
+            error = qsTr("Edit this network's saved profile and credentials in nm-connection-editor, then try again.");
             askSsid = "";
             return;
         }
         if (!profile && networkEntry.ssid.charAt(0) === "-") {
-            error = "Can't connect to a network whose name starts with \"-\".";
+            error = qsTr("Can't connect to a network whose name starts with \"-\".");
             return;
         }
         var cmd = profile
@@ -306,7 +306,7 @@ QsPage {
         } else if (!networkEntry.secured || saved.some(profile => profile.ssid === networkEntry.ssid)) {
             connectTo(networkEntry, "");
         } else if (networkEntry.enterprise) {
-            error = "Enterprise (802.1X) networks need a saved profile (nm-connection-editor).";
+            error = qsTr("Enterprise (802.1X) networks need a saved profile (nm-connection-editor).");
         } else {
             error = "";
             askSsid = networkEntry.ssid;
@@ -333,10 +333,10 @@ QsPage {
             networkChanged();
             return;
         }
-        var errorLine = stderrText.split("\n").filter(line => line.trim() !== "")[0] || "Couldn't connect.";
+        var errorLine = stderrText.split("\n").filter(line => line.trim() !== "")[0] || qsTr("Couldn't connect.");
         errorLine = errorLine.replace(/^Error:\s*/, "").replace(/^Connection activation failed:\s*(\(\d+\)\s*)?/, "");
         if (/secrets were required|no secrets|password/i.test(errorLine) && networkEntry && networkEntry.secured) {
-            error = "Wi-Fi credentials need updating. Edit the saved profile in nm-connection-editor, then try again.";
+            error = qsTr("Wi-Fi credentials need updating. Edit the saved profile in nm-connection-editor, then try again.");
             askSsid = "";
         } else {
             error = errorLine;
@@ -415,25 +415,25 @@ QsPage {
     QsEmpty {
         visible: page.radioKnown && !page.radioOn
         codepoint: 0xF05AA // md-wifi_off
-        title: "Wi-Fi is turned off"
-        detail: page.wired !== "" ? "Connected by cable: " + page.wired : ""
-        actionText: "Turn on"
+        title: qsTr("Wi-Fi is turned off")
+        detail: page.wired !== "" ? qsTr("Connected by cable: %1").arg(page.wired) : ""
+        actionText: qsTr("Turn on")
         onAction: page.setRadio()
     }
 
     QsEmpty {
         visible: page.radioOn && !page.hasDevice && !radioQuery.running && !devQuery.running
         codepoint: 0xF05AA
-        title: "No Wi-Fi adapter found"
-        detail: "NetworkManager reports no wireless device."
+        title: qsTr("No Wi-Fi adapter found")
+        detail: qsTr("NetworkManager reports no wireless device.")
     }
 
     QsEmpty {
         visible: page.radioOn && page.hasDevice && page.sorted.length === 0
         busy: page.scanning || listQuery.running
         codepoint: 0xF0928
-        title: busy ? "Looking for networks\u2026" : "No networks found"
-        actionText: busy ? "" : "Scan again"
+        title: busy ? qsTr("Looking for networks\u2026") : qsTr("No networks found")
+        actionText: busy ? "" : qsTr("Scan again")
         onAction: page.scan("yes")
     }
 
@@ -479,16 +479,16 @@ QsPage {
                 current: list.keyActive && list.activeFocus && list.cursor === entry.index
                 subtitle: {
                     if (entry.busy)
-                        return "Connecting\u2026";
+                        return qsTr("Connecting\u2026");
                     var parts = [];
                     if (entry.networkEntry.inUse)
-                        parts.push("Connected");
+                        parts.push(qsTr("Connected"));
                     else if (entry.known)
-                        parts.push("Saved");
+                        parts.push(qsTr("Saved"));
                     else if (entry.networkEntry.secured)
-                        parts.push("Secured");
+                        parts.push(qsTr("Secured"));
                     else
-                        parts.push("Open");
+                        parts.push(qsTr("Open"));
                     if (entry.networkEntry.secured && entry.networkEntry.security !== "")
                         parts.push(entry.networkEntry.security);
                     parts.push(entry.networkEntry.signal + "%");
@@ -512,7 +512,7 @@ QsPage {
                 ActionButton {
                     visible: entry.networkEntry.inUse
                     implicitHeight: Theme.px(26)
-                    text: "Disconnect"
+                    text: qsTr("Disconnect")
                     onClicked: page.disconnect()
                 }
             }
@@ -543,7 +543,7 @@ QsPage {
                             anchors.leftMargin: Theme.spacingS
                             anchors.verticalCenter: parent.verticalCenter
                             visible: passwordInput.text === ""
-                            text: "Password"
+                            text: qsTr("Password")
                             color: Theme.outline
                         }
                         TextInput {
@@ -588,7 +588,7 @@ QsPage {
                     ActionButton {
                         implicitWidth: Theme.px(78)
                         implicitHeight: Theme.px(30)
-                        text: "Connect"
+                        text: qsTr("Connect")
                         filled: true
                         opacity: passwordInput.text !== "" ? 1 : Theme.dim(0.5)
                         onClicked: if (passwordInput.text !== "") page.connectTo(entry.networkEntry, passwordInput.text)

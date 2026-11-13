@@ -29,7 +29,7 @@ QsPage {
     }
 
     codepoint: 0xF00AF // md-bluetooth
-    title: "Bluetooth"
+    title: qsTr("Bluetooth")
 
     onShownChanged: {
         if (shown) {
@@ -121,16 +121,16 @@ QsPage {
     QsEmpty {
         visible: page.adapter === null
         codepoint: 0xF00B2 // md-bluetooth_off
-        title: "No Bluetooth adapter found"
-        detail: "Is the bluetooth service running?"
+        title: qsTr("No Bluetooth adapter found")
+        detail: qsTr("Is the bluetooth service running?")
     }
 
     QsEmpty {
         visible: page.adapter !== null && !page.powered
         busy: page.powering
         codepoint: 0xF00B2
-        title: page.powering ? "Switching Bluetooth\u2026" : "Bluetooth is turned off"
-        actionText: page.powering ? "" : "Turn on"
+        title: page.powering ? qsTr("Switching Bluetooth\u2026") : qsTr("Bluetooth is turned off")
+        actionText: page.powering ? "" : qsTr("Turn on")
         onAction: page.adapter.enabled = true
     }
 
@@ -138,9 +138,9 @@ QsPage {
         visible: page.powered && page.devices.length === 0
         busy: page.discovering
         codepoint: 0xF00AF
-        title: page.discovering ? "Searching for devices\u2026" : "No devices found"
-        detail: page.discovering ? "Put the device in pairing mode." : ""
-        actionText: page.discovering ? "" : "Scan"
+        title: page.discovering ? qsTr("Searching for devices\u2026") : qsTr("No devices found")
+        detail: page.discovering ? qsTr("Put the device in pairing mode.") : ""
+        actionText: page.discovering ? "" : qsTr("Scan")
         onAction: page.adapter.discovering = true
     }
 
@@ -202,7 +202,7 @@ QsPage {
                 Layout.bottomMargin: Theme.px(2)
                 Layout.leftMargin: Theme.spacingS
                 visible: entry.firstOfGroup
-                text: page.deviceGroup(entry.device) === 0 ? "My devices" : "Nearby devices"
+                text: page.deviceGroup(entry.device) === 0 ? qsTr("My devices") : qsTr("Nearby devices")
                 font.pixelSize: Theme.fontSmall
                 font.weight: Font.DemiBold
                 color: Theme.accent
@@ -218,16 +218,16 @@ QsPage {
                 current: list.keyActive && list.activeFocus && list.cursor === entry.index
                 subtitle: {
                     if (entry.device.pairing)
-                        return "Pairing\u2026";
+                        return qsTr("Pairing\u2026");
                     if (entry.device.state === BluetoothDeviceState.Connecting)
-                        return "Connecting\u2026";
+                        return qsTr("Connecting\u2026");
                     if (entry.device.state === BluetoothDeviceState.Disconnecting)
-                        return "Disconnecting\u2026";
+                        return qsTr("Disconnecting\u2026");
                     if (entry.device.connected)
-                        return "Connected";
+                        return qsTr("Connected");
                     if (entry.device.paired)
-                        return "Paired";
-                    return "Click to pair";
+                        return qsTr("Paired");
+                    return qsTr("Click to pair");
                 }
                 onClicked: {
                     list.cursor = entry.index;
@@ -266,12 +266,12 @@ QsPage {
                     implicitHeight: Theme.px(26)
                     text: {
                         if (entry.device.pairing)
-                            return "Cancel";
+                            return qsTr("Cancel");
                         if (entry.device.connected)
-                            return "Disconnect";
+                            return qsTr("Disconnect");
                         if (entry.device.paired)
-                            return "Connect";
-                        return "Pair";
+                            return qsTr("Connect");
+                        return qsTr("Pair");
                     }
                     filled: !entry.device.connected && !entry.device.pairing
                     onClicked: entry.primary()

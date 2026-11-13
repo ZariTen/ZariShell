@@ -65,7 +65,7 @@ Scope {
                 StyledText {
                     Layout.fillWidth: true
                     Layout.topMargin: -Theme.spacingS
-                    text: "User Account Control"
+                    text: qsTr("User Account Control")
                     color: Theme.textSurfaceVariant
                     font.pixelSize: Theme.fontSmall
                 }
@@ -87,7 +87,7 @@ Scope {
                 StyledText {
                     Layout.fillWidth: true
                     horizontalAlignment: Text.AlignHCenter
-                    text: "Do you want to allow this action?"
+                    text: qsTr("Do you want to allow this action?")
                     font.pixelSize: Theme.fontHeadline - 2
                     font.weight: Font.Bold
                 }
@@ -150,12 +150,12 @@ Scope {
                     spacing: Theme.spacingS
 
                     ActionButton {
-                        text: "Cancel"
+                        text: qsTr("Cancel")
                         onClicked: window.cancel()
                     }
 
                     ActionButton {
-                        text: "Authenticate"
+                        text: qsTr("Authenticate")
                         filled: true
                         onClicked: window.submit()
                     }

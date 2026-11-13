@@ -83,7 +83,7 @@ Singleton {
     function appLabel(notification) {
         var rawAppName = notification.appName || "";
         if (rawAppName === "" || rawAppName === "notify-send")
-            return "System";
+            return qsTr("System");
         return rawAppName;
     }
 
@@ -129,12 +129,12 @@ Singleton {
     function relativeTime(timestamp, now) {
         var elapsedSeconds = Math.max(0, Math.floor((now - timestamp) / 1000));
         if (elapsedSeconds < 60)
-            return "now";
+            return qsTr("now");
         if (elapsedSeconds < 3600)
-            return Math.floor(elapsedSeconds / 60) + "m ago";
+            return qsTr("%1m ago").arg(Math.floor(elapsedSeconds / 60));
         if (elapsedSeconds < 86400)
-            return Math.floor(elapsedSeconds / 3600) + "h ago";
-        return Qt.formatDateTime(timestamp, "d MMM HH:mm");
+            return qsTr("%1h ago").arg(Math.floor(elapsedSeconds / 3600));
+        return qsTr("%1 %2").arg(ClockFormat.date(timestamp, false)).arg(ClockFormat.time(timestamp));
     }
 
     // -- Background objects -------------------------------------------------

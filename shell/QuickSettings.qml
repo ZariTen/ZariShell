@@ -59,7 +59,7 @@ Scope {
 
             PanelHeader {
                 codepoint: 0xF0493 // md-cog
-                title: "Quick settings"
+                title: qsTr("Quick settings")
 
                 // Active keyboard layout; click for the next one.
                 Button {
@@ -111,13 +111,13 @@ Scope {
 
                         return 0xF05A9;
                     }
-                    label: "Wi-Fi"
+                    label: qsTr("Wi-Fi")
                     sublabel: {
                         if (wifi.connecting !== "")
-                            return "Connecting to " + wifi.connecting + "\u2026";
+                            return qsTr("Connecting to %1\u2026").arg(wifi.connecting);
                         if (wifi.radioOn)
-                            return wifi.activeSsid || "Not connected";
-                        return wifi.wired !== "" ? "Off \u00b7 wired: " + wifi.wired : "Off";
+                            return wifi.activeSsid || qsTr("Not connected");
+                        return wifi.wired !== "" ? qsTr("Off \u00b7 wired: %1").arg(wifi.wired) : qsTr("Off");
                     }
                     active: wifi.radioOn
                     onClicked: wifi.setRadio()
@@ -126,15 +126,15 @@ Scope {
 
                 ExpandTile {
                     codepoint: root.adapter && root.adapter.enabled ? 0xF00AF : 0xF00B2 // md-bluetooth / md-bluetooth_off
-                    label: "Bluetooth"
+                    label: qsTr("Bluetooth")
                     sublabel: {
                         if (!root.adapter)
-                            return "No adapter";
+                            return qsTr("No adapter");
                         if (!root.adapter.enabled)
-                            return "Off";
+                            return qsTr("Off");
                         if (root.btConnected.length > 0)
                             return root.btConnected.map(device => device.name).join(", ");
-                        return "On";
+                        return qsTr("On");
                     }
                     active: root.adapter !== null && root.adapter.enabled
                     enabled: root.adapter !== null
@@ -144,16 +144,16 @@ Scope {
 
                 Tile {
                     codepoint: Notifs.dnd ? 0xF009B : 0xF009A
-                    label: "Do not disturb"
-                    sublabel: Notifs.dnd ? "Toasts hidden" : "Off"
+                    label: qsTr("Do not disturb")
+                    sublabel: Notifs.dnd ? qsTr("Toasts hidden") : qsTr("Off")
                     active: Notifs.dnd
                     onClicked: Notifs.dnd = !Notifs.dnd
                 }
 
                 Tile {
                     codepoint: 0xF0425
-                    label: "Power"
-                    sublabel: "Lock, sleep, restart\u2026"
+                    label: qsTr("Power")
+                    sublabel: qsTr("Lock, sleep, restart\u2026")
                     onClicked: ShellState.toggle("power")
                 }
             }
@@ -179,7 +179,7 @@ Scope {
                 StyledText {
                     Layout.preferredWidth: Theme.px(40)
                     horizontalAlignment: Text.AlignRight
-                    text: root.sink && root.sink.audio ? (root.sink.audio.muted ? "Muted" : Math.round(root.sink.audio.volume * 100) + "%") : ""
+                    text: root.sink && root.sink.audio ? (root.sink.audio.muted ? qsTr("Muted") : Math.round(root.sink.audio.volume * 100) + "%") : ""
                     font.pixelSize: Theme.fontSmall
                     color: Theme.textSurfaceVariant
                 }

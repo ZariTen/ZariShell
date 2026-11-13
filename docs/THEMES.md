@@ -201,6 +201,15 @@ in every theme. The login screen ignores this file and uses the defaults.
 The login screen does not read `settings.json` (it runs as the greeter user,
 which cannot read your home); it uses the theme's looks and the defaults.
 
+## Translation readiness
+
+Shell and greeter interface messages use extractable `qsTr()` literals, with
+placeholders for dynamic content. Application/user content, commands and setting
+keys are not translated. Quickshell 0.3.2 uses `QQmlEngine` and has no built-in
+catalog loader: these annotations prepare translation sources, but do not load
+`.qm` files or provide language packs. Setting `Qt.uiLanguage` alone is not a
+translation loader.
+
 ## Greeter session commands
 
 `services.zarishell.greeter.sessionCommand` / `QS_GREETER_SESSION_COMMAND`

@@ -28,7 +28,7 @@ Item {
             return [];
         var needle = fontFilter.trim().toLowerCase();
         var families = savedFontMissing ? [savedFont].concat(installedFonts) : installedFonts;
-        var choices = needle === "" ? [{ family: "", label: Theme.themeFont + " (theme)" }] : [];
+        var choices = needle === "" ? [{ family: "", label: qsTr("%1 (theme)").arg(Theme.themeFont) }] : [];
         families.forEach(family => {
             if (needle === "" || family.toLowerCase().indexOf(needle) >= 0)
                 choices.push({ family: family, label: family });
@@ -242,13 +242,13 @@ Item {
                 spacing: Theme.spacingS
                 StyledText {
                     Layout.fillWidth: true
-                    text: row.savedFont !== "" ? row.savedFont : Theme.themeFont + " (theme)"
+                    text: row.savedFont !== "" ? row.savedFont : qsTr("%1 (theme)").arg(Theme.themeFont)
                     color: row.savedFont !== "" ? Theme.textSurface : Theme.textSurfaceVariant
                     font.italic: row.savedFont === ""
                 }
                 StyledText {
                     visible: row.savedFontMissing
-                    text: "not installed"
+                    text: qsTr("not installed")
                     color: Theme.error
                     font.pixelSize: Theme.fontSmall
                 }
@@ -265,8 +265,8 @@ Item {
             spacing: Theme.spacingXs
             Repeater {
                 model: [
-                    { value: "", label: "Theme" },
-                    { value: "wallpaper", label: "Wallpaper" }
+                    { value: "", label: qsTr("Theme") },
+                    { value: "wallpaper", label: qsTr("Wallpaper") }
                 ]
                 Button {
                     id: choiceButton
@@ -446,7 +446,7 @@ Item {
                 StyledText {
                     anchors.fill: parent
                     visible: filterInput.text === ""
-                    text: "Search " + row.installedFonts.length + " installed fonts"
+                    text: (row.installedFonts.length === 1 ? qsTr("Search %1 installed font") : qsTr("Search %1 installed fonts")).arg(row.installedFonts.length)
                     color: Theme.textSurfaceVariant
                     font.italic: true
                 }
@@ -485,7 +485,7 @@ Item {
                     }
                     StyledText {
                         visible: fontChoice.selected && row.savedFontMissing
-                        text: "not installed"
+                        text: qsTr("not installed")
                         color: Theme.error
                         font.pixelSize: Theme.fontSmall
                     }
@@ -500,7 +500,7 @@ Item {
             StyledText {
                 anchors.centerIn: parent
                 visible: fontList.count === 0
-                text: "No installed font matches"
+                text: qsTr("No installed font matches")
                 color: Theme.textSurfaceVariant
             }
         }

@@ -38,6 +38,7 @@ function harness(calls, settings = {}) {
     fs.writeFileSync(stateFile, JSON.stringify({ calls }));
     const queue = [];
     const context = vm.createContext({
+        qsTr: text => text,
         Settings: { get: (key, fallback) => settings[key] ?? fallback },
         connectGuard: { restart() {}, stop() {} },
         finishTimer: {

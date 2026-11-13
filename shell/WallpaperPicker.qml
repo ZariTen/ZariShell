@@ -96,12 +96,12 @@ Scope {
                         ColumnLayout {
                             spacing: 0
                             StyledText {
-                                text: "Wallpapers"
+                                text: qsTr("Wallpapers")
                                 font.pixelSize: Theme.fontHeadline
                                 font.weight: Font.Bold
                             }
                             StyledText {
-                                text: root.files.length + " images \u00b7 colors follow the wallpaper"
+                                text: (root.files.length === 1 ? qsTr("%1 image \u00b7 colors follow the wallpaper") : qsTr("%1 images \u00b7 colors follow the wallpaper")).arg(root.files.length)
                                 font.pixelSize: Theme.fontSmall
                                 color: Theme.textSurfaceVariant
                             }

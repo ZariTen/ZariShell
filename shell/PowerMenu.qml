@@ -11,11 +11,11 @@ Scope {
     property string pending: ""   // action awaiting confirmation
     // Lock has no command: it goes through ShellState.lockRequested().
     readonly property var actions: [
-        { id: "lock", label: "Lock", glyph: 0xF033E, confirm: false },
-        { id: "logout", label: "Log out", glyph: 0xF0343, confirm: true, command: ["hyprctl", "dispatch", "exit"] },
-        { id: "suspend", label: "Sleep", glyph: 0xF04B2, confirm: false, command: ["systemctl", "suspend"] },
-        { id: "reboot", label: "Restart", glyph: 0xF0709, confirm: true, command: ["systemctl", "reboot"] },
-        { id: "poweroff", label: "Shut down", glyph: 0xF0425, confirm: true, command: ["systemctl", "poweroff"] }
+        { id: "lock", label: qsTr("Lock"), glyph: 0xF033E, confirm: false },
+        { id: "logout", label: qsTr("Log out"), glyph: 0xF0343, confirm: true, command: ["hyprctl", "dispatch", "exit"] },
+        { id: "suspend", label: qsTr("Sleep"), glyph: 0xF04B2, confirm: false, command: ["systemctl", "suspend"] },
+        { id: "reboot", label: qsTr("Restart"), glyph: 0xF0709, confirm: true, command: ["systemctl", "reboot"] },
+        { id: "poweroff", label: qsTr("Shut down"), glyph: 0xF0425, confirm: true, command: ["systemctl", "poweroff"] }
     ]
 
     // -- Helper functions ---------------------------------------------------
@@ -48,7 +48,7 @@ Scope {
 
         PanelHeader {
             codepoint: 0xF0425
-            title: root.pending === "" ? "Shut down or sign out" : "Confirm"
+            title: root.pending === "" ? qsTr("Shut down or sign out") : qsTr("Confirm")
         }
 
         // Action buttons
@@ -96,13 +96,13 @@ Scope {
             StyledText {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
-                text: "Are you sure you want to " + root.actionLabel(root.pending).toLowerCase() + "? Unsaved work in open applications may be lost."
+                text: qsTr("Confirm %1? Unsaved work in open applications may be lost.").arg(root.actionLabel(root.pending))
             }
             RowLayout {
                 Layout.alignment: Qt.AlignRight
                 spacing: Theme.spacingS
                 ActionButton {
-                    text: "Cancel"
+                    text: qsTr("Cancel")
                     onClicked: root.pending = ""
                 }
                 ActionButton {

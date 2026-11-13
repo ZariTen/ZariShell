@@ -121,7 +121,7 @@ Item {
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.topMargin: -Theme.spacingS
-                text: "Locked"
+                text: qsTr("Locked")
                 color: Theme.textSurfaceVariant
                 font.pixelSize: Theme.fontSmall
             }
@@ -157,7 +157,7 @@ Item {
                         StyledText {
                             anchors.fill: parent
                             visible: password.text === ""
-                            text: surface.lock.busy ? "Checking\u2026" : "Password"
+                            text: surface.lock.busy ? qsTr("Checking\u2026") : qsTr("Password")
                             color: Theme.textSurfaceVariant
                             font.italic: true
                         }
@@ -203,7 +203,7 @@ Item {
             StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 visible: surface.capsLock
-                text: "Caps Lock is on"
+                text: qsTr("Caps Lock is on")
                 color: Theme.warning
                 font.pixelSize: Theme.fontSmall
             }

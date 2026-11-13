@@ -30,7 +30,7 @@ Scope {
 
     function tryUnlock(password) {
         if (preview) {
-            errorText = "Incorrect password";
+            errorText = qsTr("Incorrect password");
             failed();
             return;
         }
@@ -42,7 +42,7 @@ Scope {
         if (!pam.start()) {
             busy = false;
             pending = "";
-            errorText = "Authentication unavailable";
+            errorText = qsTr("Authentication unavailable");
             failed();
         }
     }
@@ -108,7 +108,7 @@ Scope {
                 root.errorText = "";
                 root.locked = false;
             } else {
-                root.errorText = "Incorrect password";
+                root.errorText = qsTr("Incorrect password");
                 root.failed();
             }
         }
@@ -116,7 +116,7 @@ Scope {
         onError: error => {
             root.busy = false;
             root.pending = "";
-            root.errorText = "Authentication error";
+            root.errorText = qsTr("Authentication error");
             root.failed();
         }
     }

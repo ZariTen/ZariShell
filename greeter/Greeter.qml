@@ -135,15 +135,15 @@ Item {
 
     function login() {
         if (!Greetd.available) {
-            fail("greetd is not running (preview mode)");
+            fail(qsTr("greetd is not running (preview mode)"));
             return;
         }
         if (userName === "") {
-            fail("Choose a user");
+            fail(qsTr("Choose a user"));
             return;
         }
         if (currentSession.exec.length === 0) {
-            fail("Invalid session command");
+            fail(qsTr("Invalid session command"));
             return;
         }
         errorText = "";
@@ -162,7 +162,7 @@ Item {
 
     function fail(message) {
         resetAuth();
-        errorText = message || "Login failed";
+        errorText = message || qsTr("Login failed");
         password.text = "";
         shakeAnim.restart();
         password.forceActiveFocus();
@@ -293,7 +293,7 @@ Item {
                         anchors.centerIn: parent
                         spacing: Theme.spacingXs
                         StyledText {
-                            text: root.currentUser.real || "Choose a user"
+                            text: root.currentUser.real || qsTr("Choose a user")
                             font.pixelSize: Theme.fontHeadline
                             font.weight: Font.Medium
                         }
@@ -322,7 +322,7 @@ Item {
                         StyledText {
                             anchors.fill: parent
                             visible: userInput.text === ""
-                            text: "User name"
+                            text: qsTr("User name")
                             color: Theme.textSurfaceVariant
                             font.italic: true
                         }
@@ -332,7 +332,7 @@ Item {
                 StyledText {
                     Layout.alignment: Qt.AlignHCenter
                     Layout.topMargin: -Theme.spacingS
-                    text: root.typingUser ? "Enter to confirm, Esc to cancel" : root.userName
+                    text: root.typingUser ? qsTr("Enter to confirm, Esc to cancel") : root.userName
                     color: Theme.textSurfaceVariant
                     font.pixelSize: Theme.fontSmall
                 }
@@ -367,10 +367,10 @@ Item {
                                 visible: password.text === ""
                                 text: {
                                     if (root.busy)
-                                        return "Logging on\u2026";
+                                        return qsTr("Logging on\u2026");
                                     if (root.awaitingPrompt)
                                         return root.infoText;
-                                    return "Password";
+                                    return qsTr("Password");
                                 }
                                 color: Theme.textSurfaceVariant
                                 font.italic: true
@@ -477,7 +477,7 @@ Item {
                         anchors.leftMargin: Theme.spacingM
                         spacing: Theme.spacingM
                         MdIcon { codepoint: 0xF0014 } // md-account_plus
-                        StyledText { text: "Other user\u2026" }
+                        StyledText { text: qsTr("Other user\u2026") }
                     }
                 }
             }
@@ -528,8 +528,8 @@ Item {
 
                 Repeater {
                     model: [
-                        { icon: 0xF0709, label: "Restart", action: "reboot" },     // md-restart
-                        { icon: 0xF0425, label: "Shut down", action: "poweroff" }  // md-power
+                        { icon: 0xF0709, label: qsTr("Restart"), action: "reboot" },     // md-restart
+                        { icon: 0xF0425, label: qsTr("Shut down"), action: "poweroff" }  // md-power
                     ]
                     Button {
                         required property var modelData
@@ -671,13 +671,13 @@ Item {
             }
         }
         function onAuthFailure(message) {
-            root.fail(message || "Incorrect password");
+            root.fail(message || qsTr("Incorrect password"));
         }
         function onError(error) {
             root.fail(error);
         }
         function onReadyToLaunch() {
-            root.infoText = "Welcome";
+            root.infoText = qsTr("Welcome");
             lastFile.setText(JSON.stringify({ user: root.userName, session: root.currentSession.name }));
             Greetd.launch(root.currentSession.exec, GreeterConfig.sessionEnv);
         }

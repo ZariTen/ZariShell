@@ -21,36 +21,36 @@ Scope {
     // slider range/step, unit ("pct" | "px" | "x") and the value used when
     // the key is unset.
     readonly property var sections: [
-        { id: "appearance", title: "Appearance", glyph: 0xF03D8, rows: [
-            { key: "scale", label: "UI scale", kind: "slider", min: 0.75, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
-            { key: "radius", label: "Corner radius", kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1 },
-            { key: "spacing", label: "Spacing", kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1 },
-            { key: "barHeight", label: "Bar height", kind: "slider", min: 28, max: 64, step: 1, unit: "px", def: 42, onRelease: true },
-            { key: "barOpacity", label: "Bar opacity", kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themeBar.a },
-            { key: "panelOpacity", label: "Panel opacity", kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a },
-            { key: "accent", label: "Accent color", kind: "accent", def: "" }
+        { id: "appearance", title: qsTr("Appearance"), glyph: 0xF03D8, rows: [
+            { key: "scale", label: qsTr("UI scale"), kind: "slider", min: 0.75, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
+            { key: "radius", label: qsTr("Corner radius"), kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1 },
+            { key: "spacing", label: qsTr("Spacing"), kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1 },
+            { key: "barHeight", label: qsTr("Bar height"), kind: "slider", min: 28, max: 64, step: 1, unit: "px", def: 42, onRelease: true },
+            { key: "barOpacity", label: qsTr("Bar opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themeBar.a },
+            { key: "panelOpacity", label: qsTr("Panel opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a },
+            { key: "accent", label: qsTr("Accent color"), kind: "accent", def: "" }
         ] },
-        { id: "text", title: "Text", glyph: 0xF06D6, rows: [
-            { key: "font", label: "Font family", kind: "font", def: "" },
-            { key: "fontSize", label: "Base font size", kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
-            { key: "iconSize", label: "Icon size", kind: "slider", min: 12, max: 24, step: 1, unit: "px", def: 16 }
+        { id: "text", title: qsTr("Text"), glyph: 0xF06D6, rows: [
+            { key: "font", label: qsTr("Font family"), kind: "font", def: "" },
+            { key: "fontSize", label: qsTr("Base font size"), kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
+            { key: "iconSize", label: qsTr("Icon size"), kind: "slider", min: 12, max: 24, step: 1, unit: "px", def: 16 }
         ] },
-        { id: "motion", title: "Motion", glyph: 0xF04C5, rows: [
-            { key: "animationSpeed", label: "Animation speed", kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1 },
-            { key: "reduceMotion", label: "Reduce motion", kind: "switch", def: false }
+        { id: "motion", title: qsTr("Motion"), glyph: 0xF04C5, rows: [
+            { key: "animationSpeed", label: qsTr("Animation speed"), kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1 },
+            { key: "reduceMotion", label: qsTr("Reduce motion"), kind: "switch", def: false }
         ] },
-        { id: "layout", title: "Layout", glyph: 0xF056E, rows: [
-            { key: "barStyle", label: "Bar style", kind: "choice", choices: [{ value: "full", label: "Full width" }, { value: "floating", label: "Floating" }, { value: "pills", label: "Pills" }], def: "full" },
-            { key: "workspaceStyle", label: "Workspace style", kind: "choice", choiceLayout: "stacked", choices: [{ value: "dots", label: "Dots" }, { value: "numbers", label: "Numbers" }, { value: "pills", label: "Pills" }, { value: "diamonds", label: "Diamonds" }], def: "dots" },
-            { key: "barGap", label: "Bar gap", kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
-            { key: "avatarSize", label: "Lock screen avatar", kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112 },
-            { key: "panelWidth", label: "Panel width", kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
-            { key: "dim", label: "Dimmed items", kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }
+        { id: "layout", title: qsTr("Layout"), glyph: 0xF056E, rows: [
+            { key: "barStyle", label: qsTr("Bar style"), kind: "choice", choices: [{ value: "full", label: qsTr("Full width") }, { value: "floating", label: qsTr("Floating") }, { value: "pills", label: qsTr("Pills") }], def: "full" },
+            { key: "workspaceStyle", label: qsTr("Workspace style"), kind: "choice", choiceLayout: "stacked", choices: [{ value: "dots", label: qsTr("Dots") }, { value: "numbers", label: qsTr("Numbers") }, { value: "pills", label: qsTr("Pills") }, { value: "diamonds", label: qsTr("Diamonds") }], def: "dots" },
+            { key: "barGap", label: qsTr("Bar gap"), kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
+            { key: "avatarSize", label: qsTr("Lock screen avatar"), kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112 },
+            { key: "panelWidth", label: qsTr("Panel width"), kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
+            { key: "dim", label: qsTr("Dimmed items"), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }
         ] },
-        { id: "privacy", title: "Privacy", glyph: 0xF033E, rows: [
-            { key: "clipboardHistory", label: "Clipboard history", kind: "switch", def: true }
+        { id: "privacy", title: qsTr("Privacy"), glyph: 0xF033E, rows: [
+            { key: "clipboardHistory", label: qsTr("Clipboard history"), kind: "switch", def: true }
         ] },
-        { id: "theme", title: "Theme", glyph: 0xF00E3, rows: [] }
+        { id: "theme", title: qsTr("Theme"), glyph: 0xF00E3, rows: [] }
     ]
 
     readonly property var currentSection: {
@@ -137,13 +137,13 @@ Scope {
                         Layout.fillWidth: true
                         spacing: 0
                         StyledText {
-                            text: "Settings"
+                            text: qsTr("Settings")
                             font.pixelSize: Theme.fontHeadline
                             font.weight: Font.Bold
                         }
                         StyledText {
                             Layout.fillWidth: true
-                            text: Settings.invalid ? "settings.json is not valid JSON: using defaults, changes are not saved" : "Changes apply and save immediately"
+                            text: Settings.invalid ? qsTr("settings.json is not valid JSON: using defaults, changes are not saved") : qsTr("Changes apply and save immediately")
                             color: Settings.invalid ? Theme.error : Theme.textSurfaceVariant
                             font.pixelSize: Theme.fontSmall
                         }
@@ -222,12 +222,12 @@ Scope {
                                 visible: root.currentSection.rows.length > 0
                                 enabled: root.currentSection.rows.some(rowSpec => Settings.isModified(rowSpec.key, rowSpec.def))
                                 opacity: enabled ? 1 : Theme.dim(0.5)
-                                text: "Reset section"
+                                text: qsTr("Reset section")
                                 onClicked: if (enabled) Settings.resetKeys(root.sectionKeys(root.currentSection))
                             }
                             ActionButton {
                                 visible: root.currentSection.id === "theme"
-                                text: "Reload"
+                                text: qsTr("Reload")
                                 onClicked: Theme.reload()
                             }
                         }
@@ -341,7 +341,7 @@ Scope {
                             elide: Text.ElideMiddle
                             color: Theme.textSurfaceVariant
                             font.pixelSize: Theme.fontSmall
-                            text: "User themes: ~/.config/zarishell/themes/<name>/theme.json"
+                            text: qsTr("User themes: ~/.config/zarishell/themes/<name>/theme.json")
                         }
                     }
                 }

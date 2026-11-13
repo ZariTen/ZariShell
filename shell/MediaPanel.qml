@@ -144,7 +144,7 @@ Scope {
                         }
                         StyledText {
                             Layout.fillWidth: true
-                            text: card.activePlayer ? (card.activePlayer.identity || "Media") : "Nothing playing"
+                            text: card.activePlayer ? (card.activePlayer.identity || qsTr("Media")) : qsTr("Nothing playing")
                             font.pixelSize: Theme.fontTitle
                             font.weight: Font.DemiBold
                         }
@@ -171,7 +171,7 @@ Scope {
                                 StyledText {
                                     id: chipText
                                     anchors.centerIn: parent
-                                    text: (chip.modelData.isPlaying ? "\u25b6 " : "") + (chip.modelData.identity || "Player")
+                                    text: (chip.modelData.isPlaying ? "\u25b6 " : "") + (chip.modelData.identity || qsTr("Player"))
                                     font.pixelSize: Theme.fontSmall
                                 }
                             }
@@ -227,7 +227,7 @@ Scope {
 
                             StyledText {
                                 Layout.fillWidth: true
-                                text: card.activePlayer ? (card.activePlayer.trackTitle || "Unknown title") : ""
+                                text: card.activePlayer ? (card.activePlayer.trackTitle || qsTr("Unknown title")) : ""
                                 font.pixelSize: Theme.fontTitle + 2
                                 font.weight: Font.Bold
                                 wrapMode: Text.WordWrap
@@ -306,7 +306,7 @@ Scope {
                         StyledText {
                             Layout.preferredWidth: Theme.px(40)
                             horizontalAlignment: Text.AlignRight
-                            text: root.muted ? "Muted" : Math.round((volSlider.pressed ? volSlider.shown : root.volume) * 100) + "%"
+                            text: root.muted ? qsTr("Muted") : Math.round((volSlider.pressed ? volSlider.shown : root.volume) * 100) + "%"
                             font.pixelSize: Theme.fontSmall
                             color: Theme.textSurfaceVariant
                         }
