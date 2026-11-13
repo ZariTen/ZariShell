@@ -39,11 +39,11 @@ Item {
     }
 
     Rectangle {
-        x: control.checked ? parent.width - width - 3 : 3
+        x: control.checked ? parent.width - width - Theme.px(3) : Theme.px(3)
         anchors.verticalCenter: parent.verticalCenter
-        width: 16
-        height: 16
-        radius: 8
+        width: Theme.px(16)
+        height: width
+        radius: width / 2
         border.width: 1
         border.color: Theme.border
         scale: control.pressed ? 0.92 : (control.hovered ? 1.1 : 1)
