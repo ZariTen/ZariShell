@@ -25,7 +25,7 @@ for (const [mode, systemd, manager, appCode, scoped] of [
     fake('systemctl', `require('node:assert/strict').deepEqual(args,['--user','show-environment']); process.exit(${manager ? 0 : 1});`);
     let launch;
     const app = {command: ['app', 'two words', '$HOME;$(id)'], workingDirectory: work};
-    const context = vm.createContext({mode: 'launcher', apps: [app], itemCount: () => 1,
+    const context = vm.createContext({mode: 'launcher', apps: [app], calculator: {result: ''}, itemCount: () => 1,
         Theme: {useSystemdScope: mode}, Quickshell: {shellDir: path.join(scratch, 'shell'), execDetached: spec => launch = spec},
         ShellState: {close() {}}, recordLaunch() {}});
     context.root = context;

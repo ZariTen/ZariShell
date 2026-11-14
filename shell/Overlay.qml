@@ -30,7 +30,7 @@ Scope {
 
     // Header glyph, header title and search placeholder for each mode.
     readonly property var modeLabels: ({
-        launcher: { glyph: 0xF1105, title: qsTr("All Programs"), placeholder: qsTr("Search programs and files") },
+        launcher: { glyph: 0xF1105, title: qsTr("All Programs"), placeholder: qsTr("Search programs or calculate (= for functions and units)") },
         clipboard: { glyph: 0xF0147, title: qsTr("Clipboard history"), placeholder: qsTr("Search clipboard") },
         switcher: { glyph: 0xF05B6, title: qsTr("Switch window"), placeholder: qsTr("Search windows") }
     })
@@ -95,7 +95,7 @@ Scope {
 
     function itemCount() {
         if (mode === "launcher")
-            return apps.length;
+            return apps.length + (calculator.result !== "" ? 1 : 0);
         if (mode === "clipboard")
             return clipHits.length;
         return windows.length;
@@ -104,7 +104,9 @@ Scope {
     // { title, subtitle, icon (theme icon name or ""), glyph (codepoint) }
     function item(index) {
         if (mode === "launcher") {
-            var app = apps[index];
+            if (calculator.result !== "" && index === 0)
+                return { title: calculator.result, subtitle: qsTr("Press Enter to copy result"), icon: "", glyph: 0xF0206 };
+            var app = apps[index - (calculator.result !== "" ? 1 : 0)];
             return {
                 title: app.name,
                 subtitle: app.comment || app.genericName || "",
@@ -138,7 +140,12 @@ Scope {
         if (index < 0 || index >= itemCount())
             return;
         if (mode === "launcher") {
-            var app = apps[index];
+            if (calculator.result !== "" && index === 0) {
+                Quickshell.clipboardText = calculator.result;
+                ShellState.close();
+                return;
+            }
+            var app = apps[index - (calculator.result !== "" ? 1 : 0)];
             // Keep app lifetimes separate from quickshell.service when supported.
             if (app.runInTerminal || !app.command || app.command.length === 0)
                 app.execute();
@@ -410,6 +417,12 @@ Scope {
     }
 
     // -- Lifecycle and background objects -----------------------------------
+    LauncherCalculator {
+        id: calculator
+        query: root.query
+        active: ShellState.panel === "launcher"
+    }
+
     Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", root.stateDir])
 
     Connections {

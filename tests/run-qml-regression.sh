@@ -7,10 +7,10 @@ fixture=${1:?Usage: run-qml-regression.sh fixture.qml}
 : "${TMPDIR:?Set TMPDIR to a scratch directory}"
 work=$(mktemp -d "$TMPDIR/zs-qml.XXXXXX")
 printf 'Scratch: %s\n' "$work"
-mkdir -p "$work/config/zarishell" "$work/cache"
+mkdir -p "$work/config/zarishell" "$work/cache" "$work/state"
 cp -rL "$repo/shell" "$work/shell"
 cp "$repo/tests/$fixture" "$work/shell/shell.qml"
-export XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache"
+export XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache" XDG_STATE_HOME="$work/state"
 # Retain XDG_RUNTIME_DIR to avoid exceeding Quickshell's socket path limit.
 export QT_QPA_PLATFORM=wayland QT_QUICK_BACKEND=software QT_QPA_PLATFORMTHEME=generic
 export ZARISHELL_THEME=base QS_LOCK_PREVIEW=0

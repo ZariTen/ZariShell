@@ -40,6 +40,17 @@ Sizes are in pixels before UI scaling. "Theme" means the active theme's value.
 | `clipboardHistory` | true | Enable collection and history access. Disabling does not delete stored entries. |
 | `wifiDevice` | `""` | Preferred Wi-Fi interface; empty selects automatically. |
 
+## Launcher calculator
+
+Type arithmetic such as `2 + 2` directly in the launcher. Prefix functions or
+unit conversions with `=`, for example `= sqrt(81)` or `= 10 km to mi`.
+The result appears above application matches; press Enter or click it to copy.
+
+This uses Qalculate's `qalc`, included in the Home Manager runtime defaults.
+Standalone installations and custom `runtimePackages` need `libqalculate` and
+`coreutils` on PATH. Exchange-rate updates are disabled; currency conversions
+may use older locally available rates.
+
 ## Theme selection
 
 User themes go in `${XDG_CONFIG_HOME:-~/.config}/zarishell/themes/<name>/`.
