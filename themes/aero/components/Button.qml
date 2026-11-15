@@ -1,7 +1,7 @@
 import QtQuick
 import qs
 
-// Aero: Win7 taskbar-style glossy button face. Hover brightens the glass
+// Aero: taskbar-style glossy button face. Hover brightens the glass
 // sheen, tints the border and rises a soft glow from the bottom edge (all
 // clipped to the button); `active` keeps a calmer version of that tint; press
 // goes dark and inset. `control` is the generic Button.

@@ -2,7 +2,7 @@ import QtQuick
 import qs
 
 // Metro: a flat, opaque-looking tint block; `bordered` adds a 2px edge in
-// the tint, the Windows 8 keyboard / selection outline. `control` is the
+// the tint, forming a keyboard / selection outline. `control` is the
 // generic Highlight.
 Rectangle {
     readonly property real strength: Math.min(1, control.level)

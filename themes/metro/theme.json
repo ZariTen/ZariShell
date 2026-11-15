@@ -1,6 +1,6 @@
 {
   "name": "Metro",
-  "description": "Windows 8 tiles",
+  "description": "Flat geometric tiles",
   "accent": "#0050ef",
   "components": ["Backdrop", "Button", "Field", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {

@@ -1,6 +1,6 @@
 {
   "name": "Aero",
-  "description": "Tinted Windows 7 glass",
+  "description": "Tinted glossy glass",
   "accent": "wallpaper",
   "components": ["Backdrop", "Button", "Field", "Fill", "Frame", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {

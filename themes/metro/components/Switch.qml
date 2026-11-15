@@ -1,7 +1,7 @@
 import QtQuick
 import qs
 
-// Metro: the Windows 8 toggle. A rectangular frame with an inner fill (accent
+// Metro: a rectangular toggle frame with an inner fill (accent
 // when on, dark grey when off) and a solid white block for the thumb.
 // `control` is the generic Switch.
 Item {

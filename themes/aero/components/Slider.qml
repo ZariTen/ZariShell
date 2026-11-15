@@ -1,8 +1,8 @@
 import QtQuick
 import qs
 
-// Aero: Win7 progress-bar style glossy slider with a round thumb. `tone`
-// maps to the Win7 bar states (green / amber / red) or the accent.
+// Aero: progress-bar style glossy slider with a round thumb. `tone`
+// maps to status colors (green / amber / red) or the accent.
 // `control` is the generic Slider.
 Rectangle {
     id: look

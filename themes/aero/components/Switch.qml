@@ -1,7 +1,7 @@
 import QtQuick
 import qs
 
-// Aero: Win7-style glossy on/off switch. `control` is the generic Switch.
+// Aero: glossy on/off switch. `control` is the generic Switch.
 Item {
     Rectangle {
         anchors.fill: parent
