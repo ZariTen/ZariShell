@@ -23,7 +23,7 @@ Sizes are in pixels before UI scaling. "Theme" means the active theme's value.
 | `barStyle` | `"full"` | `"full"` (one strip) or `"pills"` (separate groups). |
 | `barFloating` | false | Float either bar style away from the screen edges. Existing floating layouts are preserved. |
 | `workspaceStyle` | `"dots"` | `"dots"`, `"numbers"`, `"pills"` or `"diamonds"`. |
-| `barGap` | 8 | Floating bar's distance from screen edges. |
+| `barGap` | 8 | Floating gap slider: distance from screen edges, 0–24 px in settings. Applies to either floating bar style. |
 | `barOpacity` / `panelOpacity` | Theme | Background opacity, 0–1. |
 | `accent` | Theme | `"wallpaper"` or `"#rrggbb"`. |
 | `font` | Theme | Font family. |

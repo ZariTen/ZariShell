@@ -42,8 +42,8 @@ Scope {
         { id: "layout", title: qsTr("Layout"), glyph: 0xF056E, rows: [
             { key: "barStyle", label: qsTr("Bar style"), kind: "choice", choices: [{ value: "full", label: qsTr("Full width") }, { value: "pills", label: qsTr("Pills") }], def: "full" },
             { key: "barFloating", label: qsTr("Floating"), kind: "switch", def: false },
+            { key: "barGap", label: qsTr("Floating gap"), kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
             { key: "workspaceStyle", label: qsTr("Workspace style"), kind: "choice", choiceLayout: "stacked", choices: [{ value: "dots", label: qsTr("Dots") }, { value: "numbers", label: qsTr("Numbers") }, { value: "pills", label: qsTr("Pills") }, { value: "diamonds", label: qsTr("Diamonds") }], def: "dots" },
-            { key: "barGap", label: qsTr("Bar gap"), kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
             { key: "avatarSize", label: qsTr("Lock screen avatar"), kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112 },
             { key: "panelWidth", label: qsTr("Panel width"), kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
             { key: "dim", label: qsTr("Dimmed items"), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }
