@@ -102,6 +102,7 @@ Scope {
                 radius: Theme.barFloating ? Theme.barRadius : 0
                 color: Theme.bar
                 attachedTop: !Theme.barFloating
+                attachedSides: !Theme.barFloating
                 shadow: Theme.barFloating
 
                 // Edge line along the bottom of an edge bar.

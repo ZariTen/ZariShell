@@ -11,16 +11,17 @@ Item {
     property color color: Theme.bar
     property bool shadow: true
     property bool attachedTop: false
+    property bool attachedSides: false
     property real headerHeight: 0
 
-    clip: attachedTop
+    clip: attachedTop || attachedSides
 
     // Extend the look past the screen edge to hide both outer and inner
     // rims, without moving the content or changing the reserved bar height.
     Loader {
-        x: 0
+        x: control.attachedSides ? -2 : 0
         y: control.attachedTop ? -2 : 0
-        width: parent.width
+        width: parent.width + (control.attachedSides ? 4 : 0)
         height: parent.height + (control.attachedTop ? 2 : 0)
         source: Theme.component("Surface")
     }
