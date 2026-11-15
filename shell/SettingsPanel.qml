@@ -41,12 +41,12 @@ Scope {
     readonly property var sections: [
         { id: "appearance", title: qsTr("Appearance"), glyph: 0xF03D8, rows: [
             { key: "accent", label: qsTr("Accent color"), kind: "accent", def: "" },
-            { key: "radius", label: qsTr("Corner radius"), kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1, advanced: true },
-            { key: "spacing", label: qsTr("Spacing"), kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1, advanced: true },
+            { key: "radius", label: qsTr("Corner roundness"), defaultLabel: qsTr("Theme default"), kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1, advanced: true },
+            { key: "spacing", label: qsTr("Interface spacing"), defaultLabel: qsTr("Default"), kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1, advanced: true },
             { key: "panelOpacity", label: qsTr("Panel opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a, advanced: true },
-            { key: "panelWidth", label: qsTr("Panel width"), kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true, advanced: true },
-            { key: "avatarSize", label: qsTr("Lock screen avatar"), kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112, advanced: true },
-            { key: "dim", label: qsTr("Dimmed items"), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5, advanced: true }
+            { key: "panelWidth", label: qsTr("Panel width"), defaultLabel: qsTr("Default"), kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true, advanced: true },
+            { key: "avatarSize", label: qsTr("Lock-screen avatar size"), kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112, advanced: true },
+            { key: "dim", label: qsTr("Dimmed-item opacity"), description: qsTr("Opacity used for muted and disabled items."), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5, advanced: true }
         ] },
         { id: "layout", title: qsTr("Bar & workspaces"), glyph: 0xF056E, rows: [
             { key: "barStyle", label: qsTr("Bar style"), kind: "choice", choices: [{ value: "full", label: qsTr("Full width") }, { value: "pills", label: qsTr("Pills") }], def: "full" },
@@ -57,15 +57,15 @@ Scope {
             { key: "barOpacity", label: qsTr("Bar opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themeBar.a, advanced: true }
         ] },
         { id: "text", title: qsTr("Text & motion"), glyph: 0xF06D6, rows: [
-            { key: "scale", label: qsTr("UI scale"), kind: "slider", min: 0.75, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
+            { key: "scale", label: qsTr("Interface scale"), kind: "slider", min: 0.75, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
             { key: "font", label: qsTr("Font family"), kind: "font", def: "" },
-            { key: "fontSize", label: qsTr("Base font size"), kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
+            { key: "fontSize", label: qsTr("Text size"), kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
             { key: "reduceMotion", label: qsTr("Reduce motion"), kind: "switch", def: false },
             { key: "iconSize", label: qsTr("Icon size"), kind: "slider", min: 12, max: 24, step: 1, unit: "px", def: 16, advanced: true },
             { key: "animationSpeed", label: qsTr("Animation speed"), kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1, advanced: true, available: !Theme.reduceMotion }
         ] },
         { id: "privacy", title: qsTr("Privacy"), glyph: 0xF033E, rows: [
-            { key: "clipboardHistory", label: qsTr("Clipboard history"), kind: "switch", def: true }
+            { key: "clipboardHistory", label: qsTr("Clipboard history"), description: qsTr("Collect copied items for later use. Turning this off does not delete saved history."), kind: "switch", def: true }
         ] }
     ]
 
@@ -249,7 +249,13 @@ Scope {
                                 Accessible.onPressAction: clicked({ button: Qt.LeftButton })
                                 Keys.onReturnPressed: clicked({ button: Qt.LeftButton })
                                 Keys.onSpacePressed: clicked({ button: Qt.LeftButton })
-                                onClicked: if (enabled) Settings.resetKeys(root.sectionKeys(root.currentSection))
+                                onClicked: {
+                                    if (enabled) {
+                                        primaryGroup.cancelEdits();
+                                        fineTuningGroup.cancelEdits();
+                                        Settings.resetKeys(root.sectionKeys(root.currentSection));
+                                    }
+                                }
                             }
                             ActionButton {
                                 visible: root.currentSection.id === "appearance" && root.themePickerOpen
@@ -364,6 +370,7 @@ Scope {
                                 }
 
                                 SettingsGroup {
+                                    id: primaryGroup
                                     rows: root.currentSection.rows.filter(rowSpec => !rowSpec.advanced && rowSpec.available !== false)
                                 }
 
@@ -375,6 +382,7 @@ Scope {
                                 }
 
                                 SettingsGroup {
+                                    id: fineTuningGroup
                                     rows: root.fineTuningOpen ? root.currentSection.rows.filter(rowSpec => rowSpec.advanced && rowSpec.available !== false) : []
                                 }
                             }

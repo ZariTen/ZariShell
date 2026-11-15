@@ -8,7 +8,9 @@ bind = SUPER, comma, exec, quickshell -c shell ipc call settings toggle
 
 Settings are grouped into Appearance (including themes), Bar & workspaces,
 Text & motion, and Privacy. Each section keeps less common adjustments under
-**Fine-tuning**; moving a control does not change its saved value.
+**Fine-tuning**; moving a control does not change its saved value. Click a
+slider’s value to type a number (percentages use 100 for 100%); Enter applies
+it, Escape cancels. Values use the slider’s range and step.
 
 Settings save to `${XDG_CONFIG_HOME:-~/.config}/zarishell/settings.json` and apply
 live. You can edit the JSON directly; missing keys use defaults. Invalid JSON

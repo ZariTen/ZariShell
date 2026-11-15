@@ -65,7 +65,30 @@ ShellRoot {
                 check(panel.sectionModified, "Section restore must include changed values");
                 Settings.set("barHeight", 42);
                 check(!panel.sectionModified, "Returning manually to the default must clear section restore");
-                console.log("PASS QML regression tests: dependent settings, accent sources and restore actions");
+                var heightRow = component.createObject(scene, {modelData: spec("barHeight"), width: 480});
+                var heightEditor = find(heightRow, item => typeof item.commitValue === "function");
+                check(heightEditor, "Slider values must offer numeric editing");
+                heightEditor.commitValue("51");
+                check(Settings.get("barHeight", 42) === 51, "Typed pixels must update the setting");
+                check(!heightEditor.commitValue("not a number") && Settings.get("barHeight", 42) === 51, "Invalid text must not change a setting");
+                heightEditor.commitValue("999");
+                check(Settings.get("barHeight", 42) === 64, "Typed values must respect the slider range");
+                heightEditor.startEditing();
+                Settings.set("barHeight", 60);
+                check(!heightEditor.editing, "A newer slider or reset value must cancel a pending numeric edit");
+                var scaleRow = component.createObject(scene, {modelData: spec("scale"), width: 480});
+                var scaleEditor = find(scaleRow, item => typeof item.commitValue === "function");
+                scaleEditor.commitValue("113");
+                check(Math.abs(Settings.get("scale", 1) - 1.15) < 0.000001, "Typed percentages must use slider units and steps");
+                var groupComponent = Qt.createComponent(Qt.resolvedUrl("SettingsGroup.qml"));
+                var group = groupComponent.createObject(scene, {rows: [spec("spacing")], width: 480});
+                var spacingEditor = find(group, item => typeof item.commitValue === "function");
+                check(group && spacingEditor, "Grouped numeric controls must load");
+                spacingEditor.startEditing();
+                check(typeof group.cancelEdits === "function", "Section restore must cancel pending edits, including unchanged values");
+                group.cancelEdits();
+                check(!spacingEditor.editing, "Cancelling a group must close every numeric edit");
+                console.log("PASS QML regression tests: dependent controls, accent, restore and numeric editing");
             } catch(error) {
                 console.error("FAIL QML regression tests: " + error.message);
             }

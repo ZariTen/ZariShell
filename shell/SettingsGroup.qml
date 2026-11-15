@@ -12,6 +12,14 @@ Item {
     implicitHeight: content.implicitHeight + Theme.spacingXs * 2
     visible: rows.length > 0
 
+    function cancelEdits() {
+        for (var i = 0; i < rowRepeater.count; i++) {
+            var row = rowRepeater.itemAt(i);
+            if (row)
+                row.cancelEditing();
+        }
+    }
+
     Surface {
         anchors.fill: parent
         radius: Theme.radius
@@ -28,6 +36,7 @@ Item {
         spacing: 0
 
         Repeater {
+            id: rowRepeater
             model: group.rows
             delegate: SettingsRow {
                 required property int index

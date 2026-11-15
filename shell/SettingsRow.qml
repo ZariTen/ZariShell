@@ -50,10 +50,16 @@ Item {
     readonly property string pickerSeed: colorPickerOpen ? Theme.accentSeed.toString() : ""
 
     Layout.fillWidth: true
-    implicitHeight: controls.height + (customControls.visible ? customControls.height + Theme.spacingS : 0) + (stackedChoice ? wrappedChoices.height + Theme.spacingS : 0) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
+    implicitHeight: controls.height + (description.visible ? description.implicitHeight + Theme.spacingS : 0) + (customControls.visible ? customControls.height + Theme.spacingS : 0) + (stackedChoice ? wrappedChoices.height + Theme.spacingS : 0) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
 
     // -- Helper functions ---------------------------------------------------
+    function cancelEditing() {
+        numberEditor.cancelEditing();
+    }
+
     function formatValue(rowSpec, numericValue) {
+        if (rowSpec.defaultLabel && !Settings.isModified(rowSpec.key, rowSpec.def) && slider.pendingValue < 0)
+            return rowSpec.defaultLabel;
         if (rowSpec.unit === "pct")
             return Math.round(numericValue * 100) + "%";
         if (rowSpec.unit === "px")
@@ -172,6 +178,8 @@ Item {
             Layout.preferredWidth: row.stackedChoice ? implicitWidth : Theme.px(140)
             Layout.fillWidth: row.stackedChoice
             text: row.modelData.label
+            wrapMode: Text.WordWrap
+            elide: Text.ElideNone
             color: row.isModified ? Theme.textSurface : Theme.textSurfaceVariant
         }
 
@@ -189,6 +197,7 @@ Item {
                 return (row.displayedSliderValue - row.modelData.min) / (row.modelData.max - row.modelData.min);
             }
             onMoved: ratio => {
+                numberEditor.cancelEditing();
                 var snapped = row.snapValue(row.modelData, ratio);
                 if (row.modelData.onRelease)
                     pendingValue = snapped;
@@ -202,12 +211,13 @@ Item {
                 }
             }
         }
-        StyledText {
+        SettingsNumber {
+            id: numberEditor
             visible: row.modelData.kind === "slider"
-            Layout.preferredWidth: Theme.px(56)
-            horizontalAlignment: Text.AlignRight
-            text: row.modelData.kind === "slider" ? row.formatValue(row.modelData, row.displayedSliderValue) : ""
-            color: Theme.textSurfaceVariant
+            spec: row.modelData
+            value: row.modelData.kind === "slider" ? row.displayedSliderValue : 0
+            displayText: row.modelData.kind === "slider" ? row.formatValue(row.modelData, row.displayedSliderValue) : ""
+            onEdited: value => Settings.set(row.modelData.key, value)
         }
 
         // Switch
@@ -344,9 +354,27 @@ Item {
                 Accessible.onPressAction: clicked({ button: Qt.LeftButton })
                 Keys.onReturnPressed: clicked({ button: Qt.LeftButton })
                 Keys.onSpacePressed: clicked({ button: Qt.LeftButton })
-                onClicked: Settings.reset(row.modelData.key)
+                onClicked: {
+                    numberEditor.cancelEditing();
+                    Settings.reset(row.modelData.key);
+                }
             }
         }
+    }
+
+    StyledText {
+        id: description
+        visible: text !== ""
+        text: row.modelData.description || ""
+        anchors.top: controls.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: Theme.spacingM
+        anchors.rightMargin: Theme.spacingM
+        wrapMode: Text.WordWrap
+        elide: Text.ElideNone
+        color: Theme.textSurfaceVariant
+        font.pixelSize: Theme.fontSmall
     }
 
     Flow {
