@@ -54,11 +54,11 @@ ShellRoot {
                 theme.clicked({button: Qt.LeftButton});
                 check(!Settings.has("accent") && accent.accentMode === "theme", "Theme must remove the override");
                 var restore = find(accent, item => item.codepoint === 0xF099B);
-                check(restore && !restore.visible, "Default values must not show a restore action");
+                check(restore && restore.visible && !restore.enabled, "Default values must show a disabled restore action");
                 Settings.set("accent", "#aabbcc");
-                check(restore.visible, "Modified values must show a restore action");
+                check(restore.visible && restore.enabled, "Modified values must enable the restore action");
                 restore.Accessible.pressAction();
-                check(!Settings.has("accent") && !restore.visible, "Accessible restore must remove the override");
+                check(!Settings.has("accent") && restore.visible && !restore.enabled, "Accessible restore must remove the override and disable the action");
                 ShellState.settingsSection = "layout";
                 Settings.reset("barFloating");
                 Settings.set("barHeight", 50);

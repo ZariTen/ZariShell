@@ -342,8 +342,8 @@ Item {
             implicitHeight: Theme.px(30)
             IconButton {
                 anchors.fill: parent
-                visible: row.isModified
-                enabled: visible
+                enabled: row.isModified
+                opacity: enabled ? 1 : Theme.dim(0.5)
                 radius: Theme.radiusFull
                 codepoint: 0xF099B // md-restore
                 icon.color: Theme.textSurfaceVariant
