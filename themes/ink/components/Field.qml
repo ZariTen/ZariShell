@@ -18,7 +18,7 @@ Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
         height: control.focused ? 2 : 1
-        color: control.focused ? Theme.textSurface : Theme.outline
+        color: control.focused ? Theme.accent : Theme.outline
         Behavior on color { ColorAnimation { duration: Theme.durShort } }
     }
 }

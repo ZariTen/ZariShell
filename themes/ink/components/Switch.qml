@@ -7,7 +7,7 @@ import qs
 Item {
     id: look
 
-    readonly property color ink: Theme.textSurface
+    readonly property color ink: control.checked ? Theme.accent : Theme.textSurface
     readonly property color paper: Theme.color("paper", "#24211e")
 
     Rectangle {
@@ -16,7 +16,7 @@ Item {
         visible: control.activeFocus
         color: "transparent"
         border.width: 1
-        border.color: Theme.outline
+        border.color: Theme.accent
     }
 
     Rectangle {

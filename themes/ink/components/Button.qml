@@ -15,7 +15,7 @@ Item {
         radius: control.radius
         color: Qt.rgba(look.ink.r, look.ink.g, look.ink.b, control.pressed ? 0.16 : 0.09 * control.level)
         border.width: control.framed ? 1 : 0
-        border.color: control.active ? Theme.border : Theme.outline
+        border.color: control.active ? look.ink : Theme.outline
         Behavior on color { ColorAnimation { duration: Theme.durShort } }
     }
 

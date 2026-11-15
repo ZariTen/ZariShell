@@ -8,7 +8,7 @@ import qs
 Item {
     id: look
 
-    readonly property color stroke: Theme.toneColor(control.tone, Theme.textSurface)
+    readonly property color stroke: Theme.toneColor(control.tone, control.interactive || control.tone === "accent" ? Theme.accent : Theme.textSurface)
 
     Rectangle {
         anchors.verticalCenter: parent.verticalCenter
