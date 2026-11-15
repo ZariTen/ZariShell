@@ -377,7 +377,7 @@ Scope {
 
                                 SettingsDisclosure {
                                     visible: root.currentSection.rows.some(rowSpec => rowSpec.advanced)
-                                    text: qsTr("Fine-tuning")
+                                    text: qsTr("Advanced")
                                     expanded: root.fineTuningOpen
                                     onClicked: root.fineTuningOpen = !root.fineTuningOpen
                                 }
