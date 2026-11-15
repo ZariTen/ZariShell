@@ -4,10 +4,8 @@ import QtQuick
 // box (font.pixelSize on each side) with the glyph centered in it, so it lines
 // up predictably in buttons, tiles and rows (anchors.centerIn or layouts).
 //
-// Uses the Propo family: its advance width is the glyph's own width, so the
-// ink is horizontally centered (the plain family keeps a monospace advance
-// that the wider icons overflow, and the Mono family shrinks them). Nerd Font
-// icons are vertically centered on the line box, which the Text is centered by.
+// Center the visible ink, not the font's advance or line box. Their bearings
+// and rounded dimensions can otherwise shift small glyphs off center.
 Item {
     id: icon
 
@@ -18,10 +16,16 @@ Item {
     implicitWidth: glyph.font.pixelSize
     implicitHeight: glyph.font.pixelSize
 
+    TextMetrics {
+        id: metrics
+        font: glyph.font
+        text: glyph.text
+    }
+
     StyledText {
         id: glyph
-        x: Math.round((icon.width - width) / 2)
-        y: Math.round((icon.height - height) / 2)
+        x: (icon.width - metrics.tightBoundingRect.width) / 2 - metrics.tightBoundingRect.x
+        y: (icon.height - metrics.tightBoundingRect.height) / 2 - metrics.tightBoundingRect.y - baselineOffset
         font.family: Theme.iconFont
         font.pixelSize: Theme.iconPx(16)
         text: icon.codepoint > 0 ? Theme.icon(icon.codepoint) : ""
