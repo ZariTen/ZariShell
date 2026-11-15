@@ -77,12 +77,26 @@ Singleton {
         saveTimer.restart();
     }
 
+    function migrateBarLayout(parsedObject) {
+        if (parsedObject.barLayoutVersion === 1)
+            return parsedObject;
+        var migrated = Object.assign({}, parsedObject);
+        // Old styles bundled the edge gap with the bar's shape. Keep that
+        // placement once; the marker lets resetting Floating stay reset.
+        if (migrated.barFloating === undefined && (migrated.barStyle === "floating" || migrated.barStyle === "pills"))
+            migrated.barFloating = true;
+        if (migrated.barStyle === "floating")
+            migrated.barStyle = "full";
+        migrated.barLayoutVersion = 1;
+        return migrated;
+    }
+
     function ingest(jsonText) {
-        if (jsonText === lastWrittenText)
+        if (lastWrittenText !== "" && jsonText === lastWrittenText)
             return;
         if (jsonText.trim() === "") {
             invalid = false;
-            values = {};
+            values = migrateBarLayout({});
             return;
         }
         try {
@@ -90,7 +104,7 @@ Singleton {
             if (parsedObject === null || typeof parsedObject !== "object" || Array.isArray(parsedObject))
                 throw "not a JSON object";
             invalid = false;
-            values = parsedObject;
+            values = migrateBarLayout(parsedObject);
         } catch (parseError) {
             if (jsonText !== lastWarnedText) {
                 console.warn("Settings: invalid " + path + " (" + parseError + "); using defaults, the file is left untouched");
@@ -128,7 +142,7 @@ Singleton {
         onLoadFailed: {
             // Missing file: defaults.
             root.invalid = false;
-            root.values = {};
+            root.values = root.migrateBarLayout({});
         }
     }
 

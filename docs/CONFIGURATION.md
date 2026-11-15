@@ -20,7 +20,8 @@ Sizes are in pixels before UI scaling. "Theme" means the active theme's value.
 | `radius` | 1 | Corner radius multiplier; 0 makes corners square. |
 | `spacing` | 1 | Spacing multiplier. |
 | `barHeight` | 42 | Bar height. |
-| `barStyle` | `"full"` | `"full"`, `"floating"` or `"pills"`. |
+| `barStyle` | `"full"` | `"full"` (one strip) or `"pills"` (separate groups). |
+| `barFloating` | false | Float either bar style away from the screen edges. Existing floating layouts are preserved. |
 | `workspaceStyle` | `"dots"` | `"dots"`, `"numbers"`, `"pills"` or `"diamonds"`. |
 | `barGap` | 8 | Floating bar's distance from screen edges. |
 | `barOpacity` / `panelOpacity` | Theme | Background opacity, 0–1. |

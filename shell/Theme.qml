@@ -111,10 +111,7 @@ Singleton {
     readonly property int spacingXl: spacing(24)
     readonly property int gap: spacing(8)                                // screen edge / bar to panels
     readonly property int barHeight: px(clamp(Settings.get("barHeight", 42), 24, 96))
-    // Bar layout: "full" (strip along the top edge), "floating" (one strip
-    // barGap away from the screen edges) or "pills" (a floating pill per
-    // group of bar content).
-    readonly property string barStyle: ["full", "floating", "pills"].indexOf(Settings.get("barStyle", "")) >= 0 ? Settings.get("barStyle", "") : "full"
+    readonly property string barStyle: Settings.get("barStyle", "full") === "pills" ? "pills" : "full"
     readonly property string useSystemdScope: Settings.get("useSystemdScope") === true ? "true" : Settings.get("useSystemdScope") === false ? "false" : "auto"
     readonly property int notificationTimeout: boundedSetting("notificationTimeout", 5000, 0, 600000)
     readonly property int notificationHistoryLimit: boundedSetting("notificationHistoryLimit", 50, 1, 1000)
@@ -123,7 +120,7 @@ Singleton {
     readonly property bool clipboardHistory: Settings.get("clipboardHistory", true)
     readonly property string workspaceStyle: ["dots", "numbers", "pills", "diamonds"].indexOf(Settings.get("workspaceStyle", "")) >= 0 ? Settings.get("workspaceStyle", "") : "dots"
     readonly property bool barPills: barStyle === "pills"
-    readonly property bool barFloating: barStyle !== "full"
+    readonly property bool barFloating: Settings.get("barFloating", false)
     readonly property int barMargin: barFloating ? px(clamp(Settings.get("barGap", 8), 0, 32)) : 0
     readonly property int barSpace: barHeight + barMargin                // screen height the bar reserves
     readonly property int shadowRoom: px(12)                             // bar window room for a look's shadow (input-masked)
