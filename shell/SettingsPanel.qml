@@ -51,7 +51,7 @@ Scope {
         { id: "layout", title: qsTr("Bar & workspaces"), glyph: 0xF056E, rows: [
             { key: "barStyle", label: qsTr("Bar style"), kind: "choice", choices: [{ value: "full", label: qsTr("Full width") }, { value: "pills", label: qsTr("Pills") }], def: "full" },
             { key: "barFloating", label: qsTr("Floating"), kind: "switch", def: false },
-            { key: "barGap", label: qsTr("Floating gap"), kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
+            { key: "barGap", label: qsTr("Floating gap"), kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true, available: Theme.barFloating },
             { key: "barHeight", label: qsTr("Bar height"), kind: "slider", min: 28, max: 64, step: 1, unit: "px", def: 42, onRelease: true },
             { key: "workspaceStyle", label: qsTr("Workspace style"), kind: "choice", choiceLayout: "stacked", choices: [{ value: "dots", label: qsTr("Dots") }, { value: "numbers", label: qsTr("Numbers") }, { value: "pills", label: qsTr("Pills") }, { value: "diamonds", label: qsTr("Diamonds") }], def: "dots" },
             { key: "barOpacity", label: qsTr("Bar opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themeBar.a, advanced: true }
@@ -62,7 +62,7 @@ Scope {
             { key: "fontSize", label: qsTr("Base font size"), kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
             { key: "reduceMotion", label: qsTr("Reduce motion"), kind: "switch", def: false },
             { key: "iconSize", label: qsTr("Icon size"), kind: "slider", min: 12, max: 24, step: 1, unit: "px", def: 16, advanced: true },
-            { key: "animationSpeed", label: qsTr("Animation speed"), kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1, advanced: true }
+            { key: "animationSpeed", label: qsTr("Animation speed"), kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1, advanced: true, available: !Theme.reduceMotion }
         ] },
         { id: "privacy", title: qsTr("Privacy"), glyph: 0xF033E, rows: [
             { key: "clipboardHistory", label: qsTr("Clipboard history"), kind: "switch", def: true }
@@ -354,7 +354,7 @@ Scope {
                                 }
 
                                 Repeater {
-                                    model: root.currentSection.rows.filter(rowSpec => !rowSpec.advanced)
+                                    model: root.currentSection.rows.filter(rowSpec => !rowSpec.advanced && rowSpec.available !== false)
                                     delegate: SettingsRow {}
                                 }
 
@@ -366,7 +366,7 @@ Scope {
                                 }
 
                                 Repeater {
-                                    model: root.fineTuningOpen ? root.currentSection.rows.filter(rowSpec => rowSpec.advanced) : []
+                                    model: root.fineTuningOpen ? root.currentSection.rows.filter(rowSpec => rowSpec.advanced && rowSpec.available !== false) : []
                                     delegate: SettingsRow {}
                                 }
                             }

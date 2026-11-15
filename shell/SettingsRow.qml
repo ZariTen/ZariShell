@@ -38,7 +38,9 @@ Item {
 
     // Accent picker (kind "accent"): a saturation/brightness square and a
     // hue bar under the row, opened from the swatch. Picks apply live.
+    readonly property string accentMode: currentValue === "" ? "theme" : currentValue === "wallpaper" ? "wallpaper" : "custom"
     property bool colorPickerOpen: false
+    onAccentModeChanged: if (accentMode !== "custom") colorPickerOpen = false
     property real pickHue: 0
     property real pickSaturation: 0
     property real pickValue: 0
@@ -48,7 +50,7 @@ Item {
     readonly property string pickerSeed: colorPickerOpen ? Theme.accentSeed.toString() : ""
 
     Layout.fillWidth: true
-    implicitHeight: controls.height + (stackedChoice ? wrappedChoices.height + Theme.spacingS : 0) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
+    implicitHeight: controls.height + (customControls.visible ? customControls.height + Theme.spacingS : 0) + (stackedChoice ? wrappedChoices.height + Theme.spacingS : 0) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
 
     // -- Helper functions ---------------------------------------------------
     function formatValue(rowSpec, numericValue) {
@@ -168,7 +170,7 @@ Item {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.top: parent.top
-        height: row.stackedChoice ? Math.max(Theme.px(40), implicitHeight) : Theme.px(40)
+        height: Math.max(Theme.px(40), implicitHeight)
         anchors.leftMargin: Theme.spacingM
         anchors.rightMargin: Theme.spacingXs
         spacing: Theme.spacingM
@@ -259,76 +261,47 @@ Item {
             }
         }
 
-        RowLayout {
+        Flow {
             visible: row.modelData.kind === "accent"
             Layout.fillWidth: true
             spacing: Theme.spacingXs
             Repeater {
                 model: [
-                    { value: "", label: qsTr("Theme") },
-                    { value: "wallpaper", label: qsTr("Wallpaper") }
+                    { value: "theme", label: qsTr("Theme") },
+                    { value: "wallpaper", label: qsTr("Wallpaper") },
+                    { value: "custom", label: qsTr("Custom") }
                 ]
                 Button {
                     id: choiceButton
                     required property var modelData
+                    readonly property string accentSource: modelData.value
                     implicitWidth: choiceLabel.implicitWidth + Theme.spacingM * 2
                     implicitHeight: Theme.px(30)
                     framed: true
-                    active: Settings.get("accent", "") === modelData.value
-                    onClicked: modelData.value === "" ? Settings.reset("accent") : Settings.set("accent", modelData.value)
+                    active: row.accentMode === accentSource || activeFocus
+                    activeFocusOnTab: true
+                    passWheel: true
+                    Accessible.role: Accessible.Button
+                    Accessible.name: modelData.label
+                    Accessible.onPressAction: clicked({ button: Qt.LeftButton })
+                    Keys.onReturnPressed: clicked({ button: Qt.LeftButton })
+                    Keys.onSpacePressed: clicked({ button: Qt.LeftButton })
+                    onClicked: {
+                        if (accentSource === "theme")
+                            Settings.reset("accent");
+                        else if (accentSource === "wallpaper")
+                            Settings.set("accent", "wallpaper");
+                        else {
+                            if (row.accentMode !== "custom")
+                                Settings.set("accent", Theme.accentSeed.toString());
+                            row.colorPickerOpen = true;
+                        }
+                    }
                     StyledText {
                         id: choiceLabel
                         anchors.centerIn: parent
                         text: choiceButton.modelData.label
                     }
-                }
-            }
-            Field {
-                Layout.fillWidth: true
-                implicitHeight: Theme.px(30)
-                Layout.minimumWidth: Theme.px(84)
-                input: hexInput
-                TextInput {
-                    id: hexInput
-                    anchors.fill: parent
-                    anchors.leftMargin: Theme.spacingS
-                    anchors.rightMargin: Theme.spacingS
-                    verticalAlignment: TextInput.AlignVCenter
-                    color: Theme.textSurface
-                    selectionColor: Theme.primary
-                    selectedTextColor: Theme.textPrimary
-                    font.family: Theme.font
-                    font.pixelSize: Theme.fontBody
-                    clip: true
-                    maximumLength: 9
-                    text: /^#/.test(Settings.get("accent", "")) ? Settings.get("accent", "") : ""
-                    onAccepted: {
-                        var trimmedHex = text.trim();
-                        if (/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmedHex))
-                            Settings.set("accent", trimmedHex);
-                    }
-                    StyledText {
-                        anchors.fill: parent
-                        visible: hexInput.text === ""
-                        text: "#rrggbb"
-                        color: Theme.textSurfaceVariant
-                        font.italic: true
-                    }
-                }
-            }
-            Button {
-                implicitWidth: Theme.px(22)
-                implicitHeight: Theme.px(22)
-                radius: Theme.radiusFull
-                onClicked: row.colorPickerOpen = !row.colorPickerOpen
-                // The picked accent itself; themes derive their accent
-                // tokens from it (see Theme.accentTone).
-                Rectangle {
-                    anchors.fill: parent
-                    radius: Theme.radiusFull
-                    color: Theme.accentSeed
-                    border.width: 1
-                    border.color: Theme.border
                 }
             }
         }
@@ -506,12 +479,74 @@ Item {
         }
     }
 
+    RowLayout {
+        id: customControls
+        visible: row.modelData.kind === "accent" && row.accentMode === "custom"
+        anchors.top: controls.bottom
+        anchors.topMargin: Theme.spacingS
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: Theme.spacingM
+        anchors.rightMargin: Theme.spacingM
+        height: Theme.px(34)
+        spacing: Theme.spacingS
+
+        Field {
+            Layout.fillWidth: true
+            input: hexInput
+            TextInput {
+                id: hexInput
+                anchors.fill: parent
+                anchors.leftMargin: Theme.spacingS
+                anchors.rightMargin: Theme.spacingS
+                verticalAlignment: TextInput.AlignVCenter
+                color: Theme.textSurface
+                selectionColor: Theme.primary
+                selectedTextColor: Theme.textPrimary
+                font.family: Theme.font
+                font.pixelSize: Theme.fontBody
+                clip: true
+                maximumLength: 9
+                activeFocusOnTab: true
+                Accessible.name: qsTr("Custom accent hex color")
+                text: /^#/.test(row.currentValue) ? row.currentValue : ""
+                onAccepted: {
+                    var trimmedHex = text.trim();
+                    if (/^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmedHex))
+                        Settings.set("accent", trimmedHex);
+                }
+            }
+        }
+        Button {
+            implicitWidth: Theme.px(30)
+            implicitHeight: Theme.px(30)
+            radius: Theme.radiusFull
+            activeFocusOnTab: true
+            active: activeFocus
+            Accessible.role: Accessible.Button
+            Accessible.name: qsTr("Choose custom accent color")
+            Accessible.onPressAction: clicked({ button: Qt.LeftButton })
+            Keys.onReturnPressed: clicked({ button: Qt.LeftButton })
+            Keys.onSpacePressed: clicked({ button: Qt.LeftButton })
+            onClicked: row.colorPickerOpen = !row.colorPickerOpen
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 2
+                radius: Math.min(width, height) / 2
+                color: Theme.accentSeed
+                border.width: 1
+                border.color: Theme.border
+            }
+        }
+    }
+
     // Accent picker: saturation runs left to right and brightness bottom to
     // top over the current hue; the bar below chooses the hue.
     ColumnLayout {
         id: colorPicker
         visible: row.colorPickerOpen
-        anchors.top: controls.bottom
+        anchors.top: customControls.bottom
+        anchors.topMargin: Theme.spacingS
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.leftMargin: Theme.spacingM
