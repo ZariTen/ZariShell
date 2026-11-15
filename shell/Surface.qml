@@ -10,10 +10,18 @@ Item {
     property real radius: Theme.radiusLarge
     property color color: Theme.bar
     property bool shadow: true
+    property bool attachedTop: false
     property real headerHeight: 0
 
+    clip: attachedTop
+
+    // Extend the look past the screen edge to hide both outer and inner
+    // rims, without moving the content or changing the reserved bar height.
     Loader {
-        anchors.fill: parent
+        x: 0
+        y: control.attachedTop ? -2 : 0
+        width: parent.width
+        height: parent.height + (control.attachedTop ? 2 : 0)
         source: Theme.component("Surface")
     }
 

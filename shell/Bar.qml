@@ -101,6 +101,8 @@ Scope {
                 height: Theme.barHeight
                 radius: Theme.barFloating ? Theme.barRadius : 0
                 color: Theme.bar
+                attachedTop: !Theme.barFloating
+                shadow: Theme.barFloating
 
                 // Edge line along the bottom of an edge bar.
                 Divider {
@@ -112,7 +114,7 @@ Scope {
                 }
             }
 
-            // Pills style: one floating surface behind each group of bar content.
+            // Pills style: one surface behind each group of bar content.
             Repeater {
                 model: Theme.barPills ? [leftGroup, mediaButton, rightGroup] : []
 
@@ -125,6 +127,8 @@ Scope {
                     height: Theme.barHeight
                     radius: Theme.barRadius
                     color: Theme.bar
+                    attachedTop: !Theme.barFloating
+                    shadow: Theme.barFloating
                 }
             }
 
