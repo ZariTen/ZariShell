@@ -8,6 +8,8 @@ QtObject {
     // -- Public state -------------------------------------------------------
     property string panel: ""
     property string settingsSection: "appearance"   // open page of the settings panel
+    property real trayAnchorX: -1
+    property var trayScreen: null
     property var chosenPlayer: null                 // media player picked in the media panel
 
     readonly property var player: {

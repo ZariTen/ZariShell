@@ -334,32 +334,29 @@ Scope {
                     framed: true
                     spacing: Theme.spacingXs
 
-                    Repeater {
-                        model: SystemTray.items
+                    Button {
+                        id: trayToggle
+                        visible: SystemTray.items.values.length > 0
+                        implicitWidth: Theme.px(26)
+                        implicitHeight: Theme.px(26)
+                        active: ShellState.panel === "tray"
+                        activeFocusOnTab: true
+                        framed: activeFocus
+                        Accessible.role: Accessible.Button
+                        Accessible.name: active ? qsTr("Hide tray apps") : qsTr("Show tray apps")
+                        Accessible.onPressAction: clicked({ button: Qt.LeftButton })
+                        Keys.onReturnPressed: clicked({ button: Qt.LeftButton })
+                        Keys.onEnterPressed: clicked({ button: Qt.LeftButton })
+                        Keys.onSpacePressed: clicked({ button: Qt.LeftButton })
+                        onClicked: {
+                            ShellState.trayScreen = bar.screen;
+                            ShellState.trayAnchorX = trayToggle.mapToItem(bar.contentItem, width / 2, height).x;
+                            ShellState.toggle("tray");
+                        }
 
-                        delegate: Button {
-                            id: trayIcon
-                            required property var modelData
-                            implicitWidth: Theme.px(26)
-                            implicitHeight: Theme.px(26)
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-
-                            IconImage {
-                                anchors.centerIn: parent
-                                implicitSize: 16
-                                source: trayIcon.modelData.icon
-                            }
-
-                            onClicked: mouse => {
-                                var menuPos = trayIcon.mapToItem(bar.contentItem, mouse.x, mouse.y);
-                                if (trayIcon.modelData.hasMenu && (mouse.button === Qt.RightButton || trayIcon.modelData.onlyMenu))
-                                    trayIcon.modelData.display(bar, menuPos.x, menuPos.y);
-                                else if (mouse.button === Qt.MiddleButton)
-                                    trayIcon.modelData.secondaryActivate();
-                                else
-                                    trayIcon.modelData.activate();
-                            }
-                            onWheel: wheel => trayIcon.modelData.scroll(wheel.angleDelta.y, false)
+                        MdIcon {
+                            anchors.centerIn: parent
+                            codepoint: trayToggle.active ? 0xF0143 : 0xF0140 // chevron-up / chevron-down
                         }
                     }
 

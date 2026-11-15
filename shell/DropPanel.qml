@@ -11,8 +11,10 @@ PanelWindow {
 
     property string name
     property string align: "right"
+    property real anchorCenter: -1
     property bool centered: false
     property int cardWidth: Theme.widthPx(360)
+    property real headerHeight: Theme.px(44)
     property bool canGoBack: false   // Escape steps back (signal back) instead of closing
     default property alias content: column.data
     readonly property bool open: ShellState.panel === name
@@ -57,6 +59,8 @@ PanelWindow {
         readonly property real restY: panel.centered ? (panel.height - height) / 2 : Theme.barSpace + Theme.gap
 
         x: {
+            if (panel.anchorCenter >= 0 && !panel.centered)
+                return Math.max(Theme.gap, Math.min(panel.width - width - Theme.gap, panel.anchorCenter - width / 2));
             if (panel.align === "left")
                 return Theme.gap;
             if (panel.align === "center" || panel.centered)
@@ -79,7 +83,7 @@ PanelWindow {
         Surface {
             anchors.fill: parent
             color: Theme.panel
-            headerHeight: Theme.px(44)
+            headerHeight: panel.headerHeight
         }
 
         MouseArea {

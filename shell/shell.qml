@@ -5,6 +5,7 @@ import Quickshell
 ShellRoot {
     Background {}
     Bar {}
+    TrayPanel {}
     Overlay {}
     WallpaperPicker {}
     Toasts {}
