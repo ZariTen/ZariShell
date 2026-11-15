@@ -70,6 +70,7 @@ Singleton {
     readonly property color outlineFaint: color("outlineFaint", [1, 1, 1, 0.08]) // list cards, inner well edge
     readonly property color insetEdge: color("insetEdge", [1, 1, 1, 0.10])     // edge of framed bar trays
     readonly property color buttonDefault: color("buttonDefault", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.63 }) // default dialog button
+    readonly property color textButtonDefault: color("textButtonDefault", readableText(buttonDefault))
     readonly property color badge: color("badge", "#d9463a")                   // unread count badge
     readonly property color textSoft: color("textSoft", [1, 1, 1, 0.85])       // secondary display text
     readonly property color textShadow: color("textShadow", "transparent")     // shadow under body text
@@ -450,6 +451,28 @@ Singleton {
 
     function toColor(rawValue) {
         return resolveColorValue(rawValue, activeAccent);
+    }
+
+    function readableText(fill) {
+        // Resolve translucent faces against the panel before comparing contrast.
+        var background = Qt.tint(Qt.tint(surface, panel), fill);
+        var luminance = relativeLuminance(background);
+        function contrast(foreground) {
+            var value = relativeLuminance(Qt.tint(background, foreground));
+            return (Math.max(value, luminance) + 0.05) / (Math.min(value, luminance) + 0.05);
+        }
+        if (contrast(textSurface) >= 4.5)
+            return textSurface;
+        if (contrast(textPrimary) >= 4.5)
+            return textPrimary;
+        return luminance > 0.179 ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(1, 1, 1, 1);
+    }
+
+    function relativeLuminance(value) {
+        function linear(channel) {
+            return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+        }
+        return 0.2126 * linear(value.r) + 0.7152 * linear(value.g) + 0.0722 * linear(value.b);
     }
 
     function withAlpha(colorValue, alphaValue) {

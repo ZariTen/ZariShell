@@ -26,6 +26,7 @@ Button {
         id: label
         anchors.centerIn: parent
         text: button.text
+        color: button.filled ? Theme.textButtonDefault : Theme.textSurface
         font.weight: Font.Medium
     }
 }

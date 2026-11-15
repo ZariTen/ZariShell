@@ -43,9 +43,12 @@ accent overrides.
 | Containers | `surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest` |
 | Recessed areas | `inset`, `insetBorder`, `insetEdge` |
 | Borders and lines | `border`, `borderLight`, `outline`, `outlineVariant`, `outlineFaint`, `divider`, `dividerStrong` |
-| Text | `textSurface`, `textSurfaceVariant`, `textPrimary`, `textPrimaryContainer`, `textSoft`, `textShadow` |
+| Text | `textSurface`, `textSurfaceVariant`, `textPrimary`, `textPrimaryContainer`, `textButtonDefault`, `textSoft`, `textShadow` |
 | Overlays | `scrim`, `scrimStrong`, `badge` |
 | Status | `error`, `errorContainer`, `errorOutline`, `criticalContainer`, `danger`, `dangerHighlight`, `success`, `warning` |
+
+`textButtonDefault` pairs with `buttonDefault`; when omitted, the shell selects
+readable text against the filled face, including accent overrides.
 
 ## Shape, fonts and motion
 
