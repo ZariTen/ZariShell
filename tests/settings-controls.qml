@@ -53,7 +53,19 @@ ShellRoot {
                 check(Settings.get("accent", "") === "wallpaper" && !accent.colorPickerOpen, "Wallpaper must close custom editing");
                 theme.clicked({button: Qt.LeftButton});
                 check(!Settings.has("accent") && accent.accentMode === "theme", "Theme must remove the override");
-                console.log("PASS QML regression tests: dependent settings and accent sources");
+                var restore = find(accent, item => item.codepoint === 0xF099B);
+                check(restore && !restore.visible, "Default values must not show a restore action");
+                Settings.set("accent", "#aabbcc");
+                check(restore.visible, "Modified values must show a restore action");
+                restore.Accessible.pressAction();
+                check(!Settings.has("accent") && !restore.visible, "Accessible restore must remove the override");
+                ShellState.settingsSection = "layout";
+                Settings.reset("barFloating");
+                Settings.set("barHeight", 50);
+                check(panel.sectionModified, "Section restore must include changed values");
+                Settings.set("barHeight", 42);
+                check(!panel.sectionModified, "Returning manually to the default must clear section restore");
+                console.log("PASS QML regression tests: dependent settings, accent sources and restore actions");
             } catch(error) {
                 console.error("FAIL QML regression tests: " + error.message);
             }

@@ -77,6 +77,8 @@ Scope {
         return sections[0];
     }
 
+    readonly property bool sectionModified: currentSection.rows.some(rowSpec => Settings.isModified(rowSpec.key, rowSpec.def))
+
     // -- Helper functions ---------------------------------------------------
     function sectionKeys(sectionSpec) {
         return sectionSpec.rows.map(rowSpec => rowSpec.key);
@@ -231,14 +233,22 @@ Scope {
                             StyledText {
                                 Layout.fillWidth: true
                                 text: root.currentSection.title
+                                wrapMode: Text.WordWrap
                                 font.pixelSize: Theme.fontTitle
                                 font.weight: Font.DemiBold
                             }
                             ActionButton {
-                                visible: root.currentSection.rows.length > 0
-                                enabled: root.currentSection.rows.some(rowSpec => Settings.isModified(rowSpec.key, rowSpec.def))
-                                opacity: enabled ? 1 : Theme.dim(0.5)
-                                text: qsTr("Reset section")
+                                visible: root.sectionModified
+                                enabled: visible
+                                text: qsTr("Restore defaults")
+                                framed: false
+                                activeFocusOnTab: true
+                                active: activeFocus
+                                Accessible.role: Accessible.Button
+                                Accessible.name: qsTr("Restore defaults in %1").arg(root.currentSection.title)
+                                Accessible.onPressAction: clicked({ button: Qt.LeftButton })
+                                Keys.onReturnPressed: clicked({ button: Qt.LeftButton })
+                                Keys.onSpacePressed: clicked({ button: Qt.LeftButton })
                                 onClicked: if (enabled) Settings.resetKeys(root.sectionKeys(root.currentSection))
                             }
                             ActionButton {
@@ -353,9 +363,8 @@ Scope {
                                     }
                                 }
 
-                                Repeater {
-                                    model: root.currentSection.rows.filter(rowSpec => !rowSpec.advanced && rowSpec.available !== false)
-                                    delegate: SettingsRow {}
+                                SettingsGroup {
+                                    rows: root.currentSection.rows.filter(rowSpec => !rowSpec.advanced && rowSpec.available !== false)
                                 }
 
                                 SettingsDisclosure {
@@ -365,9 +374,8 @@ Scope {
                                     onClicked: root.fineTuningOpen = !root.fineTuningOpen
                                 }
 
-                                Repeater {
-                                    model: root.fineTuningOpen ? root.currentSection.rows.filter(rowSpec => rowSpec.advanced && rowSpec.available !== false) : []
-                                    delegate: SettingsRow {}
+                                SettingsGroup {
+                                    rows: root.fineTuningOpen ? root.currentSection.rows.filter(rowSpec => rowSpec.advanced && rowSpec.available !== false) : []
                                 }
                             }
                         }

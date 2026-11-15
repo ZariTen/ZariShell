@@ -158,13 +158,6 @@ Item {
     }
 
     // -- Visual tree --------------------------------------------------------
-    Surface {
-        anchors.fill: parent
-        radius: Theme.radius
-        color: Theme.surfaceContainer
-        shadow: false
-    }
-
     RowLayout {
         id: controls
         anchors.left: parent.left
@@ -334,14 +327,25 @@ Item {
         }
 
         // Reset
-        IconButton {
+        Item {
             implicitWidth: Theme.px(30)
-            radius: Theme.radiusFull
-            enabled: row.isModified
-            opacity: row.isModified ? 1 : Theme.dim(0.5)
-            codepoint: 0xF099B // md-restore
-            icon.color: Theme.textSurfaceVariant
-            onClicked: Settings.reset(row.modelData.key)
+            implicitHeight: Theme.px(30)
+            IconButton {
+                anchors.fill: parent
+                visible: row.isModified
+                enabled: visible
+                radius: Theme.radiusFull
+                codepoint: 0xF099B // md-restore
+                icon.color: Theme.textSurfaceVariant
+                activeFocusOnTab: true
+                active: activeFocus
+                Accessible.role: Accessible.Button
+                Accessible.name: qsTr("Restore %1 to default").arg(row.modelData.label)
+                Accessible.onPressAction: clicked({ button: Qt.LeftButton })
+                Keys.onReturnPressed: clicked({ button: Qt.LeftButton })
+                Keys.onSpacePressed: clicked({ button: Qt.LeftButton })
+                onClicked: Settings.reset(row.modelData.key)
+            }
         }
     }
 
