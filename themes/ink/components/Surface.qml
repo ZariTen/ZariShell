@@ -1,7 +1,7 @@
 import QtQuick
 import qs
 
-// Ink: a sheet of warm paper with a fine grain and a hairline ink rule round
+// Ink: a sheet of charcoal paper with a fine grain and a hairline ink rule round
 // the edge. Raised sheets (shadow: true) get a faint second rule set a few
 // pixels off, like a print slightly out of register. `control` is the
 // generic Surface.

@@ -8,7 +8,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Theme.radius
-        color: control.prominent ? Theme.color("paper", "#f7f3ea") : Theme.inset
+        color: control.prominent ? Theme.color("paper", "#24211e") : Theme.inset
         border.width: control.prominent ? 1 : 0
         border.color: Theme.outlineVariant
     }

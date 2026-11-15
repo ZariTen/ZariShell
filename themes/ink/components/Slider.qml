@@ -45,7 +45,7 @@ Item {
         width: parent.height + 2
         height: width
         rotation: 45
-        color: control.pressed ? look.stroke : Theme.color("paper", "#f7f3ea")
+        color: control.pressed ? look.stroke : Theme.color("paper", "#24211e")
         border.width: 1.5
         border.color: look.stroke
         scale: control.hovered || control.pressed ? 1.15 : 1

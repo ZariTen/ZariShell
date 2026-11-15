@@ -2,13 +2,13 @@ import QtQuick
 import QtQuick.Effects
 import qs
 
-// Ink: the wallpaper as a faded monochrome print on warm paper, with the
+// Ink: the wallpaper as a faded monochrome print on charcoal paper, with the
 // paper grain over it. Without a wallpaper it is plain paper. `control` is
 // the generic Backdrop.
 Item {
     id: look
 
-    readonly property color paper: Theme.color("paper", "#f7f3ea")
+    readonly property color paper: Theme.color("paper", "#24211e")
 
     Rectangle {
         anchors.fill: parent
@@ -33,8 +33,8 @@ Item {
         source: wall
         saturation: -1
         contrast: 0.2
-        brightness: 0.1
-        opacity: 0.3
+        brightness: -0.15
+        opacity: 0.18
     }
 
     Image {

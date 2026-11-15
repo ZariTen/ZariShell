@@ -3,7 +3,7 @@ import qs
 
 // Ink: no fill at rest. Hover lays a faint ink wash and draws an ink
 // underline out from the center; `active` keeps a full, heavier underline and
-// an ink rule round framed buttons; press darkens the wash. `control` is the
+// an ink rule round framed buttons; press strengthens the wash. `control` is the
 // generic Button.
 Item {
     id: look

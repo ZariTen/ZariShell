@@ -8,7 +8,7 @@ Item {
     id: look
 
     readonly property color ink: Theme.textSurface
-    readonly property color paper: Theme.color("paper", "#f7f3ea")
+    readonly property color paper: Theme.color("paper", "#24211e")
 
     Rectangle {
         anchors.fill: parent

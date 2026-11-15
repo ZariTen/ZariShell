@@ -6,7 +6,7 @@ import qs
 // ring inside. `control` is the generic Fill.
 Rectangle {
     radius: control.radius
-    color: Theme.color("paper", "#f7f3ea")
+    color: Theme.color("paper", "#24211e")
     border.width: control.role === "badge" ? 1 : 1.5
     border.color: control.color
 
