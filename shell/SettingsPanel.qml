@@ -15,43 +15,58 @@ Scope {
 
     // -- Public / derived state ---------------------------------------------
     readonly property bool open: ShellState.panel === "settings"
-    readonly property string section: ShellState.settingsSection
+    readonly property string section: ShellState.settingsSection === "theme" ? "appearance"
+        : ShellState.settingsSection === "motion" ? "text" : ShellState.settingsSection
+    property bool fineTuningOpen: false
+    property bool themePickerOpen: false
+
+    onSectionChanged: {
+        fineTuningOpen = false;
+        themePickerOpen = false;
+        flick.contentY = 0;
+    }
+    onOpenChanged: {
+        if (open) {
+            Theme.scan();
+            themePickerOpen = ShellState.settingsSection === "theme";
+        } else {
+            fineTuningOpen = false;
+            themePickerOpen = false;
+        }
+    }
 
     // Rows: key, label, kind ("slider" | "switch" | "font" | "accent"),
     // slider range/step, unit ("pct" | "px" | "x") and the value used when
     // the key is unset.
     readonly property var sections: [
         { id: "appearance", title: qsTr("Appearance"), glyph: 0xF03D8, rows: [
-            { key: "scale", label: qsTr("UI scale"), kind: "slider", min: 0.75, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
-            { key: "radius", label: qsTr("Corner radius"), kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1 },
-            { key: "spacing", label: qsTr("Spacing"), kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1 },
-            { key: "barHeight", label: qsTr("Bar height"), kind: "slider", min: 28, max: 64, step: 1, unit: "px", def: 42, onRelease: true },
-            { key: "barOpacity", label: qsTr("Bar opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themeBar.a },
-            { key: "panelOpacity", label: qsTr("Panel opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a },
-            { key: "accent", label: qsTr("Accent color"), kind: "accent", def: "" }
+            { key: "accent", label: qsTr("Accent color"), kind: "accent", def: "" },
+            { key: "radius", label: qsTr("Corner radius"), kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1, advanced: true },
+            { key: "spacing", label: qsTr("Spacing"), kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1, advanced: true },
+            { key: "panelOpacity", label: qsTr("Panel opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a, advanced: true },
+            { key: "panelWidth", label: qsTr("Panel width"), kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true, advanced: true },
+            { key: "avatarSize", label: qsTr("Lock screen avatar"), kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112, advanced: true },
+            { key: "dim", label: qsTr("Dimmed items"), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5, advanced: true }
         ] },
-        { id: "text", title: qsTr("Text"), glyph: 0xF06D6, rows: [
-            { key: "font", label: qsTr("Font family"), kind: "font", def: "" },
-            { key: "fontSize", label: qsTr("Base font size"), kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
-            { key: "iconSize", label: qsTr("Icon size"), kind: "slider", min: 12, max: 24, step: 1, unit: "px", def: 16 }
-        ] },
-        { id: "motion", title: qsTr("Motion"), glyph: 0xF04C5, rows: [
-            { key: "animationSpeed", label: qsTr("Animation speed"), kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1 },
-            { key: "reduceMotion", label: qsTr("Reduce motion"), kind: "switch", def: false }
-        ] },
-        { id: "layout", title: qsTr("Layout"), glyph: 0xF056E, rows: [
+        { id: "layout", title: qsTr("Bar & workspaces"), glyph: 0xF056E, rows: [
             { key: "barStyle", label: qsTr("Bar style"), kind: "choice", choices: [{ value: "full", label: qsTr("Full width") }, { value: "pills", label: qsTr("Pills") }], def: "full" },
             { key: "barFloating", label: qsTr("Floating"), kind: "switch", def: false },
             { key: "barGap", label: qsTr("Floating gap"), kind: "slider", min: 0, max: 24, step: 1, unit: "px", def: 8, onRelease: true },
+            { key: "barHeight", label: qsTr("Bar height"), kind: "slider", min: 28, max: 64, step: 1, unit: "px", def: 42, onRelease: true },
             { key: "workspaceStyle", label: qsTr("Workspace style"), kind: "choice", choiceLayout: "stacked", choices: [{ value: "dots", label: qsTr("Dots") }, { value: "numbers", label: qsTr("Numbers") }, { value: "pills", label: qsTr("Pills") }, { value: "diamonds", label: qsTr("Diamonds") }], def: "dots" },
-            { key: "avatarSize", label: qsTr("Lock screen avatar"), kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112 },
-            { key: "panelWidth", label: qsTr("Panel width"), kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
-            { key: "dim", label: qsTr("Dimmed items"), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5 }
+            { key: "barOpacity", label: qsTr("Bar opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themeBar.a, advanced: true }
+        ] },
+        { id: "text", title: qsTr("Text & motion"), glyph: 0xF06D6, rows: [
+            { key: "scale", label: qsTr("UI scale"), kind: "slider", min: 0.75, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true },
+            { key: "font", label: qsTr("Font family"), kind: "font", def: "" },
+            { key: "fontSize", label: qsTr("Base font size"), kind: "slider", min: 9, max: 20, step: 1, unit: "px", def: Theme.defaultFontSize },
+            { key: "reduceMotion", label: qsTr("Reduce motion"), kind: "switch", def: false },
+            { key: "iconSize", label: qsTr("Icon size"), kind: "slider", min: 12, max: 24, step: 1, unit: "px", def: 16, advanced: true },
+            { key: "animationSpeed", label: qsTr("Animation speed"), kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1, advanced: true }
         ] },
         { id: "privacy", title: qsTr("Privacy"), glyph: 0xF033E, rows: [
             { key: "clipboardHistory", label: qsTr("Clipboard history"), kind: "switch", def: true }
-        ] },
-        { id: "theme", title: qsTr("Theme"), glyph: 0xF00E3, rows: [] }
+        ] }
     ]
 
     readonly property var currentSection: {
@@ -66,8 +81,6 @@ Scope {
     function sectionKeys(sectionSpec) {
         return sectionSpec.rows.map(rowSpec => rowSpec.key);
     }
-
-    onOpenChanged: if (open) Theme.scan()
 
     // -- Visual tree --------------------------------------------------------
     PanelWindow {
@@ -167,8 +180,8 @@ Scope {
                     ColumnLayout {
                         Layout.alignment: Qt.AlignTop
                         Layout.fillWidth: false
-                        Layout.preferredWidth: Theme.px(170)
-                        Layout.maximumWidth: Theme.px(170)
+                        Layout.preferredWidth: Theme.px(182)
+                        Layout.maximumWidth: Theme.px(182)
                         spacing: Theme.spacingXs
 
                         Repeater {
@@ -177,7 +190,7 @@ Scope {
                                 id: navButton
                                 required property var modelData
                                 Layout.fillWidth: true
-                                implicitHeight: Theme.px(36)
+                                implicitHeight: Math.max(Theme.px(36), navLabel.implicitHeight + Theme.spacingS * 2)
                                 active: root.currentSection.id === modelData.id
                                 onClicked: ShellState.settingsSection = modelData.id
 
@@ -191,7 +204,9 @@ Scope {
                                         color: navButton.active ? Theme.accent : Theme.textSurface
                                     }
                                     StyledText {
+                                        id: navLabel
                                         Layout.fillWidth: true
+                                        wrapMode: Text.WordWrap
                                         text: navButton.modelData.title
                                         font.weight: navButton.active ? Font.DemiBold : Font.Normal
                                     }
@@ -227,7 +242,7 @@ Scope {
                                 onClicked: if (enabled) Settings.resetKeys(root.sectionKeys(root.currentSection))
                             }
                             ActionButton {
-                                visible: root.currentSection.id === "theme"
+                                visible: root.currentSection.id === "appearance" && root.themePickerOpen
                                 text: qsTr("Reload")
                                 onClicked: Theme.reload()
                             }
@@ -249,9 +264,12 @@ Scope {
                                 width: flick.width
                                 spacing: Theme.spacingS
 
-                                Repeater {
-                                    model: root.currentSection.rows
-                                    delegate: SettingsRow {}
+                                SettingsDisclosure {
+                                    visible: root.currentSection.id === "appearance"
+                                    text: qsTr("Theme")
+                                    detail: Theme.name
+                                    expanded: root.themePickerOpen
+                                    onClicked: root.themePickerOpen = !root.themePickerOpen
                                 }
 
                                 // Theme picker. The model is a count, not the
@@ -260,7 +278,7 @@ Scope {
                                 // the cards (resetting their size and hover
                                 // while the list keeps scrolling under them).
                                 Repeater {
-                                    model: root.currentSection.id === "theme" ? Theme.themes.length : 0
+                                    model: root.currentSection.id === "appearance" && root.themePickerOpen ? Theme.themes.length : 0
 
                                     Button {
                                         id: themeCard
@@ -272,7 +290,10 @@ Scope {
                                         framed: true
                                         active: isCurrent
                                         passWheel: true
-                                        onClicked: Theme.setTheme(themeEntry.id)
+                                        onClicked: {
+                                            Theme.setTheme(themeEntry.id);
+                                            root.themePickerOpen = false;
+                                        }
 
                                         // The preview shows the theme's own
                                         // colors, so it sits outside the
@@ -331,13 +352,30 @@ Scope {
                                         }
                                     }
                                 }
+
+                                Repeater {
+                                    model: root.currentSection.rows.filter(rowSpec => !rowSpec.advanced)
+                                    delegate: SettingsRow {}
+                                }
+
+                                SettingsDisclosure {
+                                    visible: root.currentSection.rows.some(rowSpec => rowSpec.advanced)
+                                    text: qsTr("Fine-tuning")
+                                    expanded: root.fineTuningOpen
+                                    onClicked: root.fineTuningOpen = !root.fineTuningOpen
+                                }
+
+                                Repeater {
+                                    model: root.fineTuningOpen ? root.currentSection.rows.filter(rowSpec => rowSpec.advanced) : []
+                                    delegate: SettingsRow {}
+                                }
                             }
                         }
 
                         // Theme picker hint: outside the list so it stays
                         // visible however many themes there are.
                         StyledText {
-                            visible: root.currentSection.id === "theme"
+                            visible: root.currentSection.id === "appearance" && root.themePickerOpen
                             Layout.fillWidth: true
                             elide: Text.ElideMiddle
                             color: Theme.textSurfaceVariant

@@ -6,6 +6,10 @@ Open settings from quick settings, or bind it in Hyprland:
 bind = SUPER, comma, exec, quickshell -c shell ipc call settings toggle
 ```
 
+Settings are grouped into Appearance (including themes), Bar & workspaces,
+Text & motion, and Privacy. Each section keeps less common adjustments under
+**Fine-tuning**; moving a control does not change its saved value.
+
 Settings save to `${XDG_CONFIG_HOME:-~/.config}/zarishell/settings.json` and apply
 live. You can edit the JSON directly; missing keys use defaults. Invalid JSON
 is left untouched and blocks saving. The greeter does not read this file.
