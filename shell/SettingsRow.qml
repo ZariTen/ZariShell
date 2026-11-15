@@ -50,7 +50,7 @@ Item {
     readonly property string pickerSeed: colorPickerOpen ? Theme.accentSeed.toString() : ""
 
     Layout.fillWidth: true
-    implicitHeight: controls.height + (description.visible ? description.implicitHeight + Theme.spacingS : 0) + (customControls.visible ? customControls.height + Theme.spacingS : 0) + (stackedChoice ? wrappedChoices.height + Theme.spacingS : 0) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
+    implicitHeight: controls.height + (customControls.visible ? customControls.height + Theme.spacingS : 0) + (stackedChoice ? wrappedChoices.height + Theme.spacingS : 0) + (fontListOpen ? fontPicker.height : 0) + (colorPickerOpen ? colorPicker.height + Theme.spacingS : 0)
 
     // -- Helper functions ---------------------------------------------------
     function cancelEditing() {
@@ -360,21 +360,6 @@ Item {
                 }
             }
         }
-    }
-
-    StyledText {
-        id: description
-        visible: text !== ""
-        text: row.modelData.description || ""
-        anchors.top: controls.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.leftMargin: Theme.spacingM
-        anchors.rightMargin: Theme.spacingM
-        wrapMode: Text.WordWrap
-        elide: Text.ElideNone
-        color: Theme.textSurfaceVariant
-        font.pixelSize: Theme.fontSmall
     }
 
     Flow {

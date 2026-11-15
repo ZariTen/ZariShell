@@ -46,7 +46,7 @@ Scope {
             { key: "panelOpacity", label: qsTr("Panel opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a, advanced: true },
             { key: "panelWidth", label: qsTr("Panel width"), defaultLabel: qsTr("Default"), kind: "slider", min: 0.8, max: 1.5, step: 0.05, unit: "pct", def: 1, onRelease: true, advanced: true },
             { key: "avatarSize", label: qsTr("Lock-screen avatar size"), kind: "slider", min: 64, max: 192, step: 4, unit: "px", def: 112, advanced: true },
-            { key: "dim", label: qsTr("Dimmed-item opacity"), description: qsTr("Opacity used for muted and disabled items."), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5, advanced: true }
+            { key: "dim", label: qsTr("Dimmed-item opacity"), kind: "slider", min: 0.15, max: 0.9, step: 0.05, unit: "pct", def: 0.5, advanced: true }
         ] },
         { id: "layout", title: qsTr("Bar & workspaces"), glyph: 0xF056E, rows: [
             { key: "barStyle", label: qsTr("Bar style"), kind: "choice", choices: [{ value: "full", label: qsTr("Full width") }, { value: "pills", label: qsTr("Pills") }], def: "full" },
@@ -65,7 +65,7 @@ Scope {
             { key: "animationSpeed", label: qsTr("Animation speed"), kind: "slider", min: 0.25, max: 3, step: 0.05, unit: "x", def: 1, advanced: true, available: !Theme.reduceMotion }
         ] },
         { id: "privacy", title: qsTr("Privacy"), glyph: 0xF033E, rows: [
-            { key: "clipboardHistory", label: qsTr("Clipboard history"), description: qsTr("Collect copied items for later use. Turning this off does not delete saved history."), kind: "switch", def: true }
+            { key: "clipboardHistory", label: qsTr("Clipboard history"), kind: "switch", def: true }
         ] }
     ]
 
@@ -159,8 +159,9 @@ Scope {
                         }
                         StyledText {
                             Layout.fillWidth: true
-                            text: Settings.invalid ? qsTr("settings.json is not valid JSON: using defaults, changes are not saved") : qsTr("Changes apply and save immediately")
-                            color: Settings.invalid ? Theme.error : Theme.textSurfaceVariant
+                            visible: Settings.invalid
+                            text: qsTr("settings.json is not valid JSON: using defaults, changes are not saved")
+                            color: Theme.error
                             font.pixelSize: Theme.fontSmall
                         }
                     }
