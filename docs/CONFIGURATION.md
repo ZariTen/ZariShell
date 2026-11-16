@@ -95,7 +95,7 @@ Quickshell; updating the lockfile alone does not.
 
 | Environment variable | Purpose |
 | --- | --- |
-| `ZARISHELL_THEME` | Packaged fallback theme; default `aero`. |
+| `ZARISHELL_THEME` | Packaged fallback theme; default `base`. |
 | `ZARISHELL_WALLPAPER_DIR` / `ZARISHELL_WALLPAPER` | Wallpaper folder and default image; also exposed as Home Manager options `wallpaperDir` / `wallpaper`. |
 | `ZARISHELL_SCREENSHOT_DIR` | Screenshot folder; otherwise uses XDG Pictures/Screenshots, then `$HOME/Pictures/Screenshots`. |
 | `QS_GREETER_CLOCK_FORMAT` / `QS_GREETER_DATE_FORMAT` / `QS_GREETER_LONG_DATE_FORMAT` | Greeter date/time patterns. |

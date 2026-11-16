@@ -12,7 +12,7 @@ import Quickshell.Io
 //
 // Active theme: the folder at <XDG_CONFIG_HOME>/zarishell/current (a symlink
 // updated by the theme picker or `quickshell -c shell ipc call theme ...`),
-// else the packaged themes/<$ZARISHELL_THEME or "aero"> next to this file.
+// else the packaged themes/<$ZARISHELL_THEME or "base"> next to this file.
 // Every token falls back to the neutral defaults below, so an empty theme
 // (such as themes/base) gives the plain flat base look.
 //
@@ -151,7 +151,7 @@ Singleton {
     readonly property string userThemeLink: configDir + "/current"
     readonly property string userThemesDir: configDir + "/themes"
     readonly property string packagedThemesDir: Quickshell.shellDir + "/themes"
-    readonly property string packagedThemeName: Quickshell.env("ZARISHELL_THEME") || "aero"
+    readonly property string packagedThemeName: Quickshell.env("ZARISHELL_THEME") || "base"
     readonly property string packagedThemePath: packagedThemesDir + "/" + packagedThemeName
     readonly property string themesScriptPath: Quickshell.shellDir + "/scripts/themes.sh"
 
@@ -532,7 +532,7 @@ Singleton {
     }
 
     function sortThemes(themeList) {
-        var builtinRank = { "aero": 0, "base": 1 };
+        var builtinRank = { "base": 0, "aero": 1 };
         themeList.sort(function(first, second) {
             var firstRank = builtinRank[first.id] !== undefined ? builtinRank[first.id] : 2;
             var secondRank = builtinRank[second.id] !== undefined ? builtinRank[second.id] : 2;
