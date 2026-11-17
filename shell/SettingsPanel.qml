@@ -153,6 +153,7 @@ Scope {
                         Layout.fillWidth: true
                         spacing: 0
                         StyledText {
+                            Layout.fillWidth: true
                             text: qsTr("Settings")
                             font.pixelSize: Theme.fontHeadline
                             font.weight: Font.Bold
