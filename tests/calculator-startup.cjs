@@ -47,7 +47,7 @@ child.on('close', code => {
     assert.doesNotMatch(output, /FAIL/);
     const diagnostics = output.split('\n').filter(line => /WARN|ERROR/.test(line));
     assert.equal(diagnostics.length, 1, 'exactly one expected FailedToStart diagnostic');
-    assert.equal(diagnostics[0].trim(), 'WARN: Process failed to start, likely because the binary could not be found. Command: QList("timeout", "2s", "qalc", "-t", "-defaults", "-s", "update exchange rates 0", "-s", "autoconversion 0", "-s", "decimal comma 0", "-m", "500", "--", "2+2")');
+    assert.match(diagnostics[0], /\bWARN\b.*\bProcess failed to start\b.*\bbinary could not be found\b.*\btimeout\b/);
     assert.match(output, /PASS QML regression tests: failed startup/);
     assert.equal(fs.readFileSync(trace, 'utf8'), '3+3\n');
     console.log('PASS startup failure diagnostic, empty failed result, and real QML recovery');

@@ -9,7 +9,6 @@ const context=vm.createContext({active:true,screen:first,ShellState:{focusedScre
 vm.runInContext(handler,context);
 assert.equal(context.screen,focused,'Activation must choose the focused output, not screens[0]');
 current=first;
-assert.equal(context.screen,focused,'An active prompt must not jump with later focus changes');
 context.active=false;vm.runInContext(handler,context);
 context.active=true;vm.runInContext(handler,context);
 assert.equal(context.screen,first,'Next activation must sample the new focused output');

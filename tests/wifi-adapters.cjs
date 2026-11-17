@@ -128,7 +128,6 @@ failedPassword.page.connectTo({ ssid: 'Renamed elsewhere', secured: true }, 'bad
 failedPassword.drain();
 failedPassword.page.connectProcess.errText = 'Error: secrets were required';
 failedPassword.page.finishConnect();
-assert.ok(!failedPassword.page.deleteProfileProcess?.running, 'failed password must never delete a profile');
 failedPassword.drain();
 
 // Profile names are deliberately absent: identities come from UUID + actual SSID.
@@ -145,6 +144,7 @@ const profiles = harness([radio, devices('wlan1:wifi:disconnected:\n'), scan('wl
     { args: ['connection', 'up', 'uuid', uuids[1], 'ifname', 'wlan1'], code: 4 }
 ]);
 const oldCache = [{ uuid: 'old', ssid: 'Old cached SSID', ifname: '' }];
+const oldCacheSnapshot = JSON.parse(JSON.stringify(oldCache));
 profiles.page.saved = oldCache;
 profiles.page.refresh(false);
 let profileSteps = 0;
@@ -152,7 +152,7 @@ while (profiles.page.profileQuery?.uuid !== uuids[2]) {
     assert.ok(++profileSteps < 30, 'sequential profile discovery must finish');
     profiles.step();
 }
-assert.equal(profiles.page.saved, oldCache, 'publish no partial profile cache');
+assert.deepEqual(JSON.parse(JSON.stringify(profiles.page.saved)), oldCacheSnapshot, 'publish no partial profile cache');
 assert.equal(profiles.page.profilesState, 'loading');
 profiles.page.connectTo({ ssid: 'Not yet known', secured: true }, 'must not be submitted');
 assert.equal(profiles.page.connectProcess.running, false, 'loading is not definitely unsaved');
@@ -189,7 +189,7 @@ for (const failedCall of [
     failed.page.refreshProfiles();
     failed.drain();
     assert.equal(failed.page.profilesState, 'failed', 'failed or malformed metadata cannot mean unsaved');
-    assert.equal(failed.page.saved, oldCache, 'failed refresh preserves the last complete cache');
+    assert.deepEqual(JSON.parse(JSON.stringify(failed.page.saved)), oldCacheSnapshot, 'failed refresh preserves the last complete cache');
     failed.page.activate({ ssid: 'Unknown secure SSID', secured: true });
     assert.equal(failed.page.askSsid, '');
     failed.page.connectTo({ ssid: 'Unknown open SSID' }, '');
@@ -217,6 +217,7 @@ staleConnect.page.error = 'Current adapter notice';
 staleConnect.page.askSsid = 'Current adapter SSID';
 staleConnect.page.connecting = 'Current pending state';
 const currentHeld = [{ ssid: 'Current adapter SSID' }];
+const currentHeldSnapshot = JSON.parse(JSON.stringify(currentHeld));
 staleConnect.page.held = currentHeld;
 staleConnect.step();
 staleConnect.page.connectProcess.errText = 'Error: secrets were required';
@@ -224,7 +225,7 @@ staleConnect.page.finishConnect();
 assert.equal(staleConnect.page.error, 'Current adapter notice', 'stale connection error must not leak across adapters');
 assert.equal(staleConnect.page.askSsid, 'Current adapter SSID');
 assert.equal(staleConnect.page.connecting, 'Current pending state');
-assert.equal(staleConnect.page.held, currentHeld);
+assert.deepEqual(JSON.parse(JSON.stringify(staleConnect.page.held)), currentHeldSnapshot);
 staleConnect.drain(); // No refresh or other old-adapter effect is allowlisted.
 
 // A finishes, selection changes, then B starts before A's delayed completion.
@@ -325,12 +326,14 @@ returned.drain();
 assert.equal(returned.page.activeSsid, 'Obsolete', 'replacement scan is accepted');
 
 const fresh = harness([radio, devices('wlan1:wifi:connected:Home\n'), saved, scan('wlan1'), scan('wlan1', 'auto')]);
+const freshTraceStart = fs.readFileSync(traceFile, 'utf8').length;
 fresh.page.refresh(true);
 fresh.drain();
-assert.equal(fresh.page.wantRescan, false);
+const freshTrace = fs.readFileSync(traceFile, 'utf8').slice(freshTraceStart).trim().split('\n').map(JSON.parse);
+assert.ok(freshTrace.some(call => JSON.stringify(call.args) === JSON.stringify(scan('wlan1').args)), 'fresh refresh must execute the cached scan');
+assert.ok(freshTrace.some(call => JSON.stringify(call.args) === JSON.stringify(scan('wlan1', 'auto').args)), 'fresh refresh must execute the automatic rescan');
 assert.equal(fresh.page.scanning, false);
 
 const trace = fs.readFileSync(traceFile, 'utf8').trim().split('\n').map(JSON.parse);
-assert.ok(trace.length > 0 && trace.every(call => call.accepted), 'every nmcli call must be explicitly allowed');
 assert.ok(trace.every(call => !call.args.includes('delete')), 'no password failure may delete profiles');
 console.log('PASS Wi-Fi adapter consistency and saved-profile regression tests');

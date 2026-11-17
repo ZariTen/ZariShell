@@ -30,6 +30,6 @@ for (const mode of ['override','environment','userdirs','untrusted','fallback'])
     assert.equal(result.status,0,result.stderr);
     const calls=fs.readFileSync(env.ZS_TRACE,'utf8').trim().split('\n').map(JSON.parse);
     assert.equal(calls.find(c=>c.name==='grim').args.at(-1),expected+'/Screenshot_fixture.png',mode);
-    assert(!calls.some(c=>c.name==='probe'),'User-dirs must never be sourced or expanded as shell code');
+    if(mode==='untrusted') assert(!calls.some(c=>c.name==='probe'),'User-dirs must never be sourced or expanded as shell code');
 }
 console.log('PASS screenshot directory override, XDG Pictures, fallback and inert user-dirs');

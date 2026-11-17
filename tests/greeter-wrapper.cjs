@@ -21,7 +21,7 @@ const actual = JSON.parse(child.stdout);
 for (const [key, value] of Object.entries({HOME: expected.stateDir, QS_GREETER_STATE: expected.stateDir,
     XDG_CACHE_HOME: expected.stateDir + '/cache', XDG_STATE_HOME: expected.stateDir + '/state',
     XDG_CONFIG_HOME: expected.stateDir + '/config', XDG_DATA_HOME: expected.stateDir + '/data',
-    XCURSOR_THEME: expected.cursor.name, XCURSOR_SIZE: '24',
+    XCURSOR_THEME: expected.cursor.name, XCURSOR_SIZE: String(expected.cursor.size),
     QS_GREETER_MIN_UID: String(expected.minUid), QS_GREETER_MAX_UID: String(expected.maxUid),
     QS_GREETER_SESSIONS: '/fixture sessions/share/wayland-sessions', QS_GREETER_MAIN_MONITOR: expected.mainMonitor,
     QS_GREETER_SESSION_COMMAND: expected.sessionCommand, QS_GREETER_SESSION_NAME: expected.sessionName, QS_GREETER_HOST_LABEL: expected.hostLabel}))

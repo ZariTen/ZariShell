@@ -9,7 +9,7 @@ const greeter=fs.readFileSync(root+'/greeter/Greeter.qml','utf8');
 const lock=fs.readFileSync(root+'/shell/LockSurface.qml','utf8');
 const block=source=>source.match(/    Process \{\n        id: userQuery[\s\S]*?^    \}/m)?.[0];
 assert(block(greeter)&&block(lock),'Greeter and lock identity discovery must query NSS using getent');
-const users='local:x:1000:1000:Local User:/home/local:/bin/sh\nremote:x:200000:200000:Remote User,room:/srv/remote:/bin/bash\nservice:x:200001:200001:Service:/srv/service:/usr/sbin/nologin\nbroken:x:1000junk:1:Bad:/bad:/bin/sh\n';
+const users='local:x:1000:1000:Local User:/home/local:/bin/sh\nremote:x:200000:200000:Remote User,room:/srv/remote:/bin/bash\nservice:x:200001:200001:Service:/srv/service:/usr/sbin/nologin\nfalse-shell:x:200002:200002:Service:/srv/false:/bin/false\nbroken:x:200003junk:1:Bad:/bad:/bin/sh\n';
 fs.writeFileSync(path.join(work,'users'),users);
 fs.writeFileSync(path.join(work,'getent'),`#!${process.execPath}\nconst fs=require('node:fs'),a=process.argv.slice(2);fs.appendFileSync(process.env.ZS_TRACE,JSON.stringify(a)+'\\n');if(process.env.ZS_FAIL)process.exit(2);if(JSON.stringify(a)==='["passwd"]')process.stdout.write(fs.readFileSync(process.env.ZS_USERS));else {require('node:assert/strict').deepEqual(a,['--','passwd','-remote;$HOME']);process.stdout.write('-remote;$HOME:x:200000:1:Remote Identity:/srv/remote:/bin/bash\\n');}`,{mode:0o700});
 const helper=vm.createContext({});vm.runInContext(fs.readFileSync(root+'/shell/UserAccounts.js','utf8').replace(/^\.pragma library\s*/m,''),helper);
@@ -22,6 +22,7 @@ function query(source,fail=false) {
     const args=Array.from(vm.runInContext(body.match(/command: (.+)/)[1],context));
     const env={PATH:work,HOME:work,XDG_CONFIG_HOME:work,ZS_TRACE:path.join(work,'trace'),ZS_USERS:path.join(work,'users'),DBUS_SESSION_BUS_ADDRESS:'unix:path=/nonexistent/zs-test',DBUS_SYSTEM_BUS_ADDRESS:'unix:path=/nonexistent/zs-test',...(fail?{ZS_FAIL:'1'}:{})};
     const result=spawnSync(args[0],args.slice(1),{env,encoding:'utf8'});assert(!result.error);
+    assert.equal(result.status,fail?2:0,result.stderr);
     context.text=result.stdout;
     vm.runInContext(body.match(/onStreamFinished: (.+)/)[1],context);
     context.exitCode=result.status;
@@ -33,6 +34,9 @@ query(greeter,true);assert.equal(context.users.length,0);assert.match(context.in
 context.selectUser('manual-unlisted');assert.equal(context.userName,'manual-unlisted','NSS failure must not block manual login');
 query(lock);assert.equal(context.realName,'Remote Identity');
 query(lock,true);assert.equal(context.realName,'-remote;$HOME','Failed lookup must retain a usable account label');
+assert.deepEqual(fs.readFileSync(path.join(work,'trace'),'utf8').trimEnd().split('\n').map(line=>JSON.parse(line)),[
+    ['passwd'],['passwd'],['--','passwd','-remote;$HOME'],['--','passwd','-remote;$HOME']
+],'NSS queries must use exactly the intended enumeration and literal identity argv');
 const config=fs.readFileSync(root+'/greeter/GreeterConfig.qml','utf8');
 const expression=config.match(/property var uidRange: (.+)/)[1];
 function limits(env) {

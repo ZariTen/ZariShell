@@ -63,7 +63,7 @@ ShellRoot {
                 Settings.reset("barFloating");
                 Settings.set("barHeight", 50);
                 check(panel.sectionModified, "Section restore must include changed values");
-                Settings.set("barHeight", 42);
+                Settings.set("barHeight", spec("barHeight").def);
                 check(!panel.sectionModified, "Returning manually to the default must clear section restore");
                 var heightRow = component.createObject(scene, {modelData: spec("barHeight"), width: 480});
                 var heightEditor = find(heightRow, item => typeof item.commitValue === "function");
@@ -72,7 +72,7 @@ ShellRoot {
                 check(Settings.get("barHeight", 42) === 51, "Typed pixels must update the setting");
                 check(!heightEditor.commitValue("not a number") && Settings.get("barHeight", 42) === 51, "Invalid text must not change a setting");
                 heightEditor.commitValue("999");
-                check(Settings.get("barHeight", 42) === 64, "Typed values must respect the slider range");
+                check(Settings.get("barHeight", 42) === spec("barHeight").max, "Typed values must respect the slider range");
                 heightEditor.startEditing();
                 Settings.set("barHeight", 60);
                 check(!heightEditor.editing, "A newer slider or reset value must cancel a pending numeric edit");
@@ -85,7 +85,6 @@ ShellRoot {
                 var spacingEditor = find(group, item => typeof item.commitValue === "function");
                 check(group && spacingEditor, "Grouped numeric controls must load");
                 spacingEditor.startEditing();
-                check(typeof group.cancelEdits === "function", "Section restore must cancel pending edits, including unchanged values");
                 group.cancelEdits();
                 check(!spacingEditor.editing, "Cancelling a group must close every numeric edit");
                 console.log("PASS QML regression tests: dependent controls, accent, restore and numeric editing");

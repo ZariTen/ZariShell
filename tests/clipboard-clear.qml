@@ -13,11 +13,6 @@ ShellRoot {
         onTriggered: {
             if (step === 0 && ClipboardHistory.ids.length === 2) {
                 ClipboardHistory.refresh();
-                if (typeof ClipboardHistory.clear !== "function") {
-                    console.error("FAIL Clipboard history has no clear action");
-                    Qt.quit();
-                    return;
-                }
                 ClipboardHistory.clear();
                 ClipboardHistory.paste(ClipboardHistory.ids[0]);
                 step++;

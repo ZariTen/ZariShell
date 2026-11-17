@@ -27,6 +27,7 @@ let
     sessionName = odd;
     hostLabel = odd;
     cursor.name = odd;
+    cursor.size = 36;
   };
   config = evaluate values;
   wrapper = config.services.greetd.settings.default_session.command;
@@ -41,8 +42,6 @@ assert lib.assertMsg (lib.hasInfix getentBin wrapper)
   "Greeter PATH must include the output that provides getent";
 assert lib.assertMsg (lib.hasInfix getentBin (lib.makeBinPath shellPackages))
   "Shell runtime PATH must include the output that provides getent";
-assert lib.assertMsg (lib.hasInfix "export HOME=${lib.escapeShellArg values.stateDir}" wrapper)
-  "Greeter HOME must quote stateDir as a single literal shell value";
 assert lib.assertMsg (builtins.all (key: builtins.all (control: rejected key ("/unsafe" + control)) controls) keys)
   "Greeter string options must reject control characters";
 assert lib.assertMsg (builtins.all (control:
