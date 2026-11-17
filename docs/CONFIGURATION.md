@@ -47,6 +47,11 @@ Sizes are in pixels before UI scaling. "Theme" means the active theme's value.
 | `clipboardHistory` | true | Enable collection and history access. Disabling does not delete stored entries. |
 | `wifiDevice` | `""` | Preferred Wi-Fi interface; empty selects automatically. |
 
+On the Clipboard history screen, **Clear clipboard** empties the current
+clipboard and deletes all saved entries, even when a search is active.
+To clear saved history, standalone installations and custom `runtimePackages`
+need `flock` from `util-linux` alongside `cliphist` and `wl-clipboard`.
+
 ## Launcher calculator
 
 Type arithmetic such as `2 + 2` directly in the launcher. Prefix functions or

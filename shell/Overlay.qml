@@ -156,6 +156,8 @@ Scope {
                 });
             root.recordLaunch(app);
         } else if (mode === "clipboard") {
+            if (ClipboardHistory.clearing)
+                return;
             ClipboardHistory.paste(clipIds[clipHits[index]]);
         } else if (windows[index].wayland) {
             windows[index].wayland.activate();
@@ -240,12 +242,42 @@ Scope {
                             text: root.currentLabels.title
                             font.pixelSize: Theme.fontTitle
                             font.weight: Font.DemiBold
+                            elide: Text.ElideRight
                         }
                         StyledText {
                             text: (list.count === 1 ? qsTr("%1 item") : qsTr("%1 items")).arg(list.count)
                             color: Theme.textSurfaceVariant
                             font.pixelSize: Theme.fontSmall
                         }
+                        ActionButton {
+                            id: clearClipboard
+                            visible: root.mode === "clipboard" && ClipboardHistory.enabled
+                            enabled: !ClipboardHistory.clearing
+                            active: activeFocus
+                            text: qsTr("Clear clipboard")
+                            Accessible.role: Accessible.Button
+                            Accessible.name: text
+                            Accessible.onPressAction: ClipboardHistory.clear()
+                            onClicked: ClipboardHistory.clear()
+                            Keys.onReturnPressed: clearFromKeyboard()
+                            Keys.onEnterPressed: clearFromKeyboard()
+                            Keys.onSpacePressed: clearFromKeyboard()
+                            Keys.onEscapePressed: ShellState.close()
+                            Keys.onTabPressed: search.forceActiveFocus()
+                            Keys.onBacktabPressed: search.forceActiveFocus()
+
+                            function clearFromKeyboard() {
+                                search.forceActiveFocus();
+                                ClipboardHistory.clear();
+                            }
+                        }
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        visible: root.mode === "clipboard" && ClipboardHistory.enabled && ClipboardHistory.clearFailed
+                        text: qsTr("Could not fully clear the clipboard. Try again.")
+                        wrapMode: Text.WordWrap
                     }
 
                     // Recessed list well (Start menu's left pane)
@@ -287,7 +319,8 @@ Scope {
                                 anchors.centerIn: parent
                                 visible: list.count === 0
                                 color: Theme.textSurfaceVariant
-                                text: qsTr("No items match your search.")
+                                text: root.mode === "clipboard" && root.clipIds.length === 0
+                                    ? qsTr("No clipboard history.") : qsTr("No items match your search.")
                             }
 
                             delegate: Item {
@@ -401,8 +434,18 @@ Scope {
                                 Keys.onEscapePressed: ShellState.close()
                                 Keys.onUpPressed: list.decrementCurrentIndex()
                                 Keys.onDownPressed: list.incrementCurrentIndex()
-                                Keys.onTabPressed: list.incrementCurrentIndex()
-                                Keys.onBacktabPressed: list.decrementCurrentIndex()
+                                Keys.onTabPressed: {
+                                    if (clearClipboard.visible && clearClipboard.enabled)
+                                        clearClipboard.forceActiveFocus();
+                                    else
+                                        list.incrementCurrentIndex();
+                                }
+                                Keys.onBacktabPressed: {
+                                    if (clearClipboard.visible && clearClipboard.enabled)
+                                        clearClipboard.forceActiveFocus();
+                                    else
+                                        list.decrementCurrentIndex();
+                                }
                             }
 
                             MdIcon {
