@@ -7,19 +7,13 @@ Bevel {
     attachedTop: control.attachedTop
     attachedSides: control.attachedSides
 
+    // headerHeight is nominal, not the bottom of the panel's laid-out title.
     Rectangle {
-        x: Theme.px(10); y: Theme.px(5)
+        x: Math.max(Theme.px(10), parent.corner)
+        y: Theme.px(5)
         width: Math.max(0, parent.width - 2 * x)
-        height: 2
+        height: 1
         visible: control.headerHeight > 0
         color: Theme.color("rail", Theme.outline)
-        Rectangle { y: 2; width: parent.width; height: 1; color: Theme.border }
-    }
-    Rectangle {
-        x: 3; y: Math.max(0, control.headerHeight - 2)
-        width: Math.max(0, parent.width - 6); height: 1
-        visible: control.headerHeight > 0
-        color: Theme.border
-        Rectangle { y: 1; width: parent.width; height: 1; color: Qt.rgba(1, 1, 1, 0.12) }
     }
 }

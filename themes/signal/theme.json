@@ -2,7 +2,7 @@
   "name": "Signal",
   "description": "Beveled graphite, metal controls and phosphor accents",
   "accent": "#9cce79",
-  "components": ["Backdrop", "Button", "Divider", "Field", "Fill", "Frame", "Highlight", "Slider", "Surface", "Switch"],
+  "components": ["Backdrop", "Button", "Divider", "Field", "Fill", "FilledButton", "Frame", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {
     "surface": "#20212c",
     "bar": "#2b2d3c",

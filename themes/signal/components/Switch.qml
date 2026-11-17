@@ -2,28 +2,33 @@ import QtQuick
 import qs
 
 Item {
+    id: look
+
+    readonly property real inset: Math.max(2, Theme.px(3))
+
     Bevel {
         anchors.fill: parent
-        radius: 1
+        radius: Theme.radiusSmall
         face: Theme.inset
         sunken: true
         light: control.activeFocus ? Theme.highlight : Theme.insetEdge
     }
 
     Rectangle {
-        x: 4; y: 4
-        width: Math.max(0, parent.width - 8)
-        height: Math.max(0, parent.height - 8)
-        color: control.checked ? Qt.rgba(Theme.highlight.r, Theme.highlight.g, Theme.highlight.b, 0.35) : Theme.surfaceContainer
+        anchors.fill: parent
+        anchors.margins: look.inset
+        radius: Math.max(0, Theme.radiusSmall - 1)
+        color: control.checked ? Qt.rgba(Theme.highlight.r, Theme.highlight.g, Theme.highlight.b, 0.28) : Theme.surfaceContainer
+        Behavior on color { ColorAnimation { duration: Theme.durShort } }
     }
 
     Bevel {
-        x: control.checked ? parent.width - width - 3 : 3
+        x: control.checked ? parent.width - width - look.inset : look.inset
         anchors.verticalCenter: parent.verticalCenter
-        width: Math.max(8, parent.width * 0.45)
-        height: Math.max(4, parent.height - 6)
-        radius: 1
-        face: Theme.color("metal", Theme.textSurfaceVariant)
+        width: Math.max(Theme.px(8), parent.width * 0.45)
+        height: Math.max(Theme.px(4), parent.height - look.inset * 2)
+        radius: Theme.radiusSmall
+        face: control.hovered ? Qt.lighter(Theme.color("metal", Theme.textSurfaceVariant), 1.1) : Theme.color("metal", Theme.textSurfaceVariant)
         light: Theme.color("metalLight", Theme.textSurface)
         dark: Theme.color("metalDark", Theme.border)
         sunken: control.pressed
@@ -31,8 +36,9 @@ Item {
 
         Rectangle {
             anchors.centerIn: parent
-            width: 2; height: Math.max(2, parent.height - 8)
-            color: control.checked ? Theme.highlight : Theme.color("metalDark", Theme.border)
+            width: Theme.px(2)
+            height: Math.max(Theme.px(2), parent.height - Theme.px(8))
+            color: Theme.color("metalDark", Theme.border)
         }
     }
 }

@@ -78,6 +78,10 @@ Each look reads the generic component through `control`.
 | `Backdrop` | `source`, `role` (`lock`, `login`) |
 | `Divider` | `strong` |
 
+Optional looks: `FilledButton` replaces the inset fill of a filled `ActionButton`
+and reads its `radius`, `hovered`, and `pressed` state through `control`.
+Without it, filled actions keep their plain `buttonDefault` face.
+
 Optional effects: `Glow` for clocks and `ActiveContent` for active button content.
 `restyleContent: false` skips `ActiveContent`; `plainContent` is never restyled.
 See the [bundled themes](../themes/) for working examples.

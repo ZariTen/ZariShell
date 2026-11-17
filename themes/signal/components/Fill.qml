@@ -2,7 +2,7 @@ import QtQuick
 import qs
 
 Rectangle {
-    radius: control.radius
+    radius: Math.max(0, Math.min(control.radius, width / 2, height / 2))
     color: control.color
     border.width: control.bordered ? 1 : 0
     border.color: Theme.border
@@ -10,7 +10,7 @@ Rectangle {
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
-        radius: Math.max(0, control.radius - 1)
+        radius: Math.max(0, parent.radius - 1)
         color: "transparent"
         border.width: control.bordered ? 1 : 0
         border.color: Qt.rgba(1, 1, 1, 0.18)

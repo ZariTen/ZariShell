@@ -13,13 +13,21 @@ Button {
     framed: true
     radius: Theme.radius
 
-    Rectangle {
+    Loader {
         anchors.fill: parent
         anchors.margins: 1
-        radius: button.radius
         visible: button.filled
-        color: Theme.buttonDefault
         z: -1
+        property var control: button
+        sourceComponent: Theme.effect("FilledButton") || plainFill
+    }
+
+    Component {
+        id: plainFill
+        Rectangle {
+            radius: button.radius
+            color: Theme.buttonDefault
+        }
     }
 
     StyledText {
