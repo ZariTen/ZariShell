@@ -7,7 +7,7 @@ A themeable desktop shell for Hyprland, built with [Quickshell](https://quickshe
 - Notifications, calendar, system monitor and wallpaper picker
 - Lock screen, polkit prompts and optional greetd login screen
 
-Bundled themes: Aero (default), Base, Ink, Liquid Glass, Metro and Modern.
+Bundled themes: Modern (default), Aero, Ink, Liquid Glass, Metro and Signal.
 
 ## Installation
 

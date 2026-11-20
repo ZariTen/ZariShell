@@ -1,9 +1,8 @@
 import QtQuick
 
 // Tiny mock desktop for the theme picker, drawn from a theme.json's own
-// colors and shapes: its surface, bar and a panel with text in the theme's
-// font and a highlight button. Bar size and style are the user's (the same
-// in every theme). Fallbacks match Theme.qml defaults.
+// colors and shapes, with the user's bar layout and font. Fallbacks match
+// Theme.qml defaults.
 Rectangle {
     id: root
 
@@ -87,7 +86,7 @@ Rectangle {
             y: Theme.px(3)
             text: "Aa"
             color: root.tint("textSurface", "#ffffff")
-            font.family: root.value("fonts", "font", "sans-serif")
+            font.family: Theme.font
             font.pixelSize: Theme.px(10)
         }
 

@@ -54,11 +54,6 @@
     "radiusFrame": 10,
     "barRadius": 0
   },
-  "fonts": {
-    "font": "Noto Sans",
-    "iconFont": "JetBrainsMono Nerd Font Propo",
-    "fontDisplayWeight": 300
-  },
   "motion": {
     "durShort": 150,
     "durMedium": 280,

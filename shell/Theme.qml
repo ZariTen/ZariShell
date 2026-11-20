@@ -12,9 +12,8 @@ import Quickshell.Io
 //
 // Active theme: the folder at <XDG_CONFIG_HOME>/zarishell/current (a symlink
 // updated by the theme picker or `quickshell -c shell ipc call theme ...`),
-// else the packaged themes/<$ZARISHELL_THEME or "base"> next to this file.
-// Every token falls back to the neutral defaults below, so an empty theme
-// (such as themes/base) gives the plain flat base look.
+// else the packaged themes/<$ZARISHELL_THEME or "modern"> next to this file.
+// Missing tokens fall back to the neutral defaults below.
 //
 // theme.json colors accept "#rrggbb" / "#aarrggbb", [r, g, b, a] (0..1),
 // "accent" (the accent seed) or { "h", "s", "l", "a" }: a tone whose hue is
@@ -22,10 +21,8 @@ import Quickshell.Io
 // the accent setting (see accentTone). "accent" is "wallpaper" (hue sampled
 // from the current wallpaper) or a color. Every token is listed in README.md.
 //
-// A theme sets only the look: colors, corner radii, fonts (family, display
-// weight), motion and component looks. Sizes, spacing and the bar layout are
-// the same in every theme and come from the user settings (Settings.qml,
-// settings.json); geometry keys left in an old theme.json are ignored.
+// A theme sets colors, corner radii, motion and component looks.
+// Font preferences, sizes, spacing and bar layout come from user settings.
 // Shell code only ever reads Theme.*.
 Singleton {
     id: root
@@ -127,17 +124,20 @@ Singleton {
     readonly property int shadowRoom: px(12)                             // bar window room for a look's shadow (input-masked)
     readonly property int avatarSize: px(clamp(Settings.get("avatarSize", 112), 48, 256)) // lock screen avatar
 
-    // -- Typography (theme: families and display weight; sizes: settings) ---
-    readonly property string themeFont: fontValue("font", "sans-serif")
-    readonly property string font: Settings.get("font", "") !== "" ? Settings.get("font", "") : themeFont
-    readonly property string iconFont: fontValue("iconFont", "JetBrainsMono Nerd Font Propo")
+    // -- Typography ----------------------------------------------------------
+    readonly property string defaultFont: "Noto Sans"
+    readonly property string font: {
+        var family = Settings.get("font", "");
+        return typeof family === "string" && family !== "" ? family : defaultFont;
+    }
+    readonly property string iconFont: "JetBrainsMono Nerd Font Propo"
     readonly property int fontSmall: fontPx(11)
     readonly property int fontBody: fontPx(defaultFontSize)
     readonly property int fontTitle: fontPx(15)
     readonly property int fontHeadline: fontPx(22)
     readonly property int fontLarge: fontPx(34)                         // calendar clock
     readonly property int fontDisplay: fontPx(112)                      // lock / login clock
-    readonly property int fontDisplayWeight: fontValue("fontDisplayWeight", Font.Light)
+    readonly property int fontDisplayWeight: Font.Light
 
     // -- Motion (M3 emphasized / standard) ----------------------------------
     readonly property int durShort: dur(motion("durShort", 150))
@@ -151,7 +151,9 @@ Singleton {
     readonly property string userThemeLink: configDir + "/current"
     readonly property string userThemesDir: configDir + "/themes"
     readonly property string packagedThemesDir: Quickshell.shellDir + "/themes"
-    readonly property string packagedThemeName: Quickshell.env("ZARISHELL_THEME") || "base"
+    readonly property string defaultThemeName: "modern"
+    readonly property string packagedThemeOverride: Quickshell.env("ZARISHELL_THEME")
+    readonly property string packagedThemeName: !packagedThemeOverride || packagedThemeOverride === "base" ? defaultThemeName : packagedThemeOverride
     readonly property string packagedThemePath: packagedThemesDir + "/" + packagedThemeName
     readonly property string themesScriptPath: Quickshell.shellDir + "/scripts/themes.sh"
 
@@ -161,7 +163,10 @@ Singleton {
     property bool isReloadingFile: false
     property string pendingSymlinkTarget: ""
 
-    readonly property var initialUserSpec: parseThemeJson(activeThemeFile.text(), activeThemeFile.path)
+    readonly property var initialUserSpec: {
+        var parsed = parseThemeJson(activeThemeFile.text(), activeThemeFile.path);
+        return isRetiredThemeSpec(parsed) ? null : parsed;
+    }
     readonly property var initialPackagedSpec: parseThemeJson(packagedThemeFile.text(), packagedThemeFile.path)
     readonly property var fallbackThemeState: ({
         id: initialUserSpec !== null ? "current" : packagedThemeName,
@@ -486,10 +491,6 @@ Singleton {
         return typeof rawValue === "number" ? rawValue : fallbackValue;
     }
 
-    function fontValue(key, fallbackValue) {
-        return lookup("fonts", key, fallbackValue);
-    }
-
     function motion(key, fallbackValue) {
         return lookup("motion", key, fallbackValue);
     }
@@ -531,13 +532,22 @@ Singleton {
         return "custom";
     }
 
+    function isRetiredPackagedTheme(dirPath) {
+        // An old Nix generation can keep the removed theme's manifest alive.
+        return /^\/nix\/store\/[a-z0-9]{32}-zarishell-(shell|greeter)\/themes\/base\/?$/.test(dirPath);
+    }
+
+    function isRetiredThemeSpec(parsedSpec) {
+        // FileView follows symlinks without exposing their resolved path.
+        // Recognize the unmodified bundled manifest, not just the name Base.
+        return parsedSpec !== null && parsedSpec.name === "Base"
+            && parsedSpec.description === "Flat, neutral slate" && Object.keys(parsedSpec).length === 2;
+    }
+
     function sortThemes(themeList) {
-        var builtinRank = { "base": 0, "aero": 1 };
         themeList.sort(function(first, second) {
-            var firstRank = builtinRank[first.id] !== undefined ? builtinRank[first.id] : 2;
-            var secondRank = builtinRank[second.id] !== undefined ? builtinRank[second.id] : 2;
-            if (firstRank !== secondRank)
-                return firstRank - secondRank;
+            if (first.id === defaultThemeName || second.id === defaultThemeName)
+                return Number(second.id === defaultThemeName) - Number(first.id === defaultThemeName);
             if (first.id < second.id)
                 return -1;
             return first.id > second.id ? 1 : 0;
@@ -570,13 +580,19 @@ Singleton {
     }
 
     function loadThemeDirectory(targetDir, themeId, sourceType, incrementRevision) {
+        if (isRetiredPackagedTheme(targetDir))
+            return false;
         var jsonPath = targetDir + "/theme.json";
         var previousSnapshot = activeTheme;
+        var previousJsonPath = activeThemeFile.path;
         watchThemeFile(jsonPath);
 
         var parsedSpec = parseThemeJson(activeThemeFile.text(), jsonPath);
-        if (parsedSpec === null)
+        if (parsedSpec === null || isRetiredThemeSpec(parsedSpec)) {
+            if (previousJsonPath !== jsonPath)
+                watchThemeFile(previousJsonPath);
             return false;
+        }
 
         var nextRevision = previousSnapshot.revision + (incrementRevision ? 1 : 0);
         loadedThemeState = {
@@ -684,9 +700,11 @@ Singleton {
             var parts = line.split("\t");
             var themePath = parts[1] || "";
             var realPath = parts[2] || themePath;
+            if (isRetiredPackagedTheme(realPath))
+                continue;
             var jsonText = parts.slice(3).join("\t");
             var parsedSpec = parseThemeJson(jsonText, themePath + "/theme.json");
-            if (parsedSpec === null)
+            if (parsedSpec === null || isRetiredThemeSpec(parsedSpec))
                 continue;
 
             var themeId = directoryName(themePath);
@@ -703,9 +721,10 @@ Singleton {
         if (symlinkProcess.running)
             return;
 
-        var matchedTheme = resolveActiveThemeEntry(currentLinkPath, currentRealPath, themesById);
+        var retiredSelection = isRetiredPackagedTheme(currentLinkPath) || isRetiredPackagedTheme(currentRealPath);
+        var matchedTheme = resolveActiveThemeEntry(retiredSelection ? "" : currentLinkPath, retiredSelection ? "" : currentRealPath, themesById);
         if (matchedTheme !== null)
-            applyScannedTheme(matchedTheme, currentLinkPath, currentRealPath);
+            applyScannedTheme(matchedTheme, currentLinkPath, retiredSelection ? "" : currentRealPath);
     }
 
     // -- Lifecycle and background objects -----------------------------------

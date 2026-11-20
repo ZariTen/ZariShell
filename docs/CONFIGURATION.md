@@ -32,7 +32,7 @@ Sizes are in pixels before UI scaling. "Theme" means the active theme's value.
 | `barGap` | 8 | Floating gap slider: distance from screen edges, 0–24 px in settings. Applies to either floating bar style. |
 | `barOpacity` / `panelOpacity` | Theme | Background opacity, 0–1. |
 | `accent` | Theme | `"wallpaper"` or `"#rrggbb"`. |
-| `font` | Theme | Font family. |
+| `font` | Noto Sans | Font family, shared across themes. Install Noto Sans if it is missing; otherwise Qt uses a fallback. |
 | `fontSize` / `iconSize` | 13 / 16 | Base text and icon sizes. |
 | `animationSpeed` | 1 | Animation multiplier; 2 is twice as fast. |
 | `reduceMotion` | false | Disable transitions; spinners still run. |
@@ -100,7 +100,7 @@ Quickshell; updating the lockfile alone does not.
 
 | Environment variable | Purpose |
 | --- | --- |
-| `ZARISHELL_THEME` | Packaged fallback theme; default `base`. |
+| `ZARISHELL_THEME` | Packaged fallback theme; default `modern`. |
 | `ZARISHELL_WALLPAPER_DIR` / `ZARISHELL_WALLPAPER` | Wallpaper folder and default image; also exposed as Home Manager options `wallpaperDir` / `wallpaper`. |
 | `ZARISHELL_SCREENSHOT_DIR` | Screenshot folder; otherwise uses XDG Pictures/Screenshots, then `$HOME/Pictures/Screenshots`. |
 | `QS_GREETER_CLOCK_FORMAT` / `QS_GREETER_DATE_FORMAT` / `QS_GREETER_LONG_DATE_FORMAT` | Greeter date/time patterns. |

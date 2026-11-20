@@ -12,7 +12,6 @@ export XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache" XDG_STATE_HOM
 # Keep the session runtime dir: Unix socket paths have a short length limit.
 # Each temporary config still gets its own isolated Quickshell IPC instance.
 export QT_QPA_PLATFORM=wayland QT_QUICK_BACKEND=software QT_QPA_PLATFORMTHEME=generic
-export ZARISHELL_THEME="${ZARISHELL_THEME:-base}"
 export QS_LOCK_PREVIEW=0
 unset QS_CONFIG_PATH QS_CONFIG_NAME QS_MANIFEST
 run_tests() {

@@ -28,7 +28,7 @@ Item {
             return [];
         var needle = fontFilter.trim().toLowerCase();
         var families = savedFontMissing ? [savedFont].concat(installedFonts) : installedFonts;
-        var choices = needle === "" ? [{ family: "", label: qsTr("%1 (theme)").arg(Theme.themeFont) }] : [];
+        var choices = needle === "" ? [{ family: "", label: qsTr("%1 (default)").arg(Theme.defaultFont) }] : [];
         families.forEach(family => {
             if (needle === "" || family.toLowerCase().indexOf(needle) >= 0)
                 choices.push({ family: family, label: family });
@@ -247,7 +247,7 @@ Item {
                 spacing: Theme.spacingS
                 StyledText {
                     Layout.fillWidth: true
-                    text: row.savedFont !== "" ? row.savedFont : qsTr("%1 (theme)").arg(Theme.themeFont)
+                    text: row.savedFont !== "" ? row.savedFont : qsTr("%1 (default)").arg(Theme.defaultFont)
                     color: row.savedFont !== "" ? Theme.textSurface : Theme.textSurfaceVariant
                     font.italic: row.savedFont === ""
                 }
@@ -470,7 +470,7 @@ Item {
                     StyledText {
                         Layout.fillWidth: true
                         text: fontChoice.modelData.label
-                        font.family: fontChoice.modelData.family !== "" ? fontChoice.modelData.family : Theme.themeFont
+                        font.family: fontChoice.modelData.family !== "" ? fontChoice.modelData.family : Theme.defaultFont
                         font.italic: fontChoice.modelData.family === ""
                     }
                     StyledText {

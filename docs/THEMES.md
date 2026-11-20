@@ -11,7 +11,6 @@ themes/<name>/
 Put user themes in `${XDG_CONFIG_HOME:-~/.config}/zarishell/themes/<name>/`.
 Missing tokens and components use the defaults in
 [`shell/Theme.qml`](../shell/Theme.qml) and [`shell/base/`](../shell/base/).
-An empty `{}` gives the flat Base look.
 
 ## theme.json
 
@@ -22,7 +21,6 @@ An empty `{}` gives the flat Base look.
   "accent": "#7a9cc6",
   "colors": { "panel": "#24282e", "textSurface": "#ffffff" },
   "metrics": { "radius": 5 },
-  "fonts": { "font": "sans-serif" },
   "components": ["Button"]
 }
 ```
@@ -50,15 +48,14 @@ accent overrides.
 `textButtonDefault` pairs with `buttonDefault`; when omitted, the shell selects
 readable text against the filled face, including accent overrides.
 
-## Shape, fonts and motion
+## Shape and motion
 
 | Section | Tokens |
 | --- | --- |
 | `metrics` | `radiusSmall`, `radius`, `radiusLarge`, `radiusFull`, `radiusFrame`, `barRadius` |
-| `fonts` | `font`, `iconFont`, `fontDisplayWeight` |
 | `motion` | `durShort`, `durMedium`, `durLong` (ms); `emphasized`, `standard` (Bezier curves) |
 
-Sizes, spacing and bar layout come from
+The text font, sizes, spacing and bar layout come from
 [user settings](CONFIGURATION.md#settings-keys), not theme tokens.
 
 ## Components

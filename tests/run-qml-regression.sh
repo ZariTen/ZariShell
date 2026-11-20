@@ -13,8 +13,8 @@ cp "$repo/tests/$fixture" "$work/shell/shell.qml"
 export XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache" XDG_STATE_HOME="$work/state"
 # Retain XDG_RUNTIME_DIR to avoid exceeding Quickshell's socket path limit.
 export QT_QPA_PLATFORM=wayland QT_QUICK_BACKEND=software QT_QPA_PLATFORMTHEME=generic
-export ZARISHELL_THEME=base QS_LOCK_PREVIEW=0
-unset QS_CONFIG_PATH QS_CONFIG_NAME QS_MANIFEST
+export QS_LOCK_PREVIEW=0
+unset QS_CONFIG_PATH QS_CONFIG_NAME QS_MANIFEST ZARISHELL_THEME
 status=0
 output=$(timeout 20s quickshell --no-color -p "$work/shell" 2>&1) || status=$?
 printf '%s\n' "$output" | tee "$work/output.log"
