@@ -162,7 +162,7 @@ Scope {
                             Layout.fillWidth: true
                             visible: Settings.invalid
                             text: qsTr("settings.json is not valid JSON: using defaults, changes are not saved")
-                            color: Theme.error
+                            color: Theme.textPanelError
                             font.pixelSize: Theme.fontSmall
                         }
                     }

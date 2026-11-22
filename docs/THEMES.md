@@ -45,11 +45,12 @@ accent overrides.
 | Overlays | `scrim`, `scrimStrong`, `badge` |
 | Status | `error`, `errorContainer`, `errorOutline`, `criticalContainer`, `danger`, `dangerHighlight`, `success`, `warning` |
 
-When the user explicitly selects **Wallpaper**, the wallpaper hue colors the
-shared backgrounds, surface containers, inset, and accent tokens, even if the
-theme specifies literal colors. Surface opacity and light/dark text polarity
-are preserved. Use these tokens or the generic control's `tint` in custom
-looks, and keep status colors separate.
+When the user explicitly selects **Wallpaper**, the average wallpaper color
+tints shared backgrounds, containers, insets, and accent tokens, even if the
+theme specifies literal colors. Bright pastel wallpapers can use light
+surfaces and dark text; explicit opacity settings still apply. Use these
+tokens or the generic control's `tint` in custom looks, and keep status colors
+separate.
 
 `textButtonDefault` pairs with `buttonDefault`; when omitted, the shell selects
 readable text against the filled face. In **Wallpaper** mode, the shell can

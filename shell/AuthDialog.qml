@@ -108,7 +108,7 @@ Scope {
                     horizontalAlignment: Text.AlignHCenter
                     wrapMode: Text.WordWrap
                     font.pixelSize: Theme.fontSmall
-                    color: agent.flow !== null && agent.flow.supplementaryIsError ? Theme.error : Theme.textSurfaceVariant
+                    color: agent.flow !== null && agent.flow.supplementaryIsError ? Theme.textPanelError : Theme.textSurfaceVariant
                     text: agent.flow ? agent.flow.supplementaryMessage : ""
                 }
 

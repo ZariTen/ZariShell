@@ -48,7 +48,7 @@ Singleton {
     readonly property color primaryIndicator: wallpaperAccentOverride ? accent : primary
     readonly property color textPrimary: {
         var preferred = color("textPrimary", "#ffffff");
-        return wallpaperAccentOverride ? readableText(primary, preferred, textSurface) : preferred;
+        return userAccentOverride !== "" ? readableText(primary, preferred, textSurface) : preferred;
     }
     readonly property color primaryContainer: color("primaryContainer", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.9 })
     readonly property color textPrimaryContainer: {
@@ -81,6 +81,12 @@ Singleton {
     readonly property color textSoft: color("textSoft", [1, 1, 1, 0.85])       // secondary display text
     readonly property color textShadow: color("textShadow", "transparent")     // shadow under body text
     readonly property color error: color("error", "#ff6b5e")
+    readonly property color textBarError: wallpaperAccentOverride
+        ? readableStatusText(error, Qt.tint(surface, bar))
+        : error
+    readonly property color textPanelError: wallpaperAccentOverride
+        ? readableStatusText(error, Qt.tint(Qt.tint(surface, panel), surfaceContainerHighest))
+        : error
     readonly property color success: color("success", "#7fd45a")
     readonly property color warning: color("warning", "#f2c94c")
     readonly property color errorContainer: color("errorContainer", Qt.rgba(error.r, error.g, error.b, 0.22))
@@ -191,27 +197,15 @@ Singleton {
     readonly property string userAccentOverride: Settings.get("accent", "")
     readonly property bool wallpaperAccentOverride: userAccentOverride === "wallpaper"
     readonly property var activeAccent: resolveAccent(themeAccent)
+    readonly property bool wallpaperPastel: activeAccent.pastel
     readonly property string accentMode: activeAccent.mode
     readonly property bool wallpaperAccent: accentMode === "wallpaper"
     readonly property color accentSeed: activeAccent.seed
     readonly property real hue: activeAccent.hue
 
-    // Hue of the most vivid wallpaper color, or -1 when none has a hue.
-    readonly property real sampledWallpaperHue: {
-        var bestScore = -1;
-        var selectedHue = -1;
-        var palette = quantizer.colors;
-        for (var i = 0; i < palette.length; i++) {
-            var sampleColor = palette[i];
-            var vividnessScore = sampleColor.hslSaturation * (1 - Math.abs(sampleColor.hslLightness - 0.5) * 1.6);
-            if (sampleColor.hslHue >= 0 && vividnessScore > bestScore) {
-                bestScore = vividnessScore;
-                selectedHue = sampleColor.hslHue;
-            }
-        }
-        return selectedHue;
-    }
-    readonly property real wallpaperHue: sampledWallpaperHue >= 0 ? sampledWallpaperHue : 0.62
+    readonly property color wallpaperColor: Wallpaper.path !== "" && quantizer.colors.length > 0 ? quantizer.colors[0] : "#808080"
+    readonly property real sampledWallpaperHue: wallpaperColor.hslHue
+    readonly property real wallpaperHue: Math.max(0, sampledWallpaperHue)
 
     // -- Public API helpers -------------------------------------------------
     // URL of the look for a generic component: the theme's override when the
@@ -273,17 +267,23 @@ Singleton {
     // it, the theme's own seed (base) that its tones are written against.
     function resolveAccent(themeAccentValue) {
         var mode = userAccentOverride !== "" ? userAccentOverride : themeAccentValue;
-        var seed = seedColor(mode);
+        var seed = mode === "wallpaper" ? wallpaperSeed() : Qt.lighter(mode, 1);
+        // A fixed reference keeps Custom tones stable when a wallpaper-default theme's image changes.
+        var base = themeAccentValue === "wallpaper" ? tone(0, 0.6, 0.6) : Qt.lighter(themeAccentValue, 1);
         return {
             "mode": mode,
             "seed": seed,
             "hue": mode === "wallpaper" ? wallpaperHue : Math.max(0, seed.hslHue),
-            "base": mode === themeAccentValue ? null : seedColor(themeAccentValue)
+            "pastel": wallpaperAccentOverride && seed.hslLightness >= 0.76 && relativeLuminance(seed) >= 0.50,
+            "base": mode === themeAccentValue ? null : base
         };
     }
 
-    function seedColor(accentValue) {
-        return accentValue === "wallpaper" ? tone(wallpaperHue, 0.6, 0.6) : Qt.lighter(accentValue, 1);
+    function wallpaperSeed() {
+        // Fade weak chroma to neutral: tiny color differences in dark pixels are not a useful hue.
+        var sample = wallpaperColor;
+        var chroma = Math.max(sample.r, sample.g, sample.b) - Math.min(sample.r, sample.g, sample.b);
+        return tone(wallpaperHue, sample.hslSaturation * clamp((chroma - 0.02) / 0.10, 0, 1), sample.hslLightness);
     }
 
     // A theme's { h, s, l } tone is written against its own seed. When the
@@ -294,8 +294,11 @@ Singleton {
     function accentTone(accentState, hueOffset, saturation, lightness, alpha) {
         var base = accentState.base;
         var seed = accentState.seed;
-        if (base === null)
+        if (base === null) {
+            if (accentState.mode === "wallpaper")
+                saturation *= seed.hslSaturation;
             return tone(accentState.hue + hueOffset, saturation, lightness, alpha);
+        }
         if (base.hslSaturation > 0.01)
             saturation = clamp(saturation * seed.hslSaturation / base.hslSaturation, 0, 1);
         var fromLightness = clamp(base.hslLightness, 0.01, 0.99);
@@ -452,6 +455,8 @@ Singleton {
         var colorValue = resolveColorValue(key, specValue(themeSpec, "colors", key, fallbackValue), accentState);
         if (!wallpaperAccentOverride)
             return colorValue;
+        if (accentState.pastel)
+            return pastelColor(key, colorValue, accentState.seed);
 
         var darkLightness = wallpaperSurfaceLightness(key);
         if (darkLightness < 0)
@@ -464,11 +469,15 @@ Singleton {
         var text = foreground("textSurface", "#ffffff");
         var lightSurface = relativeLuminance(text) <= 0.179;
         var endpoint = lightSurface ? 1 : 0;
-        var lightness = lightSurface ? 1 - darkLightness : darkLightness;
-        var saturation = lightSurface ? 0.62 : 0.80;
+        var seed = accentState.seed;
+        // Retain some brightness from the wallpaper instead of using a fixed dark tint.
+        var depth = darkLightness * clamp(0.12 + 2.65 * seed.hslLightness, 0.36, 1.62);
+        var lightness = lightSurface ? 1 - depth : depth;
+        var saturation = (lightSurface ? 0.62 : 0.80) * seed.hslSaturation;
         var surfaceTone = tone(accentState.hue, saturation, lightness);
         var neutral = Qt.rgba(endpoint, endpoint, endpoint, 1);
-        var pairedText = [text, foreground("textSurfaceVariant", [1, 1, 1, 0.70]), foreground("error", "#ff6b5e")];
+        var pairedText = [text, foreground("textSurfaceVariant", [1, 1, 1, 0.70])];
+
         var targets = pairedText.map(color => ({ color: color, limit: contrastRatio(color, neutral) }))
             .filter(target => target.limit >= 4.5);
         function fits(tint) {
@@ -490,6 +499,59 @@ Singleton {
         return withAlpha(surfaceTone, Qt.lighter(colorValue, 1).a);
     }
 
+    function pastelColor(key, original, seed) {
+        function shade(lightness, alpha) {
+            return tone(seed.hslHue < 0 ? 0 : seed.hslHue, seed.hslSaturation, clamp(lightness, 0, 1), alpha);
+        }
+        var lightness = seed.hslLightness;
+        switch (key) {
+        case "bar":
+        case "panel":
+        case "panelError": {
+            // Pale, translucent fills still need enough coverage over dark windows. Explicit
+            // barOpacity/panelOpacity settings are applied separately after this default.
+            var opacity = Math.max(Qt.lighter(original, 1).a, 0.76);
+            return key === "panelError" ? Qt.hsla(0.97, 0.52, 0.88, opacity) : withAlpha(seed, opacity);
+        }
+        case "surface":                 return shade(lightness + 0.05, 1);
+        case "backdrop":                return shade(lightness - 0.06, 1);
+        case "surfaceContainer":        return shade(lightness + 0.02, Qt.lighter(original, 1).a);
+        case "surfaceContainerHigh":    return shade(lightness - 0.03, Qt.lighter(original, 1).a);
+        case "surfaceContainerHighest": return shade(lightness - 0.06, Qt.lighter(original, 1).a);
+        case "inset":                   return shade(lightness - 0.04, Qt.lighter(original, 1).a);
+        case "paper":
+        case "startScreen":
+        case "tileHover":               return shade(lightness - 0.05, Qt.lighter(original, 1).a);
+        case "glassFill":               return shade(lightness - 0.15, Qt.lighter(original, 1).a);
+        case "accent":                  return shade(0.27, 1);
+        case "highlight":               return shade(0.71, 1);
+        case "primary":                 return shade(0.74, 1);
+        case "primaryContainer":        return shade(0.81, 1);
+        case "buttonDefault":           return shade(0.75, 1);
+        case "textSurface":             return "#1b1424";
+        case "textSurfaceVariant":
+        case "textSoft":                return "#2c2235";
+        case "textShadow":              return "transparent";
+        case "outline":                return "#675873";
+        case "outlineVariant":
+        case "outlineFaint":
+        case "insetEdge":
+        case "insetBorder":
+        case "divider":
+        case "dividerStrong":           return shade(0.3, 0.26);
+        case "error":
+        case "danger":
+        case "dangerHighlight":         return "#5a1126";
+        case "errorOutline":            return withAlpha(Qt.lighter("#5a1126", 1), Qt.lighter(original, 1).a);
+        case "errorContainer":          return Qt.hsla(0.97, 0.55, 0.88, 0.8);
+        case "criticalContainer":       return Qt.hsla(0.97, 0.58, 0.84, 0.9);
+        case "warning":                 return "#633b06";
+        case "success":                 return "#1a4d32";
+        case "badge":                   return "#e7a5b6";
+        default:                        return original;
+        }
+    }
+
     function wallpaperSurfaceLightness(key) {
         switch (key) {
         case "surface":                 return 0.14;
@@ -507,13 +569,17 @@ Singleton {
     function resolveColorValue(key, rawValue, accentState) {
         // Wallpaper mode owns the accent roles, even when a manifest pins them to literal colors.
         if (wallpaperAccentOverride) {
+            function wallpaperTone(saturation, lightness) {
+                return tone(accentState.hue, saturation * accentState.seed.hslSaturation, lightness);
+            }
+            var lift = Math.max(0, accentState.seed.hslLightness - 0.6) * 0.32;
             switch (key) {
-            case "accent":           return tone(accentState.hue, 0.70, 0.78);
-            case "highlight":        return tone(accentState.hue, 0.70, 0.74);
-            case "primary":          return tone(accentState.hue, 0.64, 0.34);
-            case "primaryContainer": return tone(accentState.hue, 0.40, 0.24);
+            case "accent":           return wallpaperTone(0.70, 0.78 + lift);
+            case "highlight":        return wallpaperTone(0.70, 0.74 + lift);
+            case "primary":          return wallpaperTone(0.64, 0.34);
+            case "primaryContainer": return wallpaperTone(0.40, 0.24);
             // Keep the filled face dark enough for light text even before hover/press darken it.
-            case "buttonDefault":    return tone(accentState.hue, 0.46, 0.28);
+            case "buttonDefault":    return wallpaperTone(0.46, 0.28);
             }
         }
 
@@ -546,6 +612,16 @@ Singleton {
         var fg = relativeLuminance(Qt.tint(background, foreground));
         var bg = relativeLuminance(background);
         return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+    }
+
+    function readableStatusText(foreground, background) {
+        var toward = relativeLuminance(background) > 0.179 ? 0 : 1;
+        for (var step = 0; step <= 10; step++) {
+            var tint = step === 0 ? foreground : Qt.tint(foreground, Qt.rgba(toward, toward, toward, step / 10));
+            if (contrastRatio(tint, background) >= 4.5)
+                return tint;
+        }
+        return Qt.rgba(toward, toward, toward, 1);
     }
 
     function relativeLuminance(value) {
@@ -810,7 +886,8 @@ Singleton {
         // Always sampled: the picker previews wallpaper themes even while
         // the active theme has a fixed accent.
         source: root.fileUrl(Wallpaper.path)
-        depth: 3
+        // A single bucket averages the full image, so small vivid details can't win.
+        depth: 0
         rescaleSize: 96
     }
 

@@ -254,7 +254,7 @@ Item {
                 StyledText {
                     visible: row.savedFontMissing
                     text: qsTr("not installed")
-                    color: Theme.error
+                    color: Theme.textPanelError
                     font.pixelSize: Theme.fontSmall
                 }
                 MdIcon {
@@ -476,7 +476,7 @@ Item {
                     StyledText {
                         visible: fontChoice.selected && row.savedFontMissing
                         text: qsTr("not installed")
-                        color: Theme.error
+                        color: Theme.textPanelError
                         font.pixelSize: Theme.fontSmall
                     }
                     MdIcon {

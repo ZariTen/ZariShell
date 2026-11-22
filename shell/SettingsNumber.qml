@@ -80,7 +80,7 @@ Item {
             anchors.rightMargin: Theme.spacingXs
             verticalAlignment: TextInput.AlignVCenter
             horizontalAlignment: TextInput.AlignRight
-            color: control.invalid ? Theme.error : Theme.textSurface
+            color: control.invalid ? Theme.textPanelError : Theme.textSurface
             selectionColor: Theme.primary
             selectedTextColor: Theme.textPrimary
             font.family: Theme.font

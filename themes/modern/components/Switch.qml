@@ -20,7 +20,7 @@ Rectangle {
         width: look.height - look.knobInset * 2
         height: width
         radius: width / 2
-        color: control.checked ? Theme.surface : Theme.textSurfaceVariant
+        color: control.checked ? (Theme.wallpaperPastel ? Theme.textSurface : Theme.surface) : Theme.textSurfaceVariant
         Behavior on x { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.standard } }
     }
 }

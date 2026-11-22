@@ -390,7 +390,7 @@ QsPage {
 
             MdIcon {
                 codepoint: 0xF05D6 // md-alert_circle_outline
-                color: Theme.error
+                color: Theme.textPanelError
             }
             StyledText {
                 Layout.fillWidth: true

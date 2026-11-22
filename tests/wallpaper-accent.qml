@@ -11,6 +11,9 @@ ShellRoot {
     property color defaultPanel
     property string defaultText
     property string defaultError
+    property color previousSample
+    property color customPanel
+    property real darkBlueLightness: 0
 
     FileView { id: fixtureFile; blockWrites: true; printErrors: false }
 
@@ -26,6 +29,10 @@ ShellRoot {
     }
     function wallpaper(name, rgb) {
         Wallpaper.path = writeFixture(name + ".ppm", "P3\n2 2\n255\n" + (rgb + "\n").repeat(4));
+    }
+    function sampleWallpaper(name, pixels) {
+        previousSample = Theme.wallpaperColor;
+        Wallpaper.path = writeFixture(name + ".ppm", "P3\n" + pixels.length + " 1\n255\n" + pixels.join("\n"));
     }
     function contrast(foreground, background) {
         var fg = Theme.relativeLuminance(Qt.tint(background, foreground));
@@ -84,7 +91,7 @@ ShellRoot {
                     root.checkSurfaces("g");
                     root.check(root.contrast(Theme.textSurfaceVariant, Qt.tint(Theme.surface, Theme.panel)) >= 4.5,
                         "Unmodified settings labels must stay readable on the green panel");
-                    root.check(root.contrast(Theme.error, Qt.tint(Theme.surface, Theme.bar)) >= 4.5,
+                    root.check(root.contrast(Theme.textBarError, Qt.tint(Theme.surface, Theme.bar)) >= 4.5,
                         "Low-battery text must stay readable on the green bar");
                     root.wallpaper("red", "255 0 0");
                     root.phase = 2;
@@ -116,7 +123,70 @@ ShellRoot {
                     root.check(root.contrast(Theme.textButtonDefault, Theme.buttonDefault) >= 4.5,
                         "A pinned dark label must not disappear on the wallpaper-tinted button");
                     console.log("PASS QML regression tests: wallpaper accents preserve foreground contrast");
-                    Qt.quit();
+                    root.check(Theme.setTheme("aero") === "aero", "Aero theme must load for wallpaper sampling");
+                    root.sampleWallpaper("mostly-dark", Array(31).fill("32 32 32").concat("0 0 255"));
+                    root.phase = 4;
+                } else if (root.phase >= 4 && !Qt.colorEqual(Theme.wallpaperColor, root.previousSample)) {
+                    var panel = Theme.themePanel;
+                    if (root.phase === 4) {
+                        root.check(panel.hslSaturation < 0.08 && panel.hslLightness < 0.14,
+                            "A small bright detail must not tint a mostly dark wallpaper: " + panel);
+                        root.sampleWallpaper("dark-blue", Array(32).fill("12 39 76"));
+                        root.phase = 5;
+                    } else if (root.phase === 5) {
+                        root.darkBlueLightness = panel.hslLightness;
+                        root.sampleWallpaper("bright-blue", Array(32).fill("33 138 214"));
+                        root.phase = 6;
+                    } else if (root.phase === 6) {
+                        root.check(panel.hslHue > 0.53 && panel.hslHue < 0.62 && panel.hslLightness > root.darkBlueLightness + 0.04,
+                            "A brighter blue wallpaper must produce a lighter blue panel: " + panel);
+                        root.check(Theme.themeBar.hslLightness > 0.23 && Theme.themeBar.hslHue > 0.53 && Theme.themeBar.hslHue < 0.62,
+                            "The visible bar must also follow a bright blue wallpaper: " + Theme.themeBar);
+                        root.check(root.contrast(Theme.textPanelError, Qt.tint(Qt.tint(Theme.surface, Theme.panel), Theme.surfaceContainerHighest)) >= 4.5,
+                            "Error labels must remain readable on the brighter palette");
+                        root.sampleWallpaper("pastel", Array(15).fill("178 195 236").concat(Array(16).fill("238 189 228"), "0 0 255"));
+                        root.phase = 7;
+                    } else if (root.phase === 7) {
+                        root.check(panel.b > panel.r && panel.r > panel.g + 0.025,
+                            "Blue and pink wallpaper regions must blend into a lavender tint: " + panel);
+                        for (var theme of Theme.themes) {
+                            var foreground = Theme.specColor(theme.spec, "textSurface", "#ffffff");
+                            var secondary = Theme.specColor(theme.spec, "textSurfaceVariant", "#ffffff");
+                            for (var key of ["panel", "bar"]) {
+                                var face = Theme.specColor(theme.spec, key, "transparent");
+                                root.check(Math.abs(face.hslLightness - Theme.wallpaperColor.hslLightness) < 0.08,
+                                    theme.id + " must preserve the brightness of a pale lavender " + key + ": " + face);
+                                var painted = Qt.tint(Qt.rgba(0, 0, 0, 1), face);
+                                root.check(root.contrast(foreground, painted) >= 4.5 && root.contrast(secondary, painted) >= 4.5,
+                                    theme.id + " must keep body text and labels readable on its pastel " + key);
+                            }
+                            var panelFace = Theme.specColor(theme.spec, "panel", "transparent");
+                            var errorText = Theme.specColor(theme.spec, "error", "#ff6b5e");
+                            for (var statusRole of ["errorContainer", "criticalContainer"]) {
+                                var statusFace = Qt.tint(Qt.tint(Qt.rgba(0, 0, 0, 1), panelFace),
+                                    Theme.specColor(theme.spec, statusRole, "transparent"));
+                                root.check(root.contrast(foreground, statusFace) >= 4.5 && root.contrast(errorText, statusFace) >= 4.5,
+                                    theme.id + " must keep error messages readable on a pastel " + statusRole);
+                            }
+                        }
+                        Settings.set("panelOpacity", 0.3);
+                        root.check(Math.abs(Theme.panel.a - 0.3) < 0.001, "A pastel palette must honor explicit opacity");
+                        Settings.reset("panelOpacity");
+                        root.check(Theme.setTheme("ink") === "ink", "Ink theme must load for custom color contrast");
+                        Settings.set("accent", "#202020");
+                        root.check(String(Theme.primary) === "#202020" && root.contrast(Theme.textPrimary, Theme.primary) >= 4.5,
+                            "A dark custom color must keep the selected wallpaper checkmark readable");
+                        root.check(Theme.setTheme("aero") === "aero", "Aero theme must load for custom palette isolation");
+                        Settings.set("accent", "#527de0");
+                        root.customPanel = Theme.themePanel;
+                        root.sampleWallpaper("unrelated", Array(32).fill("45 200 195"));
+                        root.phase = 8;
+                    } else {
+                        root.check(Qt.colorEqual(Theme.themePanel, root.customPanel),
+                            "Changing wallpaper must not recolor a Custom palette");
+                        console.log("PASS QML regression tests: wallpaper composition, brightness and blended hues");
+                        Qt.quit();
+                    }
                 }
             } catch (error) {
                 console.error("FAIL " + error.message);

@@ -245,7 +245,7 @@ QsPage {
                     MdIcon {
                         codepoint: ShellState.batteryGlyph(page.batteryLevel(entry.device))
                         font.pixelSize: Theme.iconPx(14)
-                        color: page.batteryLevel(entry.device) <= 0.15 ? Theme.error : Theme.textSurfaceVariant
+                        color: page.batteryLevel(entry.device) <= 0.15 ? Theme.textPanelError : Theme.textSurfaceVariant
                     }
                     StyledText {
                         text: Math.round(page.batteryLevel(entry.device) * 100) + "%"

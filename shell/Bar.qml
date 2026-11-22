@@ -415,7 +415,7 @@ Scope {
                                     codepoint: battery.charging ? 0xF0084 : ShellState.batteryGlyph(battery.device.percentage / 100)
                                     color: {
                                         if (battery.low)
-                                            return Theme.error;
+                                            return Theme.textBarError;
                                         if (battery.charging)
                                             return Theme.success;
                                         return Theme.textSurface;
@@ -425,7 +425,7 @@ Scope {
                                     visible: battery.low || battery.device.state === UPowerDeviceState.Charging
                                     text: Math.round(battery.device.percentage) + "%"
                                     font.pixelSize: Theme.fontSmall
-                                    color: battery.low ? Theme.error : Theme.textSurface
+                                    color: battery.low ? Theme.textBarError : Theme.textSurface
                                 }
                             }
                         }

@@ -12,8 +12,12 @@ Rectangle {
     readonly property color hover: Theme.color("tileHover", "#3d3d3d")
 
     radius: control.radius
+    border.width: Theme.wallpaperPastel && control.active ? 1 : 0
+    border.color: Theme.accent
     color: {
         if (control.active) {
+            if (Theme.wallpaperPastel)
+                return Qt.tint(Theme.surfaceContainer, Theme.withAlpha(control.tint, control.pressed ? 0.75 : (control.hovered ? 0.55 : 0.35)));
             // Keep Metro's light labels legible over the shared bright highlight.
             var fill = Theme.wallpaperAccentOverride ? Qt.darker(control.tint, 2.7) : control.tint;
             return control.pressed ? Qt.darker(fill, 1.25) : (control.hovered ? Qt.lighter(fill, 1.15) : fill);
