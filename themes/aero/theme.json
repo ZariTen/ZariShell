@@ -1,7 +1,7 @@
 {
   "name": "Aero",
   "description": "Tinted glossy glass",
-  "accent": "wallpaper",
+  "accent": "#5c7bd6",
   "components": ["Backdrop", "Button", "Field", "Fill", "Frame", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {
     "surface": { "h": 0, "s": 0.4, "l": 0.12 },

@@ -13,6 +13,7 @@ ShellRoot {
     property string defaultError
     property color previousSample
     property color customPanel
+    property var themePalettes
     property real darkBlueLightness: 0
 
     FileView { id: fixtureFile; blockWrites: true; printErrors: false }
@@ -38,6 +39,14 @@ ShellRoot {
         var fg = Theme.relativeLuminance(Qt.tint(background, foreground));
         var bg = Theme.relativeLuminance(background);
         return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
+    }
+    function defaultPalettes() {
+        var values = {};
+        for (var theme of Theme.themes.concat([{ id: "legacy", spec: { accent: "wallpaper" } }])) {
+            values[theme.id] = ["accent", "bar", "panel", "surface", "textSurface"].map(key =>
+                String(Theme.specColor(theme.spec, key, key === "accent" ? "accent" : "#ffffff")));
+        }
+        return values;
     }
     function checkPalette(channel) {
         var alternatives = channel === "g" ? ["r", "b"] : ["g", "b"];
@@ -181,10 +190,34 @@ ShellRoot {
                         root.customPanel = Theme.themePanel;
                         root.sampleWallpaper("unrelated", Array(32).fill("45 200 195"));
                         root.phase = 8;
-                    } else {
+                    } else if (root.phase === 8) {
                         root.check(Qt.colorEqual(Theme.themePanel, root.customPanel),
                             "Changing wallpaper must not recolor a Custom palette");
-                        console.log("PASS QML regression tests: wallpaper composition, brightness and blended hues");
+                        Settings.reset("accent");
+                        root.themePalettes = root.defaultPalettes();
+                        root.sampleWallpaper("another-default", Array(32).fill("235 76 123"));
+                        root.phase = 9;
+                    } else if (root.phase === 9) {
+                        var after = root.defaultPalettes();
+                        for (var id of Object.keys(after))
+                            root.check(JSON.stringify(after[id]) === JSON.stringify(root.themePalettes[id]),
+                                id + " palette must not change with wallpaper in Theme mode");
+                        root.check(Theme.setTheme("liquid") === "liquid", "Liquid Glass must load in Theme mode");
+                        var glassPanel = Qt.tint(Qt.rgba(0, 0, 0, 1), Theme.panel);
+                        root.check(root.contrast(Theme.primaryIndicator, glassPanel) >= 4.5,
+                            "Fixed frosted panels must keep notification names readable");
+                        Settings.set("accent", "#999999");
+                        root.check(Theme.primary.hslSaturation < 0.02 && Theme.buttonDefault.hslSaturation < 0.02,
+                            "A gray Custom color must not introduce red-tinted Liquid Glass controls");
+                        Settings.set("accent", "wallpaper");
+                        root.sampleWallpaper("legacy-dark", Array(32).fill("32 32 32"));
+                        root.phase = 10;
+                    } else if (Theme.wallpaperColor.hslLightness < 0.2) {
+                        var legacy = { accent: "wallpaper", colors: { rim: { h: 0, s: 0.55, l: 0.72 } } };
+                        var rim = Theme.specColor(legacy, "rim", "transparent");
+                        root.check(Math.abs(rim.hslLightness - 0.72) < 0.01,
+                            "Opting into Wallpaper must preserve a legacy theme's decorative tone lightness");
+                        console.log("PASS QML regression tests: wallpaper composition and fixed theme palettes");
                         Qt.quit();
                     }
                 }

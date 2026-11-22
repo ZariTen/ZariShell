@@ -16,6 +16,7 @@ Item {
     implicitHeight: Theme.px(40)
 
     ClippingRectangle {
+        id: tile
         anchors.fill: parent
         radius: Theme.radius
         color: root.critical ? Theme.error : Theme.primaryContainer
@@ -46,7 +47,7 @@ Item {
             anchors.centerIn: parent
             visible: !root.showImage && !icon.visible
             codepoint: root.critical ? 0xF0026 : 0xF009A
-            color: Theme.textSurface
+            color: Theme.readableText(tile.color, Theme.textSurface, Theme.textPrimaryContainer)
             font.pixelSize: Theme.iconPx(20)
         }
     }

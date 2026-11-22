@@ -31,7 +31,7 @@ Sizes are in pixels before UI scaling. "Theme" means the active theme's value.
 | `workspaceStyle` | `"dots"` | `"dots"`, `"numbers"`, `"pills"` or `"diamonds"`. |
 | `barGap` | 8 | Floating gap slider: distance from screen edges, 0–24 px in settings. Applies to either floating bar style. |
 | `barOpacity` / `panelOpacity` | Theme | Background opacity, 0–1. |
-| `accent` | Theme | **Color palette**: `"wallpaper"` tints the bar, panels, cards, and controls from the current wallpaper; `"#rrggbb"` sets a custom seed. |
+| `accent` | Theme | **Color palette**: unset uses the theme's fixed colors, `"wallpaper"` tints the shell from the current wallpaper, and `"#rrggbb"` sets a custom seed. |
 | `font` | Noto Sans | Font family, shared across themes. Install Noto Sans if it is missing; otherwise Qt uses a fallback. |
 | `fontSize` / `iconSize` | 13 / 16 | Base text and icon sizes. |
 | `animationSpeed` | 1 | Animation multiplier; 2 is twice as fast. |

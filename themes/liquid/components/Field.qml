@@ -14,7 +14,7 @@ Item {
         radius: look.cornerRadius
         color: control.prominent ? Theme.color("glassFill", [1, 1, 1, 0.12]) : Theme.inset
         border.width: control.focused ? 1.5 : 0
-        border.color: Theme.highlight
+        border.color: Theme.lightSurfaces ? Theme.accent : Theme.highlight
     }
 
     GlassEdge {

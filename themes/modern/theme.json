@@ -1,7 +1,17 @@
 {
   "name": "Modern",
   "description": "Dark rounded islands",
-  "accent": "wallpaper",
+  "accent": "#5c7bd6",
+  "themeColors": {
+    "surface": "#17181b",
+    "bar": "#e01b1d21",
+    "panel": "#f21d1f24",
+    "surfaceContainer": "#eb272a31",
+    "surfaceContainerHigh": "#30333c",
+    "surfaceContainerHighest": "#393d48",
+    "inset": "#bf111217",
+    "backdrop": "#101114"
+  },
   "components": ["Backdrop", "Button", "Divider", "Field", "Highlight", "Slider", "Surface", "Switch"],
   "colors": {
     "surface": { "h": 0, "s": 0.18, "l": 0.09 },

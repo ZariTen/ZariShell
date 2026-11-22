@@ -3,8 +3,8 @@ import QtQuick.Effects
 import qs
 
 // Liquid Glass backdrop: the wallpaper, heavily blurred but kept vivid, with
-// a light dim toward the bottom bar; without a wallpaper a deep gradient in
-// the accent hue. The login screen is a little brighter than the lock.
+// a translucent veil that keeps the clock and controls readable. Without a
+// wallpaper the backdrop uses the theme's own gradient.
 // `control` is the generic Backdrop.
 Item {
     id: look
@@ -43,9 +43,9 @@ Item {
     Rectangle {
         anchors.fill: parent
         gradient: Gradient {
-            GradientStop { position: 0.0; color: Qt.rgba(0, 0, 0, 0.12) }
-            GradientStop { position: 0.6; color: Qt.rgba(0, 0, 0, 0.18) }
-            GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.45) }
+            GradientStop { position: 0.0; color: Theme.lightSurfaces ? Theme.withAlpha(Theme.surface, 0.8) : Qt.rgba(0, 0, 0, 0.12) }
+            GradientStop { position: 0.6; color: Theme.lightSurfaces ? Theme.withAlpha(Theme.surface, 0.68) : Qt.rgba(0, 0, 0, 0.18) }
+            GradientStop { position: 1.0; color: Theme.lightSurfaces ? Theme.withAlpha(Theme.surface, 0.85) : Qt.rgba(0, 0, 0, 0.45) }
         }
     }
 }

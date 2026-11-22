@@ -46,7 +46,7 @@ Item {
         width: look.knobWidth
         height: look.knobHeight
         radius: height / 2
-        color: Theme.wallpaperPastel ? (look.on ? Theme.textSurface : Theme.textSurfaceVariant)
+        color: Theme.lightSurfaces ? (look.on ? Theme.textSurface : Theme.textSurfaceVariant)
             : look.tinted ? Theme.surface : look.on ? Theme.color("activeKnob", "#8e8e93") : "#ffffff"
         Behavior on color { ColorAnimation { duration: Theme.durMedium } }
         Behavior on x { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }

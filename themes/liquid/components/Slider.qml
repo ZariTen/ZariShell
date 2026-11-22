@@ -2,14 +2,16 @@ import QtQuick
 import QtQuick.Effects
 import qs
 
-// Liquid Glass slider: a clear glass capsule track with a white fill (or the
-// tone's color) and a white capsule thumb that grows while dragged. Meters
+// Liquid Glass slider: a clear glass capsule track with a contrasting fill
+// and a capsule thumb that grows while dragged. Meters
 // are the track and fill alone. `control` is the generic Slider.
 Item {
     id: look
 
     readonly property bool accentFill: control.tone === "accent" || (Theme.wallpaperAccentOverride && control.interactive)
-    readonly property color fill: Theme.toneColor(control.tone, accentFill ? Theme.highlight : Qt.rgba(1, 1, 1, 0.92))
+    readonly property color fill: Theme.toneColor(control.tone,
+        Theme.lightSurfaces && !control.interactive ? Theme.accent
+        : accentFill || Theme.lightSurfaces ? Theme.highlight : Qt.rgba(1, 1, 1, 0.92))
 
 
     Rectangle {
@@ -52,7 +54,7 @@ Item {
         radius: height / 2
         x: Math.max(0, Math.min(parent.width - width, parent.width * control.shown - width / 2))
         anchors.verticalCenter: parent.verticalCenter
-        color: "#ffffff"
+        color: Theme.lightSurfaces ? Theme.textSurface : "#ffffff"
         scale: control.pressed ? 1.2 : (control.hovered ? 1.08 : 1)
         Behavior on scale { NumberAnimation { duration: Theme.durShort; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }
     }

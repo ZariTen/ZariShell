@@ -45,7 +45,7 @@ Singleton {
     readonly property color accent: color("accent", "accent")                 // accent icons and text
     readonly property color highlight: color("highlight", "accent")           // hover / selection / active fill
     readonly property color primary: color("primary", "accent")
-    readonly property color primaryIndicator: wallpaperAccentOverride ? accent : primary
+    readonly property color primaryIndicator: wallpaperAccentOverride || lightSurfaces ? accent : primary
     readonly property color textPrimary: {
         var preferred = color("textPrimary", "#ffffff");
         return userAccentOverride !== "" ? readableText(primary, preferred, textSurface) : preferred;
@@ -63,6 +63,7 @@ Singleton {
     readonly property color border: color("border", [0, 0, 0, 0.35])           // outer 1px edge
     readonly property color borderLight: color("borderLight", [1, 1, 1, 0.10]) // inner / subtle edge
     readonly property color textSurface: color("textSurface", "#ffffff")
+    readonly property bool lightSurfaces: relativeLuminance(textSurface) <= 0.179
     readonly property color textSurfaceVariant: color("textSurfaceVariant", [1, 1, 1, 0.70])
     readonly property color outline: color("outline", [1, 1, 1, 0.45])
     readonly property color outlineVariant: color("outlineVariant", [1, 1, 1, 0.16])
@@ -196,7 +197,7 @@ Singleton {
     readonly property string themeAccent: specAccent(spec)
     readonly property string userAccentOverride: Settings.get("accent", "")
     readonly property bool wallpaperAccentOverride: userAccentOverride === "wallpaper"
-    readonly property var activeAccent: resolveAccent(themeAccent)
+    readonly property var activeAccent: resolveAccent(themeAccent, spec.accent === "wallpaper")
     readonly property bool wallpaperPastel: activeAccent.pastel
     readonly property string accentMode: activeAccent.mode
     readonly property bool wallpaperAccent: accentMode === "wallpaper"
@@ -249,14 +250,14 @@ Singleton {
     // theme picker to preview inactive themes), with the same accent the
     // theme would get if it were active.
     function specColor(themeSpec, key, fallbackValue) {
-        var accentState = resolveAccent(specAccent(themeSpec));
+        var accentState = resolveAccent(specAccent(themeSpec), themeSpec && themeSpec.accent === "wallpaper");
         var resolved = paletteColor(themeSpec, key, fallbackValue, accentState);
         return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
     }
 
-    // A theme.json's own accent seed: a color or "wallpaper".
+    // Legacy manifests may ask for wallpaper. Only the user's Wallpaper option samples it.
     function specAccent(themeSpec) {
-        if (themeSpec && typeof themeSpec.accent === "string" && themeSpec.accent !== "")
+        if (themeSpec && typeof themeSpec.accent === "string" && themeSpec.accent !== "" && themeSpec.accent !== "wallpaper")
             return themeSpec.accent;
         return "#7a9cc6";
     }
@@ -265,17 +266,20 @@ Singleton {
     // setting wins over the theme's, and "wallpaper" is a tone of the
     // wallpaper hue. { mode, seed, hue } plus, when the setting replaces
     // it, the theme's own seed (base) that its tones are written against.
-    function resolveAccent(themeAccentValue) {
+    function resolveAccent(themeAccentValue, legacyWallpaper) {
         var mode = userAccentOverride !== "" ? userAccentOverride : themeAccentValue;
         var seed = mode === "wallpaper" ? wallpaperSeed() : Qt.lighter(mode, 1);
-        // A fixed reference keeps Custom tones stable when a wallpaper-default theme's image changes.
-        var base = themeAccentValue === "wallpaper" ? tone(0, 0.6, 0.6) : Qt.lighter(themeAccentValue, 1);
+        // Keep the authored lightness of legacy decorative tokens when Wallpaper is explicit.
+        var base = null;
+        if (mode !== themeAccentValue && !(legacyWallpaper && mode === "wallpaper"))
+            base = legacyWallpaper ? tone(0, 0.6, 0.6) : Qt.lighter(themeAccentValue, 1);
+
         return {
             "mode": mode,
             "seed": seed,
             "hue": mode === "wallpaper" ? wallpaperHue : Math.max(0, seed.hslHue),
             "pastel": wallpaperAccentOverride && seed.hslLightness >= 0.76 && relativeLuminance(seed) >= 0.50,
-            "base": mode === themeAccentValue ? null : base
+            "base": base
         };
     }
 
@@ -452,7 +456,10 @@ Singleton {
     }
 
     function paletteColor(themeSpec, key, fallbackValue, accentState) {
-        var colorValue = resolveColorValue(key, specValue(themeSpec, "colors", key, fallbackValue), accentState);
+        var rawValue = specValue(themeSpec, "colors", key, fallbackValue);
+        if (userAccentOverride === "")
+            rawValue = specValue(themeSpec, "themeColors", key, rawValue);
+        var colorValue = resolveColorValue(key, rawValue, accentState);
         if (!wallpaperAccentOverride)
             return colorValue;
         if (accentState.pastel)

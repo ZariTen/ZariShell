@@ -25,7 +25,10 @@ Missing tokens and components use the defaults in
 }
 ```
 
-List only components you supply. `accent` accepts a color or `"wallpaper"`.
+List only components you supply. Set `accent` to a fixed color. Older
+manifests with `"accent": "wallpaper"` use the default seed unless the user
+selects **Wallpaper**. Optional `themeColors` override `colors` only when
+the user selects **Theme**.
 
 ## Colors
 
