@@ -45,10 +45,11 @@ accent overrides.
 | Overlays | `scrim`, `scrimStrong`, `badge` |
 | Status | `error`, `errorContainer`, `errorOutline`, `criticalContainer`, `danger`, `dangerHighlight`, `success`, `warning` |
 
-When the user explicitly selects **Wallpaper**, all five accent and selection
-tokens use shared tones of the wallpaper hue, even if the theme specifies
-literal colors. Keep accent-bearing controls tied to these tokens (or to the
-`tint` provided by the generic control) and keep status colors separate.
+When the user explicitly selects **Wallpaper**, the wallpaper hue colors the
+shared backgrounds, surface containers, inset, and accent tokens, even if the
+theme specifies literal colors. Surface opacity and light/dark text polarity
+are preserved. Use these tokens or the generic control's `tint` in custom
+looks, and keep status colors separate.
 
 `textButtonDefault` pairs with `buttonDefault`; when omitted, the shell selects
 readable text against the filled face. In **Wallpaper** mode, the shell can

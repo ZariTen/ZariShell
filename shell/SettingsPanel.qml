@@ -40,7 +40,7 @@ Scope {
     // the key is unset.
     readonly property var sections: [
         { id: "appearance", title: qsTr("Appearance"), glyph: 0xF03D8, rows: [
-            { key: "accent", label: qsTr("Accent color"), kind: "accent", def: "" },
+            { key: "accent", label: qsTr("Color palette"), kind: "accent", def: "" },
             { key: "radius", label: qsTr("Corner roundness"), defaultLabel: qsTr("Theme default"), kind: "slider", min: 0, max: 2, step: 0.1, unit: "pct", def: 1, advanced: true },
             { key: "spacing", label: qsTr("Interface spacing"), defaultLabel: qsTr("Default"), kind: "slider", min: 0.5, max: 2, step: 0.05, unit: "pct", def: 1, advanced: true },
             { key: "panelOpacity", label: qsTr("Panel opacity"), kind: "slider", min: 0, max: 1, step: 0.01, unit: "pct", def: Theme.themePanel.a, advanced: true },

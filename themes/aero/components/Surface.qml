@@ -11,22 +11,22 @@ Item {
 
     readonly property real sheen: control.headerHeight > 0 ? Math.min(0.48, control.headerHeight / Math.max(1, height)) : 0.48
 
+    // Draw the tint separately so a backend without shader effects still paints it.
+    RectangularShadow {
+        visible: control.shadow && control.color.a > 0
+        anchors.fill: parent
+        radius: control.radius
+        offset.y: 3
+        blur: 19
+        color: Qt.rgba(0, 0, 0, 0.55 * control.color.a)
+    }
+
     Rectangle {
         anchors.fill: parent
         radius: control.radius
         color: control.color
         border.width: 1
         border.color: Theme.border
-
-        layer.enabled: control.shadow
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowColor: "#000000"
-            shadowOpacity: 0.55
-            shadowBlur: 0.8
-            shadowVerticalOffset: 3
-            blurMax: 24
-        }
     }
 
     // Gloss: bright top band with a hard edge, gentle darkening at the bottom.

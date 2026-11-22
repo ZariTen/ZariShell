@@ -248,7 +248,7 @@ Singleton {
     // Theme color by name (also for theme-specific extras used by a theme's
     // own components), with a fallback.
     function color(key, fallbackValue) {
-        return resolveColorValue(key, lookup("colors", key, fallbackValue), activeAccent);
+        return paletteColor(spec, key, fallbackValue, activeAccent);
     }
 
     // Resolve a color token from an arbitrary theme.json object (used by the
@@ -256,7 +256,7 @@ Singleton {
     // theme would get if it were active.
     function specColor(themeSpec, key, fallbackValue) {
         var accentState = resolveAccent(specAccent(themeSpec));
-        var resolved = resolveColorValue(key, specValue(themeSpec, "colors", key, fallbackValue), accentState);
+        var resolved = paletteColor(themeSpec, key, fallbackValue, accentState);
         return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
     }
 
@@ -448,6 +448,62 @@ Singleton {
         return specValue(spec, sectionName, key, fallbackValue);
     }
 
+    function paletteColor(themeSpec, key, fallbackValue, accentState) {
+        var colorValue = resolveColorValue(key, specValue(themeSpec, "colors", key, fallbackValue), accentState);
+        if (!wallpaperAccentOverride)
+            return colorValue;
+
+        var darkLightness = wallpaperSurfaceLightness(key);
+        if (darkLightness < 0)
+            return colorValue;
+
+        // Keep the theme's text polarity and the opacity of each material.
+        function foreground(token, fallback) {
+            return Qt.lighter(resolveColorValue(token, specValue(themeSpec, "colors", token, fallback), accentState), 1);
+        }
+        var text = foreground("textSurface", "#ffffff");
+        var lightSurface = relativeLuminance(text) <= 0.179;
+        var endpoint = lightSurface ? 1 : 0;
+        var lightness = lightSurface ? 1 - darkLightness : darkLightness;
+        var saturation = lightSurface ? 0.62 : 0.80;
+        var surfaceTone = tone(accentState.hue, saturation, lightness);
+        var neutral = Qt.rgba(endpoint, endpoint, endpoint, 1);
+        var pairedText = [text, foreground("textSurfaceVariant", [1, 1, 1, 0.70]), foreground("error", "#ff6b5e")];
+        var targets = pairedText.map(color => ({ color: color, limit: contrastRatio(color, neutral) }))
+            .filter(target => target.limit >= 4.5);
+        function fits(tint) {
+            return targets.every(target => contrastRatio(target.color, tint) >= (target.limit >= 5 ? 5 : 4.5));
+        }
+        // Leave margin for gloss and grain without dimming text or shifting status hues.
+        if (!fits(surfaceTone)) {
+            var low = 0;
+            var high = 1;
+            for (var step = 0; step < 8; step++) {
+                var midpoint = (low + high) / 2;
+                if (fits(tone(accentState.hue, saturation, endpoint + (lightness - endpoint) * midpoint)))
+                    low = midpoint;
+                else
+                    high = midpoint;
+            }
+            surfaceTone = tone(accentState.hue, saturation, endpoint + (lightness - endpoint) * low);
+        }
+        return withAlpha(surfaceTone, Qt.lighter(colorValue, 1).a);
+    }
+
+    function wallpaperSurfaceLightness(key) {
+        switch (key) {
+        case "surface":                 return 0.14;
+        case "bar":                     return 0.26;
+        case "panel":                   return 0.24;
+        case "surfaceContainer":        return 0.25;
+        case "surfaceContainerHigh":    return 0.27;
+        case "surfaceContainerHighest": return 0.29;
+        case "inset":                   return 0.11;
+        case "backdrop":                return 0.12;
+        default:                        return -1;
+        }
+    }
+
     function resolveColorValue(key, rawValue, accentState) {
         // Wallpaper mode owns the accent roles, even when a manifest pins them to literal colors.
         if (wallpaperAccentOverride) {
@@ -479,16 +535,17 @@ Singleton {
     function readableText(fill, preferred, alternate) {
         // Resolve translucent faces against the panel before comparing contrast.
         var background = Qt.tint(Qt.tint(surface, panel), fill);
-        var luminance = relativeLuminance(background);
-        function contrast(foreground) {
-            var value = relativeLuminance(Qt.tint(background, foreground));
-            return (Math.max(value, luminance) + 0.05) / (Math.min(value, luminance) + 0.05);
-        }
-        if (contrast(preferred) >= 4.5)
+        if (contrastRatio(preferred, background) >= 4.5)
             return preferred;
-        if (contrast(alternate) >= 4.5)
+        if (contrastRatio(alternate, background) >= 4.5)
             return alternate;
-        return luminance > 0.179 ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(1, 1, 1, 1);
+        return relativeLuminance(background) > 0.179 ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(1, 1, 1, 1);
+    }
+
+    function contrastRatio(foreground, background) {
+        var fg = relativeLuminance(Qt.tint(background, foreground));
+        var bg = relativeLuminance(background);
+        return (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05);
     }
 
     function relativeLuminance(value) {
