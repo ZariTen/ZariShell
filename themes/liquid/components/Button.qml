@@ -3,7 +3,7 @@ import qs
 
 // Liquid Glass button: a glass capsule, or a circle when it is square. Clear
 // at rest unless framed; hover fades the glass in. `active` turns it into a
-// solid white face (ActiveContent darkens its glyphs), or a bright frosted
+// solid face (ActiveContent darkens its glyphs), or a bright frosted
 // one when the content keeps its own colors. Press dims it. `control` is the
 // generic Button.
 Item {
@@ -21,9 +21,9 @@ Item {
         radius: look.cornerRadius
         color: {
             if (look.solid)
-                return Theme.color("activeFill", "#ffffff");
+                return Theme.wallpaperAccentOverride ? Qt.tint(control.tint, "#40ffffff") : Theme.color("activeFill", "#ffffff");
             if (control.active)
-                return Qt.rgba(1, 1, 1, 0.34);
+                return Theme.wallpaperAccentOverride ? Theme.withAlpha(control.tint, 0.34) : Qt.rgba(1, 1, 1, 0.34);
             return Theme.color("glassFill", [1, 1, 1, 0.14]);
         }
         Behavior on color { ColorAnimation { duration: Theme.durMedium } }

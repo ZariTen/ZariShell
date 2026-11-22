@@ -45,9 +45,16 @@ Singleton {
     readonly property color accent: color("accent", "accent")                 // accent icons and text
     readonly property color highlight: color("highlight", "accent")           // hover / selection / active fill
     readonly property color primary: color("primary", "accent")
-    readonly property color textPrimary: color("textPrimary", "#ffffff")
+    readonly property color primaryIndicator: wallpaperAccentOverride ? accent : primary
+    readonly property color textPrimary: {
+        var preferred = color("textPrimary", "#ffffff");
+        return wallpaperAccentOverride ? readableText(primary, preferred, textSurface) : preferred;
+    }
     readonly property color primaryContainer: color("primaryContainer", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.9 })
-    readonly property color textPrimaryContainer: color("textPrimaryContainer", "#ffffff")
+    readonly property color textPrimaryContainer: {
+        var preferred = color("textPrimaryContainer", "#ffffff");
+        return wallpaperAccentOverride ? readableText(primaryContainer, preferred, textSurface) : preferred;
+    }
     readonly property color surfaceContainer: color("surfaceContainer", [1, 1, 1, 0.08])
     readonly property color surfaceContainerHigh: color("surfaceContainerHigh", [1, 1, 1, 0.14])
     readonly property color surfaceContainerHighest: color("surfaceContainerHighest", [1, 1, 1, 0.12])
@@ -67,7 +74,9 @@ Singleton {
     readonly property color outlineFaint: color("outlineFaint", [1, 1, 1, 0.08]) // list cards, inner well edge
     readonly property color insetEdge: color("insetEdge", [1, 1, 1, 0.10])     // edge of framed bar trays
     readonly property color buttonDefault: color("buttonDefault", { "h": 0, "s": 0.4, "l": 0.38, "a": 0.63 }) // default dialog button
-    readonly property color textButtonDefault: color("textButtonDefault", readableText(buttonDefault))
+    readonly property color textButtonDefault: wallpaperAccentOverride
+        ? readableText(buttonDefault, color("textButtonDefault", textSurface), textPrimary)
+        : color("textButtonDefault", readableText(buttonDefault, textSurface, textPrimary))
     readonly property color badge: color("badge", "#d9463a")                   // unread count badge
     readonly property color textSoft: color("textSoft", [1, 1, 1, 0.85])       // secondary display text
     readonly property color textShadow: color("textShadow", "transparent")     // shadow under body text
@@ -180,6 +189,7 @@ Singleton {
     // -- Internal accent derivation -----------------------------------------
     readonly property string themeAccent: specAccent(spec)
     readonly property string userAccentOverride: Settings.get("accent", "")
+    readonly property bool wallpaperAccentOverride: userAccentOverride === "wallpaper"
     readonly property var activeAccent: resolveAccent(themeAccent)
     readonly property string accentMode: activeAccent.mode
     readonly property bool wallpaperAccent: accentMode === "wallpaper"
@@ -238,7 +248,7 @@ Singleton {
     // Theme color by name (also for theme-specific extras used by a theme's
     // own components), with a fallback.
     function color(key, fallbackValue) {
-        return toColor(lookup("colors", key, fallbackValue));
+        return resolveColorValue(key, lookup("colors", key, fallbackValue), activeAccent);
     }
 
     // Resolve a color token from an arbitrary theme.json object (used by the
@@ -246,7 +256,7 @@ Singleton {
     // theme would get if it were active.
     function specColor(themeSpec, key, fallbackValue) {
         var accentState = resolveAccent(specAccent(themeSpec));
-        var resolved = resolveColorValue(specValue(themeSpec, "colors", key, fallbackValue), accentState);
+        var resolved = resolveColorValue(key, specValue(themeSpec, "colors", key, fallbackValue), accentState);
         return typeof resolved === "string" ? Qt.lighter(resolved, 1) : resolved;
     }
 
@@ -438,7 +448,19 @@ Singleton {
         return specValue(spec, sectionName, key, fallbackValue);
     }
 
-    function resolveColorValue(rawValue, accentState) {
+    function resolveColorValue(key, rawValue, accentState) {
+        // Wallpaper mode owns the accent roles, even when a manifest pins them to literal colors.
+        if (wallpaperAccentOverride) {
+            switch (key) {
+            case "accent":           return tone(accentState.hue, 0.70, 0.78);
+            case "highlight":        return tone(accentState.hue, 0.70, 0.74);
+            case "primary":          return tone(accentState.hue, 0.64, 0.34);
+            case "primaryContainer": return tone(accentState.hue, 0.40, 0.24);
+            // Keep the filled face dark enough for light text even before hover/press darken it.
+            case "buttonDefault":    return tone(accentState.hue, 0.46, 0.28);
+            }
+        }
+
         if (rawValue === "accent")
             return accentState.seed;
         if (Array.isArray(rawValue)) {
@@ -454,11 +476,7 @@ Singleton {
         return rawValue;
     }
 
-    function toColor(rawValue) {
-        return resolveColorValue(rawValue, activeAccent);
-    }
-
-    function readableText(fill) {
+    function readableText(fill, preferred, alternate) {
         // Resolve translucent faces against the panel before comparing contrast.
         var background = Qt.tint(Qt.tint(surface, panel), fill);
         var luminance = relativeLuminance(background);
@@ -466,10 +484,10 @@ Singleton {
             var value = relativeLuminance(Qt.tint(background, foreground));
             return (Math.max(value, luminance) + 0.05) / (Math.min(value, luminance) + 0.05);
         }
-        if (contrast(textSurface) >= 4.5)
-            return textSurface;
-        if (contrast(textPrimary) >= 4.5)
-            return textPrimary;
+        if (contrast(preferred) >= 4.5)
+            return preferred;
+        if (contrast(alternate) >= 4.5)
+            return alternate;
         return luminance > 0.179 ? Qt.rgba(0, 0, 0, 1) : Qt.rgba(1, 1, 1, 1);
     }
 

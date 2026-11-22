@@ -120,7 +120,7 @@ Scope {
                     radius: Theme.radius
                     color: Theme.surfaceContainerHigh
                     border.width: secret.activeFocus ? 2 : 1
-                    border.color: secret.activeFocus ? Theme.primary : Theme.outlineVariant
+                    border.color: secret.activeFocus ? Theme.primaryIndicator : Theme.outlineVariant
 
                     TextInput {
                         id: secret

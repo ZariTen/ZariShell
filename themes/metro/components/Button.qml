@@ -13,8 +13,11 @@ Rectangle {
 
     radius: control.radius
     color: {
-        if (control.active)
-            return control.pressed ? Qt.darker(control.tint, 1.25) : (control.hovered ? Qt.lighter(control.tint, 1.15) : control.tint);
+        if (control.active) {
+            // Keep Metro's light labels legible over the shared bright highlight.
+            var fill = Theme.wallpaperAccentOverride ? Qt.darker(control.tint, 2.7) : control.tint;
+            return control.pressed ? Qt.darker(fill, 1.25) : (control.hovered ? Qt.lighter(fill, 1.15) : fill);
+        }
         if (control.pressed)
             return Theme.surfaceContainerHigh;
         if (control.hovered)

@@ -144,7 +144,7 @@ Scope {
                                         return 2;
                                     return 0;
                                 }
-                                border.color: tile.selected ? Theme.primary : Theme.outline
+                                border.color: tile.selected ? Theme.primaryIndicator : Theme.outline
                                 scale: tile.hot ? 1.03 : 1
 
                                 Behavior on scale { NumberAnimation { duration: Theme.durMedium; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphasized } }

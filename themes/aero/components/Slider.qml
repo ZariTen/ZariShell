@@ -7,7 +7,8 @@ import qs
 Rectangle {
     id: look
 
-    readonly property color fill: Theme.toneColor(control.tone, control.tone === "accent" ? Theme.accent : Theme.success)
+    readonly property bool accentFill: control.tone === "accent" || (Theme.wallpaperAccentOverride && control.interactive)
+    readonly property color fill: Theme.toneColor(control.tone, accentFill ? Theme.accent : Theme.success)
     readonly property var stops: [Qt.lighter(fill, 1.35), fill, Qt.darker(fill, 1.5), Qt.lighter(fill, 1.08)]
 
     radius: 2

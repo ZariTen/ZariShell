@@ -45,8 +45,14 @@ accent overrides.
 | Overlays | `scrim`, `scrimStrong`, `badge` |
 | Status | `error`, `errorContainer`, `errorOutline`, `criticalContainer`, `danger`, `dangerHighlight`, `success`, `warning` |
 
+When the user explicitly selects **Wallpaper**, all five accent and selection
+tokens use shared tones of the wallpaper hue, even if the theme specifies
+literal colors. Keep accent-bearing controls tied to these tokens (or to the
+`tint` provided by the generic control) and keep status colors separate.
+
 `textButtonDefault` pairs with `buttonDefault`; when omitted, the shell selects
-readable text against the filled face, including accent overrides.
+readable text against the filled face. In **Wallpaper** mode, the shell can
+also adjust a theme's primary, container, or filled-button text for contrast.
 
 ## Shape and motion
 

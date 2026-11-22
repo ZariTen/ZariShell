@@ -8,7 +8,8 @@ import qs
 Item {
     id: look
 
-    readonly property color fill: Theme.toneColor(control.tone, control.tone === "accent" ? Theme.highlight : Qt.rgba(1, 1, 1, 0.92))
+    readonly property bool accentFill: control.tone === "accent" || (Theme.wallpaperAccentOverride && control.interactive)
+    readonly property color fill: Theme.toneColor(control.tone, accentFill ? Theme.highlight : Qt.rgba(1, 1, 1, 0.92))
 
 
     Rectangle {

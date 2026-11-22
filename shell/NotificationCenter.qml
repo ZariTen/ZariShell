@@ -202,7 +202,7 @@ Scope {
                                             Layout.fillWidth: true
                                             text: Notifs.appLabel(entry.modelData)
                                             font.pixelSize: Theme.fontSmall
-                                            color: entry.critical ? Theme.error : Theme.primary
+                                            color: entry.critical ? Theme.error : Theme.primaryIndicator
                                         }
                                         StyledText {
                                             text: Notifs.relativeTime(Notifs.timeOf(entry.modelData), clock.date)
