@@ -360,6 +360,8 @@ Scope {
                         }
                     }
 
+                    CapsLockIndicator {}
+
                     // Keyboard layout (with more than one); click for the next.
                     Button {
                         visible: KeyboardLayout.several

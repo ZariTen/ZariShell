@@ -16,14 +16,17 @@ Singleton {
     property var codes: []             // short code per layout: "US", "BR"
     property int index: 0              // active layout
     property string keymap: ""         // active layout's long name
+    property bool capsLock: false
     readonly property bool several: codes.length > 1
     readonly property string code: codes.length > 0 ? codes[Math.max(0, Math.min(index, codes.length - 1))] : ""
 
     signal switched(string code, string keymap)
 
     function refresh() {
-        if (available)
+        if (available && !query.running) {
+            query.startedSuccessfully = false;
             query.running = true;
+        }
     }
 
     function next() {
@@ -48,31 +51,57 @@ Singleton {
 
     Process {
         id: query
+        property bool startedSuccessfully: false
         command: ["hyprctl", "devices", "-j"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    var keyboards = JSON.parse(text).keyboards || [];
-                    var keyboard = keyboards.find(entry => entry.main) || keyboards[0];
-                    var previousDevice = root.device;
-                    var previousCode = root.code;
-                    var previousKeymap = root.keymap;
-                    root.device = keyboard ? keyboard.name : "";
-                    root.codes = keyboard && keyboard.layout ? root.shortCodes(keyboard.layout, keyboard.variant || "") : [];
-                    root.index = keyboard ? keyboard.active_layout_index : 0;
-                    root.keymap = keyboard ? keyboard.active_keymap || "" : "";
-                    if (root.device === previousDevice && previousCode && root.code
-                        && (root.code !== previousCode || root.keymap !== previousKeymap))
-                        root.switched(root.code, root.keymap);
-                } catch (e) {
-                    root.codes = [];
-                }
+        stdout: StdioCollector { id: devicesOutput }
+        onStarted: startedSuccessfully = true
+        onRunningChanged: {
+            if (!running && !startedSuccessfully)
+                root.capsLock = false;
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (exitCode !== 0 || exitStatus !== 0) {
+                root.capsLock = false;
+                return;
+            }
+            try {
+                var keyboards = JSON.parse(devicesOutput.text).keyboards;
+                if (!Array.isArray(keyboards) || keyboards.some(entry => !entry || typeof entry !== "object" || Array.isArray(entry)))
+                    throw new Error("Invalid keyboards array");
+                var keyboard = keyboards.find(entry => entry.main === true) || keyboards[0];
+                if (keyboard && (typeof keyboard.name !== "string" || typeof keyboard.layout !== "string"
+                    || !Number.isInteger(keyboard.active_layout_index)
+                    || (keyboard.variant !== undefined && typeof keyboard.variant !== "string")
+                    || (keyboard.active_keymap !== undefined && typeof keyboard.active_keymap !== "string")))
+                    throw new Error("Invalid keyboard layout");
+
+                var previousDevice = root.device;
+                var previousCode = root.code;
+                var previousKeymap = root.keymap;
+                root.device = keyboard ? keyboard.name : "";
+                root.codes = keyboard && keyboard.layout ? root.shortCodes(keyboard.layout, keyboard.variant || "") : [];
+                root.index = keyboard ? keyboard.active_layout_index : 0;
+                root.keymap = keyboard ? keyboard.active_keymap || "" : "";
+                root.capsLock = !!keyboard && keyboard.capsLock === true;
+                if (root.device === previousDevice && previousCode && root.code
+                    && (root.code !== previousCode || root.keymap !== previousKeymap))
+                    root.switched(root.code, root.keymap);
+            } catch (e) {
+                root.capsLock = false;
             }
         }
     }
 
     Process {
         id: switcher
+    }
+
+    // Hyprland reports Caps Lock in devices JSON but doesn't emit a lock-key event.
+    Timer {
+        running: root.available
+        repeat: true
+        interval: 1000
+        onTriggered: root.refresh()
     }
 
     // Each keyboard device sends its own event; refresh once per burst.
