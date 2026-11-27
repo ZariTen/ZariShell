@@ -7,7 +7,7 @@ import Quickshell.Io
 // Keyboard layouts of Hyprland's main keyboard, from `hyprctl devices -j`
 // (layout "us,br", variant "intl,abnt2", active_layout_index). Updates on
 // Hyprland's activelayout and configreloaded events. Empty without Hyprland.
-// One instance, shared by the bar and quick settings.
+// Shared by the bar, quick settings, and on-screen indicator.
 Singleton {
     id: root
 
@@ -18,6 +18,8 @@ Singleton {
     property string keymap: ""         // active layout's long name
     readonly property bool several: codes.length > 1
     readonly property string code: codes.length > 0 ? codes[Math.max(0, Math.min(index, codes.length - 1))] : ""
+
+    signal switched(string code, string keymap)
 
     function refresh() {
         if (available)
@@ -52,10 +54,16 @@ Singleton {
                 try {
                     var keyboards = JSON.parse(text).keyboards || [];
                     var keyboard = keyboards.find(entry => entry.main) || keyboards[0];
+                    var previousDevice = root.device;
+                    var previousCode = root.code;
+                    var previousKeymap = root.keymap;
                     root.device = keyboard ? keyboard.name : "";
                     root.codes = keyboard && keyboard.layout ? root.shortCodes(keyboard.layout, keyboard.variant || "") : [];
                     root.index = keyboard ? keyboard.active_layout_index : 0;
-                    root.keymap = keyboard ? keyboard.active_keymap : "";
+                    root.keymap = keyboard ? keyboard.active_keymap || "" : "";
+                    if (root.device === previousDevice && previousCode && root.code
+                        && (root.code !== previousCode || root.keymap !== previousKeymap))
+                        root.switched(root.code, root.keymap);
                 } catch (e) {
                     root.codes = [];
                 }
@@ -71,7 +79,12 @@ Singleton {
     Timer {
         id: debounce
         interval: 80
-        onTriggered: root.refresh()
+        onTriggered: {
+            if (query.running)
+                restart();
+            else
+                root.refresh();
+        }
     }
 
     Connections {

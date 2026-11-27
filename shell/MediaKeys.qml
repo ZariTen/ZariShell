@@ -5,9 +5,7 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 
-// On-screen pill for volume and brightness changes. Volume shows for any
-// change of the default sink (keys, bar scroll, sliders, other apps); the IPC
-// handlers below go through the same show path.
+// Shared on-screen pill for volume, brightness, and keyboard layout changes.
 Scope {
     id: root
 
@@ -15,8 +13,10 @@ Scope {
     property var sink: Pipewire.defaultAudioSink
     property real shown: 0
     property string label: ""
+    property string detail: ""
     property string kind: "volume"
     property bool open: false
+    readonly property bool keyboard: kind === "keyboard"
 
     // Volume events are ignored right after startup, a sink switch or a sink
     // becoming ready, when its values are just being populated.
@@ -44,9 +44,10 @@ Scope {
         arm.restart();
     }
 
-    function show(value, text, what) {
+    function show(value, text, what, detailText = "") {
         shown = value;
         label = text;
+        detail = detailText;
         kind = what;
         open = true;
         hide.restart();
@@ -156,6 +157,8 @@ Scope {
                             return Theme.accent;
                         }
                         codepoint: {
+                            if (root.keyboard)
+                                return 0xF030C; // md-keyboard
                             if (root.kind === "brightness")
                                 return 0xF00DF;
                             return ShellState.volumeGlyph(Math.min(1, root.shown), root.kind === "muted");
@@ -163,6 +166,7 @@ Scope {
                     }
 
                     Slider {
+                        visible: !root.keyboard
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                         implicitHeight: Theme.px(14)
@@ -172,9 +176,18 @@ Scope {
                     }
 
                     StyledText {
-                        Layout.preferredWidth: Theme.px(48)
+                        visible: root.keyboard
+                        Layout.fillWidth: true
+                        textFormat: Text.PlainText
+                        text: root.detail || root.label
+                    }
+
+                    StyledText {
+                        visible: !root.keyboard || root.detail !== ""
+                        Layout.preferredWidth: root.keyboard ? Math.min(implicitWidth, Theme.widthPx(100)) : Theme.px(48)
                         Layout.alignment: Qt.AlignVCenter
                         horizontalAlignment: Text.AlignRight
+                        textFormat: Text.PlainText
                         text: root.label
                         font.weight: Font.DemiBold
                         color: root.over ? Theme.warning : Theme.textSurface
@@ -186,6 +199,13 @@ Scope {
 
     // -- Lifecycle and background objects -----------------------------------
     Component.onCompleted: disarm(1500)
+
+    Connections {
+        target: KeyboardLayout
+        function onSwitched(code, keymap) {
+            root.show(0, code, "keyboard", keymap);
+        }
+    }
 
     PwObjectTracker {
         objects: root.sink ? [root.sink] : []
