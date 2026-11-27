@@ -94,6 +94,9 @@ Wi-Fi requires NetworkManager; audio uses PipeWire. The Home Manager module
 provides the shell's command-line helpers. If you override `runtimePackages`,
 keep the tools needed by your enabled features.
 
+The microphone popup follows mute changes on the default PipeWire input. To
+wire a microphone mute key, bind it to `quickshell -c shell ipc call media micMute`.
+
 `nm-connection-editor` is optional for repairing saved Wi-Fi profiles. You can
 use `nmcli` instead. Updating the shell package through Home Manager can restart
 Quickshell; updating the lockfile alone does not.

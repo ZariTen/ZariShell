@@ -5,18 +5,22 @@ import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Wayland
 
-// Shared on-screen pill for volume, brightness, and keyboard layout changes.
+// Shared on-screen pill for media keys and keyboard layout changes.
 Scope {
     id: root
 
     // -- State and derived properties ---------------------------------------
     property var sink: Pipewire.defaultAudioSink
+    property var source: Pipewire.defaultAudioSource
+    readonly property var micAudio: source && source.ready ? source.audio : null
     property real shown: 0
     property string label: ""
     property string detail: ""
     property string kind: "volume"
     property bool open: false
     readonly property bool keyboard: kind === "keyboard"
+    readonly property bool microphone: kind === "microphone"
+    readonly property bool meter: !keyboard && !microphone
 
     // Volume events are ignored right after startup, a sink switch or a sink
     // becoming ready, when its values are just being populated.
@@ -93,6 +97,11 @@ Scope {
         showAudio(true);
     }
 
+    function toggleMicMute() {
+        if (micAudio)
+            micAudio.muted = !micAudio.muted;
+    }
+
     function bumpBrightness(up) {
         brightness.command = ["brightnessctl", "set", up ? "5%+" : "5%-"];
         brightness.running = true;
@@ -150,13 +159,15 @@ Scope {
                         Layout.alignment: Qt.AlignVCenter
                         font.pixelSize: Theme.iconPx(24)
                         color: {
-                            if (root.kind === "muted")
+                            if (root.kind === "muted" || (root.microphone && root.shown === 0))
                                 return Theme.outline;
                             if (root.over)
                                 return Theme.warning;
                             return Theme.accent;
                         }
                         codepoint: {
+                            if (root.microphone)
+                                return root.shown === 0 ? 0xF036D : 0xF036C; // microphone-off / microphone
                             if (root.keyboard)
                                 return 0xF030C; // md-keyboard
                             if (root.kind === "brightness")
@@ -166,7 +177,7 @@ Scope {
                     }
 
                     Slider {
-                        visible: !root.keyboard
+                        visible: root.meter
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                         implicitHeight: Theme.px(14)
@@ -176,14 +187,14 @@ Scope {
                     }
 
                     StyledText {
-                        visible: root.keyboard
+                        visible: !root.meter
                         Layout.fillWidth: true
                         textFormat: Text.PlainText
                         text: root.detail || root.label
                     }
 
                     StyledText {
-                        visible: !root.keyboard || root.detail !== ""
+                        visible: root.meter || (root.keyboard && root.detail !== "")
                         Layout.preferredWidth: root.keyboard ? Math.min(implicitWidth, Theme.widthPx(100)) : Theme.px(48)
                         Layout.alignment: Qt.AlignVCenter
                         horizontalAlignment: Text.AlignRight
@@ -208,7 +219,15 @@ Scope {
     }
 
     PwObjectTracker {
-        objects: root.sink ? [root.sink] : []
+        objects: [root.sink, root.source].filter(node => !!node)
+    }
+
+    Connections {
+        target: root.micAudio
+        function onMutedChanged() {
+            var muted = root.micAudio.muted;
+            root.show(muted ? 0 : 1, muted ? qsTr("Mic muted") : qsTr("Mic unmuted"), "microphone");
+        }
     }
 
     Connections {
@@ -253,6 +272,7 @@ Scope {
         function volumeUp(): void { root.bumpVolume(0.05); }
         function volumeDown(): void { root.bumpVolume(-0.05); }
         function volumeMute(): void { root.toggleMute(); }
+        function micMute(): void { root.toggleMicMute(); }
         function brightnessUp(): void { root.bumpBrightness(true); }
         function brightnessDown(): void { root.bumpBrightness(false); }
     }
